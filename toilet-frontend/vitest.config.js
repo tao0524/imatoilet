@@ -6,5 +6,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom', // ブラウザのふりをする設定
     globals: true,        // describeやtestをimportなしで使えるようにする
+    setupFiles: './src/setupTests.js', // ★この行を追加（セットアップファイルを読み込む）
   },
 });
