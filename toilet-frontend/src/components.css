@@ -1,0 +1,97 @@
+/* =========================
+   Buttons
+========================= */
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  max-width: 420px;        /* ← 横に伸びすぎない */
+  padding: 14px 16px;
+
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 1rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
+}
+
+/* PCでは中央寄せ */
+@media (min-width: 768px){
+  .btn{
+    margin-inline: auto;
+  }
+}
+
+/* 押した感 */
+.btn:active{
+  transform: translateY(1px);
+}
+
+/* キーボード操作対応 */
+.btn:focus-visible{
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+/* =========================
+   Primary
+========================= */
+.btn-primary{
+  background: var(--primary);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(0,0,0,.15);
+  /* 追加 */
+  min-height: 56px;
+}
+
+.btn-primary:hover{
+  box-shadow: 0 8px 20px rgba(0,0,0,.18);
+}
+
+/* =========================
+   Secondary
+========================= */
+.btn-secondary{
+  background: #fff;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.btn-secondary:hover{
+  background: rgba(0,0,0,0.04);
+}
+
+/* =========================
+   Sub
+========================= */
+.btn-sub{
+  background: #fff;
+  border: 1px solid #ccc;
+  font-size: .9rem;
+}
+
+.btn-sub:hover{
+  background: #f5f5f5;
+}
+
+/* =========================
+   Disabled
+========================= */
+.btn-disabled{
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  box-shadow: none;
+}

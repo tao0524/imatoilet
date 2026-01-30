@@ -1,0 +1,5 @@
+package com.imatoilet.backend;
+
+public class ToiletApiController {
+
+}

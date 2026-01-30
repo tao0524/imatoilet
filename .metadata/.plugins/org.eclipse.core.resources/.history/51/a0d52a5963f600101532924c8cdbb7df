@@ -1,0 +1,21 @@
+package com.imatoilet.backend;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController // ★ここがポイント！「データだけ返します」という宣言
+@RequestMapping("/api/toilets") // ★このクラスのURLは全部ここから始まる、という設定
+public class ToiletApiController {
+
+    @Autowired
+    private ToiletRepository repository;
+
+    // トイレのデータを全件「JSON」で返す
+    @GetMapping
+    public List<Toilet> getAllToilets() {
+        return repository.findAll();
+    }
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>トイレ登録・編集</title>
+</head>
+<body>
+    <h1>トイレ情報を入力</h1>
+    
+    <form action="/save" method="post" th:object="${toilet}">
+        
+        <input type="hidden" th:field="*{id}">
+        
+        <p>名前：<br>
+        <input type="text" th:field="*{name}" required></p>
+        
+        <p>住所：<br>
+        <input type="text" th:field="*{address}"></p>
+        
+        <p>説明：<br>
+        <textarea th:field="*{description}" rows="3"></textarea></p>
+        
+        <button type="submit">保存する</button>
+    </form>
+    
+    <br>
+    <a href="/">一覧に戻る</a>
+</body>
+</html>

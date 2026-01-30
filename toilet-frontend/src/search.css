@@ -1,0 +1,274 @@
+/* =========================================================
+   search.css (React完全移植版)
+========================================================= */
+
+.search-main {
+  padding: 12px 0;
+}
+
+:root {
+  --search-header-h: 72px;
+  --search-sticky-gap: 12px;
+  --search-gap: 14px;
+  --muted: #666;
+}
+
+/* =========================
+   1. 目的地検索（住所・駅・施設名）
+========================= */
+.place-search {
+  margin: 10px 0 12px;
+}
+
+.place-search__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 入力欄のデザイン */
+.input-search {
+  width: 100%;
+  height: 48px; /* 高さを48pxに固定 */
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
+  font-size: 1rem;
+  outline: none;
+  background: #fff;
+  /* 文字の縦位置調整 */
+  line-height: 48px; 
+}
+
+.input-search:focus {
+  border-color: #6cb4ff;
+  box-shadow: 0 0 0 2px rgba(108,180,255,.25);
+  background: #eef5ff;
+}
+
+.place-search__btns {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 10px;
+}
+
+/* ▼▼▼ 追加・修正箇所：ボタンの高さを強制的に合わせる設定 ▼▼▼ */
+.place-search__btns .btn {
+  height: 48px;          /* 入力欄と同じ高さに強制 */
+  padding: 0 18px;       /* 縦のパディングを0にして太るのを防ぐ */
+  border-radius: 12px;
+  display: inline-flex;  /* Flexboxで中身を制御 */
+  align-items: center;   /* 上下中央揃え */
+  justify-content: center; /* 左右中央揃え */
+  font-size: 0.95rem;    /* 文字サイズ微調整 */
+}
+/* ▲▲▲ ここまで ▲▲▲ */
+
+.place-search__status {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  min-height: 1.4em;
+}
+
+/* スマホ対応 */
+@media (max-width: 600px) {
+  .place-search__row {
+    grid-template-columns: 1fr; /* 縦並び */
+  }
+  
+  /* スマホの時はボタンも縦に積む */
+  .place-search__btns {
+    grid-auto-flow: row;
+  }
+}
+
+/* =========================
+   2. 条件パネル（基本）
+========================= */
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #eef0f6;
+  margin-bottom: 12px;
+}
+
+.filters label {
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* =========================
+   3. 詳細条件（折りたたみ）
+========================= */
+.filters-advanced {
+  margin: 0 0 12px;
+  border: 1px solid #eef0f6;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.filters-advanced__summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.filters-advanced__summary::-webkit-details-marker { display: none; }
+
+.filters-advanced__hint {
+  font-size: 11px;
+  font-weight: normal;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f0f4f8;
+  color: #666;
+  margin-left: 8px;
+}
+
+.filters-advanced__body {
+  padding: 12px 14px 14px;
+  border-top: 1px solid #eef0f6;
+  display: grid;
+  gap: 16px;
+}
+
+.filters-advanced__group {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.filters-advanced__group legend {
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+/* チップUI */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #eef0f6;
+  background: #fff;
+  margin: 0 6px 6px 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.chip:hover {
+  background: #f9f9f9;
+}
+
+/* チェックされた状態 */
+.chip:has(input:checked) {
+  border-color: #2f80ed;
+  background: #eef5ff;
+  color: #2f80ed;
+  font-weight: bold;
+}
+
+.chip input {
+  /* 見た目は隠すが機能は残す */
+  accent-color: #2f80ed;
+}
+
+
+/* =========================
+   4. パネル・地図・リスト
+========================= */
+.search-layout {
+  display: grid;
+  gap: var(--search-gap);
+}
+
+.panel {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #eef0f6;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+.panel-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef0f6;
+  background: #fbfcff;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.panel-meta {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.map-area {
+  background: #fff;
+  height: 300px;
+}
+#map { width: 100%; height: 100%; }
+
+.list-area {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.toilet-card {
+  background: #fff;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #e6e6e6;
+  cursor: pointer;
+}
+.toilet-card:hover {
+  background-color: #fcfcfc;
+}
+
+.toilet-name { font-weight: 700; margin-bottom: 6px; }
+.toilet-meta { font-size: 0.85rem; color: #666; display: flex; gap: 10px; }
+
+/* PCレイアウト */
+@media (min-width: 900px) {
+  .search-layout {
+    grid-template-columns: 1fr 360px; /* 左(1fr:地図) / 右(360px:リスト) */
+    align-items: start;
+  }
+
+  /* 地図を左側に配置 */
+  .panel--map {
+    order: 1; /* ★ 1番目に表示（左） */
+    position: sticky;
+    top: 20px;
+  }
+
+  /* リストを右側に配置 */
+  .panel--list {
+    order: 2; /* ★ 2番目に表示（右） */
+  }
+}

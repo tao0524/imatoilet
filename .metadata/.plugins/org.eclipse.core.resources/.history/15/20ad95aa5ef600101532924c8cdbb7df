@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>トイレ登録</title>
+</head>
+<body>
+    <h1>新しいトイレを登録する</h1>
+    
+    <form action="/save" method="post">
+        <p>名前：<br>
+        <input type="text" name="name" required></p>
+        
+        <p>住所：<br>
+        <input type="text" name="address"></p>
+        
+        <p>説明：<br>
+        <textarea name="description" rows="3"></textarea></p>
+        
+        <button type="submit">登録する</button>
+    </form>
+    
+    <br>
+    <a href="/">一覧に戻る</a>
+</body>
+</html>

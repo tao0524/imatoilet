@@ -1,0 +1,4 @@
+spring.datasource.url=jdbc:postgresql://localhost:5432/imatoilet
+spring.datasource.username=postgres
+spring.datasource.password=hi4324de3969
+spring.jpa.hibernate.ddl-auto=updatespring.application.name=backend

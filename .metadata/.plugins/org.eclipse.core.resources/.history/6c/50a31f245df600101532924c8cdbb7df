@@ -1,0 +1,35 @@
+package com.imatoilet.backend;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+
+@Controller
+public class HelloController {
+
+    @Autowired
+    private ToiletRepository repository;
+
+    // 1. 一覧画面を表示する
+    @GetMapping("/")
+    public String showToiletList(Model model) {
+        model.addAttribute("toilets", repository.findAll());
+        return "toilet-list";
+    }
+
+    // 2. 登録画面を表示する（新機能！）
+    @GetMapping("/new")
+    public String showAddForm() {
+        return "toilet-form";
+    }
+
+    // 3. フォームから送られてきたデータを保存する（新機能！）
+    @PostMapping("/save")
+    public String saveToilet(@ModelAttribute Toilet toilet) {
+        repository.save(toilet); // データベースに保存！
+        return "redirect:/";     // 保存したら一覧画面に戻る
+    }
+}

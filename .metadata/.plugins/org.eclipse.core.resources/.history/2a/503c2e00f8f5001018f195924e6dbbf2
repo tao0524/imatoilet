@@ -1,0 +1,34 @@
+package com.imatoilet.backend;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller // ★ここが変わりました！Webページを表示するための設定です
+public class HelloController {
+
+    @Autowired
+    private ToiletRepository repository;
+
+    // トイレ一覧ページを表示する
+    @GetMapping("/")
+    public String showToiletList(Model model) {
+        // データベースから全件取得して、「toilets」という名前でHTMLに渡す
+        model.addAttribute("toilets", repository.findAll());
+        return "toilet-list"; // toilet-list.html を表示しなさい、という指示
+    }
+
+    // テストデータを追加して、一覧ページに戻る
+    @GetMapping("/add")
+    public String addTestToilet() {
+        Toilet t = new Toilet();
+        t.setName("新宿駅前のトイレ");
+        t.setAddress("東京都新宿区");
+        t.setDescription("とてもきれいです");
+        
+        repository.save(t);
+        
+        return "redirect:/"; // 保存したらトップページに戻る
+    }
+}

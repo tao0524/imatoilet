@@ -1,0 +1,31 @@
+package com.imatoilet.backend;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HelloController {
+
+    @Autowired // これを書くと、Springが自動で「ロボット」を連れてきてくれます
+    private ToiletRepository repository;
+
+    // 「/」にアクセスしたら、トイレ一覧（全件）を表示する
+    @GetMapping("/")
+    public List<Toilet> getAllToilets() {
+        return repository.findAll();
+    }
+
+    // 「/add」にアクセスしたら、テスト用のトイレを1つ追加する
+    @GetMapping("/add")
+    public Toilet addTestToilet() {
+        Toilet t = new Toilet();
+        t.setName("新宿駅前のトイレ");
+        t.setAddress("東京都新宿区");
+        t.setDescription("とてもきれいです");
+        
+        // データベースに保存！
+        return repository.save(t);
+    }
+}

@@ -1,0 +1,158 @@
+/* =========================
+   register page
+========================= */
+.register-page {
+  padding-block: 18px 40px;
+}
+
+.register-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1.05fr .95fr;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .register-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* パネルスタイル */
+.panel {
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(0,0,0,.05);
+  overflow: hidden;
+}
+
+.panel__head {
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+.panel__head--tight {
+  padding: 14px 14px 10px;
+}
+
+.panel__body {
+  padding: 16px;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.panel__title--small {
+  font-size: 16px;
+}
+
+.panel__sub {
+  margin: 8px 0 0;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.req {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #ffebee;
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+/* フォーム要素 */
+.form-row { margin-bottom: 14px; }
+.form-label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #333;
+}
+
+.input, .textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  padding: 12px 12px;
+  outline: none;
+  background: #fff;
+  font-size: 1rem;
+}
+.textarea { resize: vertical; }
+
+.input:focus, .textarea:focus {
+  border-color: #2f80ed;
+  box-shadow: 0 0 0 3px rgba(47,128,237,.12);
+}
+
+/* チェックボックス群 */
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.check-label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: #f9f9f9;
+  cursor: pointer;
+}
+.check-label:hover {
+  background: #eee;
+}
+.check-label input {
+  accent-color: #2f80ed;
+}
+
+/* 地図エリア */
+.panel--map {
+  position: sticky;
+  top: 16px;
+}
+@media (max-width: 900px) {
+  .panel--map { position: static; }
+}
+
+.reg-map-area {
+  height: 400px;
+  width: 100%;
+  background: #eee;
+}
+
+.map-hint {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #666;
+  font-size: 12px;
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2f80ed;
+  display: inline-block;
+}
+
+.form-footer {
+  margin-top: 24px;
+}

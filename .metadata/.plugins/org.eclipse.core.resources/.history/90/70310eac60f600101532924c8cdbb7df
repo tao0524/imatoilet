@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>トイレ検索</title>
+</head>
+<body>
+    <h1>トイレ一覧</h1>
+    
+	<table border="1">
+	        <thead>
+	            <tr>
+	                <th>ID</th>
+	                <th>名前</th>
+	                <th>住所</th>
+	                <th>説明</th>
+	                <th>操作</th> </tr>
+	        </thead>
+	        <tbody>
+	            <tr th:each="toilet : ${toilets}">
+	                <td th:text="${toilet.id}">ID</td>
+	                <td th:text="${toilet.name}">名前</td>
+	                <td th:text="${toilet.address}">住所</td>
+	                <td th:text="${toilet.description}">説明</td>
+					<td style="white-space: nowrap">
+					    <a th:href="@{/edit/{id}(id=${toilet.id})}">編集</a>
+					    <a th:href="@{/delete/{id}(id=${toilet.id})}">削除</a>
+					</td>
+	            </tr>
+	        </tbody>
+	    </table>
+    
+    <br>
+    <a href="/new">新しいトイレを登録する</a>
+</body>
+</html>
