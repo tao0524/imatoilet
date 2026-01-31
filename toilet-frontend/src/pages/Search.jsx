@@ -1,20 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom'; // ★ useSearchParams を追加
 import { loadUserToilets, calcDistance } from '../utils';
 import '../search.css';
 
+// アイコン
+import SettingsIcon from '@mui/icons-material/Settings';
+
 function Search() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams(); // ★ URLパラメータを取得するためのフック
 
   const [toilets, setToilets] = useState([]);
   const [filteredToilets, setFilteredToilets] = useState([]);
   
-  // フィルタ条件の状態管理
-  const [filters, setFilters] = useState({
-    wheelchair: false, diaper: false, open24h: false,
-    babyChair: false, public: false,
-    type_park: false, type_station: false, type_mall: false
-  });
+  // ★ Stateとしてのfiltersは削除し、URLパラメータから動的に生成します
+  const filters = {
+    wheelchair: searchParams.get('wheelchair') === 'true',
+    diaper: searchParams.get('diaper') === 'true',
+    open24h: searchParams.get('open24h') === 'true',
+    babyChair: searchParams.get('babyChair') === 'true',
+    public: searchParams.get('public') === 'true',
+    type_park: searchParams.get('type_park') === 'true',
+    type_station: searchParams.get('type_station') === 'true',
+    type_mall: searchParams.get('type_mall') === 'true'
+  };
 
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapObj, setMapObj] = useState(null);
@@ -22,14 +31,6 @@ function Search() {
   
   const [placeQuery, setPlaceQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
-
-  const advancedKeys = ["babyChair", "public", "type_park", "type_station", "type_mall"];
-  const advCount = advancedKeys.filter(k => filters[k]).length;
-
-  let typeLabel = "未選択";
-  if (filters.type_park) typeLabel = "公園";
-  if (filters.type_station) typeLabel = "駅・公共施設";
-  if (filters.type_mall) typeLabel = "商業施設";
 
   // 1. APIからデータを取得
   useEffect(() => {
@@ -45,7 +46,7 @@ function Search() {
       const userData = loadUserToilets();
       data = [...data, ...userData];
       setToilets(data);
-      setFilteredToilets(data);
+      setFilteredToilets(data); // 初期表示は全件
     }
     fetchData();
   }, []);
@@ -93,7 +94,7 @@ function Search() {
     }
   };
 
-  // 3. ★【重要修正】バックエンドのキャメルケース変数名に対応したフィルタリング
+  // 3. フィルタリング処理（filtersが変わるたびに実行）
   useEffect(() => {
     let result = toilets.filter(t => {
       // 基本フィルタ
@@ -101,11 +102,11 @@ function Search() {
       if (filters.diaper && !t.diaper) return false;
       if (filters.open24h && !t.open24h) return false;
       
-      // 詳細フィルタ（バックエンドの変数名と合わせる）
+      // 詳細フィルタ
       if (filters.babyChair && !t.babyChair) return false;
       if (filters.public && !t.publicUse) return false; 
       
-      // 場所タイプ（バックエンドの変数名と合わせる）
+      // 場所タイプ
       const typeSelected = filters.type_park || filters.type_station || filters.type_mall;
       if (typeSelected) {
         if (filters.type_park && t.typePark) return true;
@@ -116,6 +117,7 @@ function Search() {
       return true;
     });
 
+    // 距離順ソート
     if (currentLocation) {
       result = result.map(t => {
         const dist = calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng);
@@ -124,7 +126,8 @@ function Search() {
     }
 
     setFilteredToilets(result);
-  }, [toilets, filters, currentLocation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toilets, searchParams, currentLocation]); // searchParamsの変化を監視
 
   // 4. 地図初期化
   useEffect(() => {
@@ -144,7 +147,7 @@ function Search() {
     return () => { map.remove(); setMapObj(null); };
   }, []);
 
-  // 5. ピンの描画更新
+  // 5. ピン描画更新
   useEffect(() => {
     if (!mapObj || !markersRef.current || !window.L) return;
     const layerGroup = markersRef.current;
@@ -169,31 +172,16 @@ function Search() {
     }
   }, [filteredToilets, mapObj, currentLocation]);
 
-  const handleFilterChange = (e) => {
-    const { name, checked } = e.target;
-    setFilters(prev => {
-      const next = { ...prev, [name]: checked };
-      if (name.startsWith('type_') && checked) {
-        if (name !== 'type_park') next.type_park = false;
-        if (name !== 'type_station') next.type_station = false;
-        if (name !== 'type_mall') next.type_mall = false;
-      }
-      return next;
-    });
-  };
-
-  const clearAdvanced = () => {
-    setFilters(prev => ({
-      ...prev,
-      babyChair: false, public: false,
-      type_park: false, type_station: false, type_mall: false
-    }));
+  // ★ 条件指定画面へ遷移するハンドラ
+  const goConditions = () => {
+    navigate('/conditions');
   };
 
   return (
     <main className="search-main">
       <div className="container">
-        {/* UI部分は提供いただいたものと同じです */}
+        
+        {/* 目的地検索エリア */}
         <section className="place-search">
           <div className="place-search__row">
             <input 
@@ -212,55 +200,21 @@ function Search() {
           <p className="place-search__status">{searchStatus}</p>
         </section>
 
-        <section className="filters">
-          <label><input type="checkbox" name="wheelchair" checked={filters.wheelchair} onChange={handleFilterChange} /> 車椅子対応</label>
-          <label><input type="checkbox" name="diaper" checked={filters.diaper} onChange={handleFilterChange} /> オムツ替え</label>
-          <label><input type="checkbox" name="open24h" checked={filters.open24h} onChange={handleFilterChange} /> 24時間</label>
-        </section>
-
-        <details className="filters-advanced">
-          <summary className="filters-advanced__summary">
-            詳細内容を選択する（任意）
-            <span className="filters-advanced__hint-wrap">
-              <span className="filters-advanced__hint">絞り込み：{advCount}件</span>
-              <span className="filters-advanced__hint">場所：{typeLabel}</span>
-            </span>
-          </summary>
-          <div className="filters-advanced__body">
-            <fieldset className="filters-advanced__group">
-              <legend>設備</legend>
-              <label className="chip">
-                <input type="checkbox" name="babyChair" checked={filters.babyChair} onChange={handleFilterChange} />
-                <span>ベビーチェアあり</span>
-              </label>
-            </fieldset>
-            <fieldset className="filters-advanced__group">
-              <legend>利用条件</legend>
-              <label className="chip">
-                <input type="checkbox" name="public" checked={filters.public} onChange={handleFilterChange} />
-                <span>誰でも利用可</span>
-              </label>
-            </fieldset>
-            <fieldset className="filters-advanced__group">
-              <legend>場所タイプ</legend>
-              <label className="chip chip--type">
-                <input type="checkbox" name="type_park" checked={filters.type_park} onChange={handleFilterChange} />
-                <span>公園</span>
-              </label>
-              <label className="chip chip--type">
-                <input type="checkbox" name="type_station" checked={filters.type_station} onChange={handleFilterChange} />
-                <span>駅・公共施設</span>
-              </label>
-              <label className="chip chip--type">
-                <input type="checkbox" name="type_mall" checked={filters.type_mall} onChange={handleFilterChange} />
-                <span>商業施設</span>
-              </label>
-            </fieldset>
-            <div className="filters-advanced__actions" style={{ textAlign: 'right' }}>
-              <button type="button" className="btn btn-sub" onClick={clearAdvanced}>✖ 詳細条件をクリア</button>
-            </div>
-          </div>
-        </details>
+        {/* ▼▼▼ 変更エリア：条件指定への導線（やさしいUI） ▼▼▼ */}
+        <div style={{ margin: '10px 0 24px', padding: '16px', background: '#f0f7ff', borderRadius: '16px', textAlign: 'center' }}>
+           <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#444', fontWeight: 'bold' }}>
+             条件を指定すると、もっと探しやすくなります<br/>
+             <span style={{fontSize: '0.85rem', color: '#666', fontWeight: 'normal'}}>（車いす・おむつ替え・24時間 など）</span>
+           </p>
+           <button
+             className="btn btn-secondary"
+             onClick={goConditions}
+             style={{ background: '#fff', border: '2px solid #1e88e5', color: '#1e88e5', padding: '10px 24px', fontSize: '0.95rem', maxWidth: '300px', margin: '0 auto' }}
+           >
+             <SettingsIcon fontSize="small" sx={{ mr: 0.5, mb: 0.2 }} /> 条件を指定して探す
+           </button>
+         </div>
+         {/* ▲▲▲ 変更エリア終了 ▲▲▲ */}
 
         <div className="search-layout">
           <section className="panel panel--map">

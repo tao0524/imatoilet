@@ -26,7 +26,8 @@ function Home() {
 
           <section className="actions">
             <Link to="/search" className="btn btn-primary">🚽 近くのトイレを探す</Link>
-            <Link to="/search" className="btn btn-secondary">⚙️ 条件を指定して探す</Link>
+            {/* ▼▼▼ ここを修正しました (/search → /conditions) ▼▼▼ */}
+            <Link to="/conditions" className="btn btn-secondary">⚙️ 条件を指定して探す</Link>
 
             <div className="sub-actions">
               <Link to="/favorites" className="btn btn-sub">⭐ よく使うトイレ</Link>
@@ -40,10 +41,6 @@ function Home() {
               ➕ トイレを登録する
             </Link>
             <p className="register-note">写真・設備情報を追加できます（任意）</p>
-
-            <button className="btn btn-disabled" disabled>
-              🚨 いま空いているトイレ（準備中）
-            </button>
           </section>
 
           {/* 使い方 */}

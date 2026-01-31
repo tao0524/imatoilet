@@ -37,7 +37,16 @@ body {
   font-size: 1.8rem;
   margin: 0 4px;
 }
-.logo-now { color: #333; }
+/* toilet-frontend/src/index.css の .logo-now を書き換え */
+.logo-now {
+  background-color: #1e88e5; /* メインカラーの青（または #f57c00 のオレンジ） */
+  color: #fff;               /* 文字は白 */
+  font-size: 0.9em;          /* 少し小さく */
+  padding: 2px 8px;          /* 内側の余白 */
+  border-radius: 6px;        /* 角を丸く */
+  margin-right: 6px;         /* アイコンとの隙間を開ける */
+  transform: translateY(3px); /* 少し位置調整 */
+}
 .logo-main { color: #1e88e5; }
 
 

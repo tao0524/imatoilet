@@ -4,7 +4,8 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Detail from './pages/Detail';
 import Favorites from './pages/Favorites';
-import Register from './pages/Register'; // ★追加
+import Register from './pages/Register';
+import Conditions from './pages/Conditions';
 
 function App() {
   return (
@@ -13,10 +14,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
+        
+        {/* ★この行があるか確認！（ここがないと画面は空白になります） */}
+        <Route path="/conditions" element={<Conditions />} />
+        
         <Route path="/detail/:id" element={<Detail />} />
         <Route path="/favorites" element={<Favorites />} />
-        
-        {/* ▼▼▼ 変更：登録ページを本物に ▼▼▼ */}
         <Route path="/register" element={<Register />} />
       </Routes>
     </>
