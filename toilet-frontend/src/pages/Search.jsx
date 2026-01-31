@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom'; // ★ useSearchParams を追加
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { loadUserToilets, calcDistance } from '../utils';
 import '../search.css';
 
@@ -8,13 +8,14 @@ import SettingsIcon from '@mui/icons-material/Settings';
 
 function Search() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams(); // ★ URLパラメータを取得するためのフック
+  const [searchParams] = useSearchParams();
 
   const [toilets, setToilets] = useState([]);
   const [filteredToilets, setFilteredToilets] = useState([]);
   
-  // ★ Stateとしてのfiltersは削除し、URLパラメータから動的に生成します
+  // --- 1. 検索条件の取得 (URLパラメータから) ---
   const filters = {
+    // 既存フィルター (Booleanフラグ)
     wheelchair: searchParams.get('wheelchair') === 'true',
     diaper: searchParams.get('diaper') === 'true',
     open24h: searchParams.get('open24h') === 'true',
@@ -22,7 +23,21 @@ function Search() {
     public: searchParams.get('public') === 'true',
     type_park: searchParams.get('type_park') === 'true',
     type_station: searchParams.get('type_station') === 'true',
-    type_mall: searchParams.get('type_mall') === 'true'
+    type_mall: searchParams.get('type_mall') === 'true',
+
+    // --- 新設計フィルター (追加) ---
+    // 施設カテゴリ (文字列: station, commercial 等)
+    facilityCategory: searchParams.get('facilityCategory') || '',
+
+    // 詳細設備 (新項目は t.equipment 文字列内を検索する)
+    ostomate: searchParams.get('ostomate') === 'true',
+    nursing_room: searchParams.get('nursing_room') === 'true',
+    washlet: searchParams.get('washlet') === 'true',
+    visual_support: searchParams.get('visual_support') === 'true',
+    gender_separated: searchParams.get('gender_separated') === 'true',
+    unisex: searchParams.get('unisex') === 'true',
+    free: searchParams.get('free') === 'true',
+    paid: searchParams.get('paid') === 'true'
   };
 
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -32,7 +47,7 @@ function Search() {
   const [placeQuery, setPlaceQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
 
-  // 1. APIからデータを取得
+  // 2. APIからデータを取得
   useEffect(() => {
     async function fetchData() {
       let data = [];
@@ -46,12 +61,12 @@ function Search() {
       const userData = loadUserToilets();
       data = [...data, ...userData];
       setToilets(data);
-      setFilteredToilets(data); // 初期表示は全件
+      // ここでは setFilteredToilets しない（下の useEffect でフィルタリングされるため）
     }
     fetchData();
   }, []);
 
-  // 2. 現在地取得
+  // 3. 現在地取得
   useEffect(() => {
     handleCurrentLocation();
   }, []);
@@ -94,26 +109,54 @@ function Search() {
     }
   };
 
-  // 3. フィルタリング処理（filtersが変わるたびに実行）
+  // --- 4. フィルタリング処理（filtersが変わるたびに実行） ---
   useEffect(() => {
     let result = toilets.filter(t => {
-      // 基本フィルタ
+      // (A) 既存フラグのチェック
       if (filters.wheelchair && !t.wheelchair) return false;
       if (filters.diaper && !t.diaper) return false;
       if (filters.open24h && !t.open24h) return false;
-      
-      // 詳細フィルタ
       if (filters.babyChair && !t.babyChair) return false;
       if (filters.public && !t.publicUse) return false; 
       
-      // 場所タイプ
+      // 場所タイプ (旧仕様)
       const typeSelected = filters.type_park || filters.type_station || filters.type_mall;
       if (typeSelected) {
         if (filters.type_park && t.typePark) return true;
         if (filters.type_station && t.typeStation) return true;
         if (filters.type_mall && t.typeMall) return true;
-        return false;
+        // 旧タイプフィルタがONなのに、どれもマッチしない場合は除外したいが
+        // 既存ロジックに合わせて「他条件がなければ戻す」形にするか、厳密にするか。
+        // ここでは「タイプ指定があれば、マッチしなければ除外」とします。
+        if (!filters.type_park && !filters.type_station && !filters.type_mall) {
+            // ここには来ない
+        } else {
+            // どれか一つでもHITすればOKだが、ここまで来た時点でHITしていない
+            return false;
+        }
       }
+
+      // (B) 新・施設カテゴリのチェック (facilityCategory)
+      if (filters.facilityCategory) {
+        // データ側に facilityCategory がない、または一致しない場合は除外
+        if (!t.facilityCategory || t.facilityCategory !== filters.facilityCategory) {
+          return false;
+        }
+      }
+
+      // (C) 新・詳細設備のチェック (t.equipment 文字列に含まれるか)
+      // equipment は "wheelchair,ostomate,washlet" のようなカンマ区切り文字列を想定
+      const eqStr = t.equipment || ""; // null対策
+
+      if (filters.ostomate && !eqStr.includes('ostomate')) return false;
+      if (filters.nursing_room && !eqStr.includes('nursing_room')) return false;
+      if (filters.washlet && !eqStr.includes('washlet')) return false;
+      if (filters.visual_support && !eqStr.includes('visual_support')) return false;
+      if (filters.gender_separated && !eqStr.includes('gender_separated')) return false;
+      if (filters.unisex && !eqStr.includes('unisex')) return false;
+      if (filters.free && !eqStr.includes('free')) return false;
+      if (filters.paid && !eqStr.includes('paid')) return false;
+
       return true;
     });
 
@@ -127,9 +170,9 @@ function Search() {
 
     setFilteredToilets(result);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toilets, searchParams, currentLocation]); // searchParamsの変化を監視
+  }, [toilets, searchParams, currentLocation]); 
 
-  // 4. 地図初期化
+  // 5. 地図初期化
   useEffect(() => {
     if (!window.L) return;
     const container = window.L.DomUtil.get('map');
@@ -147,7 +190,7 @@ function Search() {
     return () => { map.remove(); setMapObj(null); };
   }, []);
 
-  // 5. ピン描画更新
+  // 6. ピン描画更新
   useEffect(() => {
     if (!mapObj || !markersRef.current || !window.L) return;
     const layerGroup = markersRef.current;
@@ -158,8 +201,14 @@ function Search() {
         const marker = window.L.marker([t.lat, t.lng]).addTo(layerGroup);
         const distStr = t.distance ? `<br>約 ${Math.round(t.distance * 1000)} m` : "";
         
+        // ピンのポップアップ内容
         marker.bindPopup(`
           <b>${t.name}</b>${distStr}<br>
+          <span style="font-size:0.85rem; color:#666;">
+            ${t.facilityCategory ? `[${t.facilityCategory}]` : ''} 
+            ${t.wheelchair ? '♿' : ''}
+            ${t.diaper ? '👶' : ''}
+          </span><br>
           <a href="/detail/${t.id}">詳細を見る</a>
         `);
       }
@@ -172,7 +221,7 @@ function Search() {
     }
   }, [filteredToilets, mapObj, currentLocation]);
 
-  // ★ 条件指定画面へ遷移するハンドラ
+  // 条件指定画面へ遷移
   const goConditions = () => {
     navigate('/conditions');
   };
@@ -200,11 +249,11 @@ function Search() {
           <p className="place-search__status">{searchStatus}</p>
         </section>
 
-        {/* ▼▼▼ 変更エリア：条件指定への導線（やさしいUI） ▼▼▼ */}
+        {/* 条件指定への導線 */}
         <div style={{ margin: '10px 0 24px', padding: '16px', background: '#f0f7ff', borderRadius: '16px', textAlign: 'center' }}>
            <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#444', fontWeight: 'bold' }}>
              条件を指定すると、もっと探しやすくなります<br/>
-             <span style={{fontSize: '0.85rem', color: '#666', fontWeight: 'normal'}}>（車いす・おむつ替え・24時間 など）</span>
+             <span style={{fontSize: '0.85rem', color: '#666', fontWeight: 'normal'}}>（施設タイプ・オストメイト・授乳室など）</span>
            </p>
            <button
              className="btn btn-secondary"
@@ -214,7 +263,6 @@ function Search() {
              <SettingsIcon fontSize="small" sx={{ mr: 0.5, mb: 0.2 }} /> 条件を指定して探す
            </button>
          </div>
-         {/* ▲▲▲ 変更エリア終了 ▲▲▲ */}
 
         <div className="search-layout">
           <section className="panel panel--map">
@@ -239,9 +287,15 @@ function Search() {
                 <div key={t.id} className="toilet-card" onClick={() => navigate(`/detail/${t.id}`)}>
                   <div className="toilet-name">{t.name}</div>
                   <div className="toilet-meta">
+                    {/* アイコン表示を少し拡張 */}
+                    {t.facilityCategory === 'station' && <span title="駅・交通">🚉</span>}
+                    {t.facilityCategory === 'commercial' && <span title="商業施設">🛍️</span>}
+                    {t.facilityCategory === 'park' && <span title="公園">🌳</span>}
+                    
                     {t.wheelchair && <span>♿</span>}
                     {t.diaper && <span>👶</span>}
                     {t.open24h && <span>🕒</span>}
+                    
                     {t.distance && <span>📍 約 {Math.round(t.distance * 1000)} m</span>}
                   </div>
                 </div>

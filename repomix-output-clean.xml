@@ -78,6 +78,7 @@ toilet-frontend/src/index.css
 toilet-frontend/src/main.jsx
 toilet-frontend/src/mocks/handlers.js
 toilet-frontend/src/mocks/server.js
+toilet-frontend/src/pages/Conditions.jsx
 toilet-frontend/src/pages/Detail.jsx
 toilet-frontend/src/pages/Detail.test.jsx
 toilet-frontend/src/pages/Favorites.css
@@ -835,6 +836,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.PrePersist; // 追加
+import jakarta.persistence.PreUpdate;  // 追加
 import lombok.Data;
 
 @Entity
@@ -845,6 +848,7 @@ public class Toilet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // --- 既存フィールド（後方互換性のため維持） ---
     private String name;
     private Double lat;
     private Double lng;
@@ -856,9 +860,76 @@ public class Toilet {
     private Boolean typeStation;
     private Boolean typeMall;
     private String description;
-    
-    // DataLoaderのエラーを解消するために追加
     private Boolean open24h;
+
+    // --- 新設計フィールド（Step A0: 追加済み） ---
+    private String facilityCategory; // station, commercial, park, etc.
+    private String locationCategory; // downtown, residential, etc.
+    private String equipment;        // wheelchair, diaper_table, open_24h, etc. (カンマ区切り)
+    private String usageConditions;  // staff_required, customer_only, etc.
+    private String atmosphere;       // clean, bright, etc.
+
+    // --- Step A1: 互換レイヤー（自動同期ロジック） ---
+    
+    @PrePersist
+    @PreUpdate
+    public void syncCompatibility() {
+        syncOldToNew();
+        syncNewToOld();
+    }
+
+    // 旧仕様の入力 → 新フィールドへ反映
+    private void syncOldToNew() {
+        // 1. 施設カテゴリの変換
+        // (まだ新カテゴリが空の場合のみ、旧フラグから推測して埋める)
+        if (this.facilityCategory == null || this.facilityCategory.isEmpty()) {
+            if (Boolean.TRUE.equals(typeStation)) this.facilityCategory = "station";
+            else if (Boolean.TRUE.equals(typePark)) this.facilityCategory = "park";
+            else if (Boolean.TRUE.equals(typeMall)) this.facilityCategory = "commercial";
+        }
+
+        // 2. 設備の変換（カンマ区切り文字列として構築）
+        // 現在の equipment 文字列を取得（nullなら空文字）
+        String currentEq = (this.equipment == null) ? "" : this.equipment;
+
+        // "wheelchair" フラグがあれば、文字列に追加
+        if (Boolean.TRUE.equals(wheelchair) && !currentEq.contains("wheelchair")) {
+            currentEq = addTag(currentEq, "wheelchair");
+        }
+        // "diaper" フラグがあれば、文字列に追加
+        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper_table")) {
+            currentEq = addTag(currentEq, "diaper_table");
+        }
+        // "open24h" フラグがあれば、文字列に追加
+        if (Boolean.TRUE.equals(open24h) && !currentEq.contains("open_24h")) {
+            currentEq = addTag(currentEq, "open_24h");
+        }
+        
+        this.equipment = currentEq;
+    }
+
+    // 新仕様の入力 → 旧フラグへ反映（逆変換）
+    private void syncNewToOld() {
+        if (this.facilityCategory != null) {
+            if (this.facilityCategory.equals("station")) this.typeStation = true;
+            else if (this.facilityCategory.equals("park")) this.typePark = true;
+            else if (this.facilityCategory.equals("commercial")) this.typeMall = true;
+        }
+
+        if (this.equipment != null) {
+            if (this.equipment.contains("wheelchair")) this.wheelchair = true;
+            if (this.equipment.contains("diaper_table")) this.diaper = true;
+            if (this.equipment.contains("open_24h")) this.open24h = true;
+        }
+    }
+
+    // ユーティリティ: カンマ区切りでタグを追加
+    private String addTag(String current, String tag) {
+        if (current == null || current.isEmpty()) {
+            return tag;
+        }
+        return current + "," + tag;
+    }
 }
 </file>
 
@@ -1154,35 +1225,6 @@ If you are developing a production application, we recommend using TypeScript wi
 
 <file path="toilet-frontend/src/App.css">
 
-</file>
-
-<file path="toilet-frontend/src/App.jsx">
-import { Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import Home from './pages/Home';
-import Search from './pages/Search';
-import Detail from './pages/Detail';
-import Favorites from './pages/Favorites';
-import Register from './pages/Register'; // ★追加
-
-function App() {
-  return (
-    <>
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/detail/:id" element={<Detail />} />
-        <Route path="/favorites" element={<Favorites />} />
-        
-        {/* ▼▼▼ 変更：登録ページを本物に ▼▼▼ */}
-        <Route path="/register" element={<Register />} />
-      </Routes>
-    </>
-  );
-}
-
-export default App;
 </file>
 
 <file path="toilet-frontend/src/assets/react.svg">
@@ -1705,358 +1747,6 @@ describe('ToiletCard Component', () => {
 });
 </file>
 
-<file path="toilet-frontend/src/index.css">
-/* =========================================
-   css/pages/index.css
-   トップページ専用スタイル（スマホ・PC共通）
-========================================= */
-
-/* --- 全体のレイアウト調整 --- */
-body {
-  background-color: #f9f9f9; /* 全体の背景色 */
-}
-
-.top-main {
-  padding: 30px 0 60px;
-  min-height: 80vh; /* 画面の高さを確保 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* --- 1. ヘッダー（ロゴ） --- */
-/* HTML内の .logo クラスに対する装飾 */
-.site-header {
-  padding: 15px 0;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-}
-
-.logo {
-  font-weight: 800;
-  font-size: 1.4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center; /* スマホは中央寄せ */
-  color: #333;
-}
-
-.logo-icon {
-  font-size: 1.8rem;
-  margin: 0 4px;
-}
-.logo-now { color: #333; }
-.logo-main { color: #1e88e5; }
-
-
-/* --- 2. ヒーローエリア（キャッチコピー） --- */
-.hero {
-  text-align: center;
-  margin-bottom: 30px;
-  padding-top: 20px;
-}
-
-.catch {
-  font-size: 1.8rem;
-  font-weight: 800;
-  line-height: 1.4;
-  color: #1e88e5;
-  margin-bottom: 16px;
-}
-
-.sub {
-  font-size: 0.95rem;
-  color: #546e7a;
-  line-height: 1.6;
-  font-weight: bold;
-}
-
-
-/* --- 3. アクションエリア（ボタン群） --- */
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 400px;
-  margin: 0 auto; /* 中央寄せ */
-  width: 100%;
-}
-
-/* ボタン（大）の補正 */
-.btn-primary, .btn-secondary {
-  padding: 18px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  text-align: center;
-  border-radius: 12px;
-}
-
-/* サブボタンの横並びエリア */
-.sub-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.sub-actions .btn {
-  flex: 1; /* 等幅にする */
-  font-size: 0.9rem;
-  padding: 12px;
-  text-align: center;
-}
-
-/* トイレ登録ボタン周り */
-/* .btn を足して優先度を上げ、確実に青色を適用させます */
-.btn.btn-register {
-  background-color: #fff;
-  color: #1e88e5;
-  border: 2px solid #1e88e5; /* 太さを 2px から 1px に変更 */
-  margin-top: 10px;
-  text-align: center;
-}
-.register-note {
-  text-align: center;
-  font-size: 0.75rem;
-  color: #888;
-  margin-top: -10px; /* ボタンに近づける */
-  margin-bottom: 20px;
-}
-
-
-/* --- 4. 使い方エリア --- */
-.howto {
-  margin-top: 60px;
-  background: #fff;
-  padding: 40px 20px;
-  border-radius: 20px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-}
-
-.howto-title {
-  text-align: center;
-  font-size: 1.4rem;
-  color: #333;
-  margin-bottom: 30px;
-  font-weight: bold;
-}
-
-.howto-steps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.howto-steps li {
-  display: flex;
-  gap: 15px;
-  padding: 10px;
-  border-bottom: 1px solid #f0f0f0;
-}
-.howto-steps li:last-child {
-  border-bottom: none;
-}
-
-/* ステップ番号の丸 */
-.step-num {
-  background: #e3f2fd;
-  color: #1e88e5;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  flex-shrink: 0; /* 潰れないようにする */
-}
-
-.step-head {
-  font-weight: bold;
-  margin-bottom: 4px;
-  color: #333;
-}
-.step-text {
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.5;
-}
-
-.howto-cta {
-  text-align: center;
-  margin-top: 30px;
-}
-.howto-toplink {
-  display: block;
-  margin-top: 20px;
-  color: #999;
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-.howto-note {
-  margin-top: 20px;
-  font-size: 0.8rem;
-  color: #aaa;
-  text-align: center;
-}
-
-
-/* =========================================
-   ★PC用レイアウト（画面幅900px以上）
-   ここが「見せ方を変える」魔法の部分です
-========================================= */
-@media (min-width: 900px) {
-
-  /* --- 全体設定 --- */
-  body {
-    background-color: #f0f4f8; /* PCでは少し色味を変えてリッチに */
-  }
-
-  .site-header .container {
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-  .logo {
-    justify-content: flex-start; /* 左寄せ */
-  }
-
-  /* --- メインエリアをグリッド（格子状）にする --- */
-  .top-main .container {
-    display: grid;
-    /* 左カラム(可変) + 右カラム(400px固定) */
-    grid-template-columns: 1fr 400px; 
-    gap: 60px;
-    align-items: center; /* 上下中央揃え */
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-
-  /* --- 左側：ヒーローエリア（文字） --- */
-  .hero {
-    grid-column: 1 / 2; /* 左の列に配置 */
-    text-align: left;   /* 左揃え */
-    padding-top: 0;
-    margin-bottom: 0;
-  }
-
-  .catch {
-    font-size: 3rem; /* 文字を大きく */
-    margin-bottom: 24px;
-  }
-  .sub {
-    font-size: 1.2rem; /* 説明文も大きく */
-  }
-
-  /* --- 右側：アクションエリア（操作パネル） --- */
-  .actions {
-    grid-column: 2 / 3; /* 右の列に配置 */
-    background: #fff;
-    padding: 40px;
-    border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(30, 136, 229, 0.15); /* 浮き上がらせる影 */
-  }
-
-  /* --- 下段：使い方エリア --- */
-  .howto {
-    grid-column: 1 / -1; /* 横幅いっぱいに広げる */
-    margin-top: 80px;
-    background: none;    /* 背景を消してなじませる */
-    box-shadow: none;
-    padding: 0;
-  }
-
-  .howto-title {
-    font-size: 1.8rem;
-    margin-bottom: 40px;
-  }
-
-  /* ステップを横4列に並べる */
-  .howto-steps {
-    flex-direction: row; 
-    gap: 20px;
-  }
-
-  .howto-steps li {
-    flex: 1; /* 4等分 */
-    flex-direction: column; /* 中身は縦並び */
-    align-items: center;
-    text-align: center;
-    background: #fff;
-    padding: 30px 20px;
-    border-radius: 16px;
-    border: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  }
-
-  .step-num {
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-  }
-  
-  .howto-cta {
-    display: none; /* PC画面では下の「今すぐ探す」ボタンは不要なので隠す */
-  }
-}
-
-/* =========================================
-   追加：ヒーロー画像のスタイル
-========================================= */
-
-/* スマホ：文字の下に少し小さく表示 */
-.hero-img {
-  width: 120px;       /* 小さめに */
-  height: auto;
-  margin: 20px auto 0; /* 上に隙間、中央寄せ */
-  display: block;
-  opacity: 0.9;
-}
-
-/* --- 修正版：PC用レイアウト（一部抜粋） --- */
-@media (min-width: 900px) {
-
-  /* ...（body や .top-main などの設定はそのまま）... */
-  /* --- 左側：ヒーローエリア（文字と画像を整理） --- */
-  .hero {
-    grid-column: 1 / 2;
-    text-align: left;
-    padding-top: 0;
-    margin-bottom: 0;
-    
-    /* ★ここを変更：Flexboxで縦に並べつつ、配置を制御 */
-    display: flex;
-    flex-direction: column; /* 縦並び */
-    align-items: flex-start; /* 左寄せ */
-  }
-
-  .catch {
-    font-size: 3rem;
-    margin-bottom: 24px;
-    width: 100%; /* 幅いっぱいに */
-  }
-  
-  .sub {
-    font-size: 1.2rem;
-    max-width: 100%; /* 幅制限を解除 */
-    margin-bottom: 20px;
-  }
-
-  /* ★ここを変更：画像の位置調整 */
-  .hero-img {
-    position: static; /* 絶対配置をやめる（これで重なりません） */
-    width: 220px;     /* サイズはお好みで */
-    margin-top: 10px;
-    margin-left: auto; /* 右端に寄せる魔法 */
-    align-self: flex-end; /* コンテナ内の右側に配置 */
-    opacity: 1;
-  }
-
-  /* ...（.actions や .howto など、これより下の部分はそのまま）... */
-}
-</file>
-
 <file path="toilet-frontend/src/main.jsx">
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -2121,6 +1811,229 @@ import { handlers } from './handlers'
 
 // リクエストを受け付けるモックサーバーを作成します
 export const server = setupServer(...handlers)
+</file>
+
+<file path="toilet-frontend/src/pages/Conditions.jsx">
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import '../base.css';
+import '../components.css';
+import '../search.css'; // 既存のデザインを流用
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SearchIcon from '@mui/icons-material/Search';
+
+function Conditions() {
+  const navigate = useNavigate();
+
+  // --- 1. 既存のフィルター（互換性のため維持） ---
+  const [filters, setFilters] = useState({
+    wheelchair: false,
+    diaper: false,
+    open24h: false,
+    babyChair: false,
+    public: false,
+    type_park: false,
+    type_station: false,
+    type_mall: false
+  });
+
+  const handleFilterChange = (e) => {
+    const { name, checked } = e.target;
+    setFilters(prev => ({ ...prev, [name]: checked }));
+  };
+
+  // --- 2. 新設計のフィルター（追加） ---
+  // 施設カテゴリ（単一選択）
+  const [facilityCategory, setFacilityCategory] = useState("");
+
+  // 新・設備条件（複数選択）
+  const [newConditions, setNewConditions] = useState({
+    ostomate: false,      // オストメイト
+    nursing_room: false,  // 授乳室
+    washlet: false,       // ウォシュレット
+    visual_support: false,// 視覚障害者配慮
+    gender_separated: false, // 男女別
+    unisex: false,        // 男女共用
+    free: false,          // 無料
+    paid: false           // 有料
+  });
+
+  const handleNewConditionChange = (e) => {
+    const { name, checked } = e.target;
+    setNewConditions(prev => ({ ...prev, [name]: checked }));
+  };
+
+  const handleSearch = () => {
+    // チェックされた条件をURLパラメータに変換して、検索画面へ遷移
+    const params = new URLSearchParams();
+
+    // 1. 既存パラメータの追加
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) {
+        params.append(key, 'true');
+      }
+    });
+
+    // 2. 新パラメータの追加
+    if (facilityCategory) {
+      params.append('facilityCategory', facilityCategory);
+    }
+
+    Object.keys(newConditions).forEach(key => {
+      if (newConditions[key]) {
+        params.append(key, 'true');
+      }
+    });
+
+    // 例: /search?wheelchair=true&facilityCategory=station&ostomate=true
+    navigate(`/search?${params.toString()}`);
+  };
+
+  return (
+    <main className="container" style={{ padding: '20px 16px' }}>
+        
+        {/* ヘッダー・戻る */}
+        <div style={{ marginBottom: '24px' }}>
+          <Link to="/" className="back-link">
+            <ArrowBackIcon fontSize="small" /> トップに戻る
+          </Link>
+          <h1 style={{ marginTop:'12px', fontSize:'1.6rem' }}>条件を指定して探す</h1>
+          <p style={{ color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
+            必要な設備や条件を選んでください。<br/>
+            選んだ条件で絞り込んで検索します。
+          </p>
+        </div>
+
+        {/* 既存フィルターフォーム */}
+        <section className="panel" style={{ padding: '24px 20px', marginBottom: '30px' }}>
+          
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+            優先条件
+          </h3>
+          <div className="filters" style={{ border: 'none', padding: 0, marginBottom: '24px' }}>
+            <label className="chip">
+              <input type="checkbox" name="wheelchair" checked={filters.wheelchair} onChange={handleFilterChange} />
+              <span>♿ 車椅子対応</span>
+            </label>
+            <label className="chip">
+              <input type="checkbox" name="diaper" checked={filters.diaper} onChange={handleFilterChange} />
+              <span>👶 オムツ替え</span>
+            </label>
+            <label className="chip">
+              <input type="checkbox" name="open24h" checked={filters.open24h} onChange={handleFilterChange} />
+              <span>🕒 24時間</span>
+            </label>
+          </div>
+
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+            詳細設備・利用条件
+          </h3>
+          <div className="filters" style={{ border: 'none', padding: 0, marginBottom: '24px' }}>
+             <label className="chip">
+                <input type="checkbox" name="babyChair" checked={filters.babyChair} onChange={handleFilterChange} />
+                <span>ベビーチェアあり</span>
+              </label>
+              <label className="chip">
+                <input type="checkbox" name="public" checked={filters.public} onChange={handleFilterChange} />
+                <span>誰でも利用可</span>
+              </label>
+          </div>
+
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+            場所タイプ
+          </h3>
+          <div className="filters" style={{ border: 'none', padding: 0 }}>
+              <label className="chip chip--type">
+                <input type="checkbox" name="type_park" checked={filters.type_park} onChange={handleFilterChange} />
+                <span>公園</span>
+              </label>
+              <label className="chip chip--type">
+                <input type="checkbox" name="type_station" checked={filters.type_station} onChange={handleFilterChange} />
+                <span>駅・公共施設</span>
+              </label>
+              <label className="chip chip--type">
+                <input type="checkbox" name="type_mall" checked={filters.type_mall} onChange={handleFilterChange} />
+                <span>商業施設</span>
+              </label>
+          </div>
+        </section>
+
+        {/* --- 新カテゴリーUI（追加エリア） --- */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px dashed #ccc' }} />
+          <span style={{ fontSize: '0.9rem', color: '#1e88e5', fontWeight: 'bold' }}>▼ 新しい検索条件（β版）</span>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px dashed #ccc' }} />
+        </div>
+
+        <section className="panel" style={{ padding: '24px 20px', border: '2px solid #e3f2fd', background: '#fbfdff' }}>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', borderBottom: '1px solid #e3f2fd', paddingBottom: '8px', color: '#0d47a1' }}>
+            施設タイプ（1つ選択）
+          </h3>
+          <div className="filters" style={{ border: 'none', padding: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: 'transparent' }}>
+             {[
+               { val: '', label: '指定なし' },
+               { val: 'station', label: '駅・交通' },
+               { val: 'commercial', label: '商業施設' },
+               { val: 'convenience', label: 'コンビニ・店' },
+               { val: 'park', label: '公園・屋外' },
+               { val: 'public', label: '公共施設' },
+               { val: 'medical', label: '医療・福祉' },
+               { val: 'hotel_tourism', label: '観光・宿泊' },
+             ].map(opt => (
+               <label key={opt.val} style={{ fontSize: '0.95rem', cursor: 'pointer' }}>
+                 <input 
+                   type="radio" 
+                   name="facilityCategory" 
+                   value={opt.val} 
+                   checked={facilityCategory === opt.val} 
+                   onChange={(e) => setFacilityCategory(e.target.value)} 
+                   style={{ marginRight: '6px' }}
+                 />
+                 {opt.label}
+               </label>
+             ))}
+          </div>
+
+          <h3 style={{ fontSize: '1.1rem', marginTop: '24px', marginBottom: '12px', borderBottom: '1px solid #e3f2fd', paddingBottom: '8px', color: '#0d47a1' }}>
+            詳細設備・その他
+          </h3>
+          <div className="filters" style={{ border: 'none', padding: 0, background: 'transparent' }}>
+             <label className="chip">
+               <input type="checkbox" name="ostomate" checked={newConditions.ostomate} onChange={handleNewConditionChange} />
+               <span>オストメイト</span>
+             </label>
+             <label className="chip">
+               <input type="checkbox" name="nursing_room" checked={newConditions.nursing_room} onChange={handleNewConditionChange} />
+               <span>授乳室</span>
+             </label>
+             <label className="chip">
+               <input type="checkbox" name="washlet" checked={newConditions.washlet} onChange={handleNewConditionChange} />
+               <span>ウォシュレット</span>
+             </label>
+             <label className="chip">
+               <input type="checkbox" name="gender_separated" checked={newConditions.gender_separated} onChange={handleNewConditionChange} />
+               <span>男女別</span>
+             </label>
+             <label className="chip">
+               <input type="checkbox" name="free" checked={newConditions.free} onChange={handleNewConditionChange} />
+               <span>無料</span>
+             </label>
+          </div>
+        </section>
+
+        {/* 検索実行ボタン */}
+        <div style={{ marginTop: '30px', textAlign: 'center', position: 'sticky', bottom: '20px', zIndex: 10 }}>
+          <button className="btn btn-primary" onClick={handleSearch} style={{ maxWidth: '100%', boxShadow: '0 4px 20px rgba(30,136,229,0.3)' }}>
+            <SearchIcon sx={{ mr: 1 }} />
+            この条件で検索する
+          </button>
+        </div>
+
+    </main>
+  );
+}
+
+export default Conditions;
 </file>
 
 <file path="toilet-frontend/src/pages/Detail.jsx">
@@ -2569,121 +2482,6 @@ function Favorites() {
 export default Favorites;
 </file>
 
-<file path="toilet-frontend/src/pages/Home.jsx">
-import { Link } from 'react-router-dom';
-import '../base.css';       // ★追加
-import '../components.css'; // ★追加
-import '../index.css';      // ★追加（CSSフォルダを作っていない場合はこのパスでOK）
-
-function Home() {
-  return (
-    <>
-      <main className="top-main" id="top">
-        <div className="container">
-
-          <section className="hero">
-            <h1 className="catch">
-              困った“いま”に、<br />
-              いちばん近いトイレ。
-            </h1>
-
-            <p className="sub">
-              現在地と条件から、今すぐ使えるトイレを探せます。<br />
-              子ども連れや車椅子の方にも配慮した情報を掲載。
-            </p>
-
-            {/* 画像を表示 */}
-            <img src="/images/hero.png" alt="イメージ画像" className="hero-img" />
-          </section>
-
-          <section className="actions">
-            <Link to="/search" className="btn btn-primary">🚽 近くのトイレを探す</Link>
-            <Link to="/search" className="btn btn-secondary">⚙️ 条件を指定して探す</Link>
-
-            <div className="sub-actions">
-              <Link to="/favorites" className="btn btn-sub">⭐ よく使うトイレ</Link>
-              <button className="btn btn-sub" onClick={() => alert('位置情報を更新します（仮）')}>
-                📍 現在地を更新
-              </button>
-            </div>
-
-            {/* ✅ 副CTA：トイレ登録（検索の次に控えめに置く） */}
-            <Link to="/register" className="btn btn-sub btn-register">
-              ➕ トイレを登録する
-            </Link>
-            <p className="register-note">写真・設備情報を追加できます（任意）</p>
-
-            <button className="btn btn-disabled" disabled>
-              🚨 いま空いているトイレ（準備中）
-            </button>
-          </section>
-
-          {/* 使い方 */}
-          <section className="howto" id="howto">
-            <h2 className="howto-title">使い方（30秒）</h2>
-
-            <ol className="howto-steps">
-              <li>
-                <span className="step-num">1</span>
-                <div className="step-body">
-                  <div className="step-head">「近くのトイレを探す」を押す</div>
-                  <div className="step-text">検索ページで近い順に一覧表示します。</div>
-                </div>
-              </li>
-
-              <li>
-                <span className="step-num">2</span>
-                <div className="step-body">
-                  <div className="step-head">位置情報を許可（距離表示）</div>
-                  <div className="step-text">許可すると距離が表示され、近い順に並び替えます。</div>
-                </div>
-              </li>
-
-              <li>
-                <span className="step-num">3</span>
-                <div className="step-body">
-                  <div className="step-head">条件をチェック（車椅子 / オムツ / 24時間）</div>
-                  <div className="step-text">必要な設備だけに絞り込めます。</div>
-                </div>
-              </li>
-
-              <li>
-                <span className="step-num">4</span>
-                <div className="step-body">
-                  <div className="step-head">トイレを登録する（任意）</div>
-                  <div className="step-text">
-                    見つけたトイレを、自分用に登録できます。<br />
-                    写真や設備情報も追加できます（公開はされません）。
-                  </div>
-                </div>
-              </li>
-            </ol>
-
-            <div className="howto-cta">
-              <Link to="/search" className="btn btn-primary">🚽 今すぐ探す</Link>
-              <a href="#top" className="howto-toplink">ページ上部へ</a>
-            </div>
-
-            <p className="howto-note">
-              ※ 位置情報を許可しない場合は、距離は表示されません（条件検索は利用できます）。
-            </p>
-          </section>
-
-        </div>
-      </main>
-
-      <footer style={{ textAlign: 'center', padding: '20px', fontSize: '0.8rem', color: '#666' }}>
-        <p>※本サイトは開発中のポートフォリオ（デモ）です。<br />
-          登録したデータはブラウザ内にのみ保存され、他者とは共有されません。</p>
-        <p>&copy; 2026 Imatoilet Project</p>
-      </footer>
-    </>
-  );
-}
-
-export default Home;
-</file>
-
 <file path="toilet-frontend/src/pages/Home.test.jsx">
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -2895,7 +2693,7 @@ describe('Home Page', () => {
 <file path="toilet-frontend/src/pages/Register.jsx">
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import './Register.css'; // CSS読み込み
+import './Register.css'; 
 
 // アイコン
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -2903,43 +2701,45 @@ import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
 
 function Register() {
   const navigate = useNavigate();
-  const mapRef = useRef(null);      // 地図インスタンス保持用
-  const markerRef = useRef(null);   // ピン（マーカー）保持用
+  const mapRef = useRef(null);      // 地図インスタンス
+  const markerRef = useRef(null);   // ピン
 
-  // フォームの状態管理
+  // --- フォームの状態管理 ---
   const [formData, setFormData] = useState({
     name: '',
     address: '',
     description: '',
     lat: '',
     lng: '',
-    wheelchair: false,
-    diaper: false,
-    open24h: false
+    
+    // 新設計：施設カテゴリ (単一選択)
+    facilityCategory: '', 
+    
+    // 新設計：設備・条件 (チェックボックス管理用)
+    conditions: {
+      wheelchair: false,
+      diaper: false,
+      open24h: false,
+      ostomate: false,
+      nursing_room: false,
+      washlet: false,
+      gender_separated: false,
+      free: false
+    }
   });
 
   const [loading, setLoading] = useState(false);
 
-  // --- 1. 地図の初期化 ---
+  // 1. 地図の初期化
   useEffect(() => {
-    // 地図がまだなければ作成
     if (!mapRef.current && window.L) {
-      // つくば駅中心に表示
       const map = window.L.map('reg-map').setView([36.0825, 140.1120], 14);
-      
       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
       }).addTo(map);
-
       mapRef.current = map;
-
-      // 地図クリック時のイベント
-      map.on('click', (e) => {
-        handleMapClick(e.latlng.lat, e.latlng.lng);
-      });
+      map.on('click', (e) => handleMapClick(e.latlng.lat, e.latlng.lng));
     }
-
-    // クリーンアップ（画面移動時に地図を消す）
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
@@ -2949,40 +2749,43 @@ function Register() {
     };
   }, []);
 
-  // --- 2. 地図クリック時の処理 ---
+  // 2. 地図クリック処理
   const handleMapClick = (lat, lng) => {
     const map = mapRef.current;
     if (!map) return;
-
-    // 既存のピンがあれば消す
-    if (markerRef.current) {
-      map.removeLayer(markerRef.current);
-    }
-
-    // 新しいピンを立てる
+    if (markerRef.current) map.removeLayer(markerRef.current);
     const marker = window.L.marker([lat, lng], { draggable: true }).addTo(map);
     markerRef.current = marker;
-
-    // フォームの座標を更新
     setFormData(prev => ({ ...prev, lat: lat, lng: lng }));
-
-    // ピンをドラッグしたときも座標更新
     marker.on('dragend', (e) => {
       const pos = e.target.getLatLng();
       setFormData(prev => ({ ...prev, lat: pos.lat, lng: pos.lng }));
     });
   };
 
-  // --- 3. 入力変更ハンドラ ---
+  // 3. 入力変更ハンドラ (階層データに対応)
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    
+    // 設備チェックボックスの場合
+    if (name in formData.conditions) {
+      setFormData(prev => ({
+        ...prev,
+        conditions: {
+          ...prev.conditions,
+          [name]: checked
+        }
+      }));
+    } else {
+      // 通常のフィールド (name, facilityCategory等)
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
-  // --- 4. 送信処理 (APIへPOST) ---
+  // 4. 送信処理 (新データ形式に変換してPOST)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -2995,25 +2798,45 @@ function Register() {
 
     setLoading(true);
 
+    // --- 送信データの構築 ---
+    // チェックがついている設備キーを配列化し、カンマ区切り文字列にする
+    // 例: "wheelchair,ostomate,free"
+    const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
+    const equipmentStr = equipmentList.join(',');
+
+    const payload = {
+      name: formData.name,
+      address: formData.address,
+      description: formData.description,
+      lat: formData.lat,
+      lng: formData.lng,
+      
+      // 新フィールド
+      facilityCategory: formData.facilityCategory,
+      equipment: equipmentStr,
+
+      // 旧フィールド (互換性用)
+      wheelchair: formData.conditions.wheelchair,
+      diaper: formData.conditions.diaper,
+      open24h: formData.conditions.open24h
+    };
+
     try {
-      // APIへ送信
       const res = await fetch('http://localhost:8080/api/toilets', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         alert("登録しました！");
-        navigate('/search'); // 検索画面へ戻る
+        navigate('/search');
       } else {
         alert("登録に失敗しました。サーバーエラーです。");
       }
     } catch (err) {
       console.error(err);
-      alert("通信エラーが発生しました。バックエンドが起動しているか確認してください。");
+      alert("通信エラーが発生しました。");
     } finally {
       setLoading(false);
     }
@@ -3023,7 +2846,6 @@ function Register() {
     <main className="register-page">
       <div className="container">
         
-        {/* ヘッダー */}
         <div style={{ marginBottom: '20px' }}>
           <Link to="/" style={{ display:'inline-flex', alignItems:'center', gap:'4px', color:'#666', textDecoration:'none' }}>
             <ArrowBackIcon fontSize="small" /> トップに戻る
@@ -3039,9 +2861,7 @@ function Register() {
               <h2 className="panel__title panel__title--small">1. 場所を指定 <span className="req">必須</span></h2>
               <p className="panel__sub">地図をタップしてピンを立ててください</p>
             </div>
-            
             <div id="reg-map" className="reg-map-area"></div>
-
             <div className="map-hint">
               <span className="dot"></span>
               {formData.lat ? (
@@ -3061,57 +2881,55 @@ function Register() {
             <div className="panel__body">
               <div className="form-row">
                 <label className="form-label">名前 <span className="req">必須</span></label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  className="input" 
-                  placeholder="例：つくば駅前公衆トイレ" 
-                  value={formData.name}
-                  onChange={handleChange}
-                  required 
-                />
+                <input type="text" name="name" className="input" placeholder="例：つくば駅前公衆トイレ" value={formData.name} onChange={handleChange} required />
               </div>
 
               <div className="form-row">
-                <label className="form-label">住所・場所の目安</label>
-                <input 
-                  type="text" 
-                  name="address" 
-                  className="input" 
-                  placeholder="例：ロータリーの近く" 
-                  value={formData.address}
-                  onChange={handleChange}
-                />
+                <label className="form-label">施設タイプ <span className="req">必須</span></label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop:'8px' }}>
+                  {[
+                     { val: 'station', label: '駅・交通' },
+                     { val: 'commercial', label: '商業施設' },
+                     { val: 'convenience', label: 'コンビニ・店' },
+                     { val: 'park', label: '公園・屋外' },
+                     { val: 'public', label: '公共施設' },
+                     { val: 'medical', label: '医療・福祉' },
+                     { val: 'hotel_tourism', label: '観光・宿泊' },
+                     { val: 'other', label: 'その他' }
+                  ].map(opt => (
+                    <label key={opt.val} className="check-label" style={{ fontWeight: 'normal' }}>
+                      <input 
+                        type="radio" 
+                        name="facilityCategory" 
+                        value={opt.val} 
+                        checked={formData.facilityCategory === opt.val} 
+                        onChange={handleChange}
+                        required
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">設備・特徴</label>
+                <div className="checks">
+                  <label className="check-label"><input type="checkbox" name="wheelchair" checked={formData.conditions.wheelchair} onChange={handleChange} /> ♿ 車椅子</label>
+                  <label className="check-label"><input type="checkbox" name="diaper" checked={formData.conditions.diaper} onChange={handleChange} /> 👶 オムツ</label>
+                  <label className="check-label"><input type="checkbox" name="open24h" checked={formData.conditions.open24h} onChange={handleChange} /> 🕒 24時間</label>
+                  <label className="check-label"><input type="checkbox" name="ostomate" checked={formData.conditions.ostomate} onChange={handleChange} /> ➕ オストメイト</label>
+                  {/* ★修正箇所：onChange を handleChange に統一しました */}
+                  <label className="check-label"><input type="checkbox" name="nursing_room" checked={formData.conditions.nursing_room} onChange={handleChange} /> 🍼 授乳室</label>
+                  <label className="check-label"><input type="checkbox" name="washlet" checked={formData.conditions.washlet} onChange={handleChange} /> 🚽 ウォシュレット</label>
+                  <label className="check-label"><input type="checkbox" name="gender_separated" checked={formData.conditions.gender_separated} onChange={handleChange} /> 🚻 男女別</label>
+                  <label className="check-label"><input type="checkbox" name="free" checked={formData.conditions.free} onChange={handleChange} /> 💰 無料</label>
+                </div>
               </div>
 
               <div className="form-row">
                 <label className="form-label">説明・メモ</label>
-                <textarea 
-                  name="description" 
-                  className="textarea" 
-                  rows="3" 
-                  placeholder="例：きれいで使いやすいです。"
-                  value={formData.description}
-                  onChange={handleChange}
-                ></textarea>
-              </div>
-
-              <div className="form-row">
-                <label className="form-label">設備情報</label>
-                <div className="checks">
-                  <label className="check-label">
-                    <input type="checkbox" name="wheelchair" checked={formData.wheelchair} onChange={handleChange} />
-                    ♿ 車椅子対応
-                  </label>
-                  <label className="check-label">
-                    <input type="checkbox" name="diaper" checked={formData.diaper} onChange={handleChange} />
-                    👶 オムツ替え
-                  </label>
-                  <label className="check-label">
-                    <input type="checkbox" name="open24h" checked={formData.open24h} onChange={handleChange} />
-                    🕒 24時間
-                  </label>
-                </div>
+                <textarea name="description" className="textarea" rows="3" placeholder="例：改札を出て右側にあります。" value={formData.description} onChange={handleChange}></textarea>
               </div>
 
               <div className="form-footer">
@@ -3130,312 +2948,6 @@ function Register() {
 }
 
 export default Register;
-</file>
-
-<file path="toilet-frontend/src/pages/Search.jsx">
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loadUserToilets, calcDistance } from '../utils';
-import '../search.css';
-
-function Search() {
-  const navigate = useNavigate();
-
-  const [toilets, setToilets] = useState([]);
-  const [filteredToilets, setFilteredToilets] = useState([]);
-  
-  // フィルタ条件の状態管理
-  const [filters, setFilters] = useState({
-    wheelchair: false, diaper: false, open24h: false,
-    babyChair: false, public: false,
-    type_park: false, type_station: false, type_mall: false
-  });
-
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [mapObj, setMapObj] = useState(null);
-  const markersRef = useRef(null);
-  
-  const [placeQuery, setPlaceQuery] = useState("");
-  const [searchStatus, setSearchStatus] = useState("");
-
-  const advancedKeys = ["babyChair", "public", "type_park", "type_station", "type_mall"];
-  const advCount = advancedKeys.filter(k => filters[k]).length;
-
-  let typeLabel = "未選択";
-  if (filters.type_park) typeLabel = "公園";
-  if (filters.type_station) typeLabel = "駅・公共施設";
-  if (filters.type_mall) typeLabel = "商業施設";
-
-  // 1. APIからデータを取得
-  useEffect(() => {
-    async function fetchData() {
-      let data = [];
-      try {
-        const res = await fetch('http://localhost:8080/api/toilets');
-        const json = await res.json();
-        data = [...json];
-      } catch (err) {
-        console.error("API Error:", err);
-      }
-      const userData = loadUserToilets();
-      data = [...data, ...userData];
-      setToilets(data);
-      setFilteredToilets(data);
-    }
-    fetchData();
-  }, []);
-
-  // 2. 現在地取得
-  useEffect(() => {
-    handleCurrentLocation();
-  }, []);
-
-  const handleCurrentLocation = () => {
-    setSearchStatus("現在地を取得中...");
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          setCurrentLocation({ lat, lng });
-          setSearchStatus("現在地を表示しました");
-          if (mapObj) mapObj.setView([lat, lng], 15);
-        },
-        (err) => setSearchStatus("現在地の取得に失敗しました")
-      );
-    }
-  };
-
-  const handlePlaceSearch = async () => {
-    if (!placeQuery) return;
-    setSearchStatus("検索中...");
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeQuery)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data && data.length > 0) {
-        const hit = data[0];
-        const lat = parseFloat(hit.lat);
-        const lng = parseFloat(hit.lon);
-        setCurrentLocation({ lat, lng });
-        setSearchStatus(`「${hit.display_name.split(',')[0]}」周辺を表示`);
-        if (mapObj) mapObj.setView([lat, lng], 15);
-      } else {
-        setSearchStatus("見つかりませんでした");
-      }
-    } catch (e) {
-      setSearchStatus("検索エラーが発生しました");
-    }
-  };
-
-  // 3. ★【重要修正】バックエンドのキャメルケース変数名に対応したフィルタリング
-  useEffect(() => {
-    let result = toilets.filter(t => {
-      // 基本フィルタ
-      if (filters.wheelchair && !t.wheelchair) return false;
-      if (filters.diaper && !t.diaper) return false;
-      if (filters.open24h && !t.open24h) return false;
-      
-      // 詳細フィルタ（バックエンドの変数名と合わせる）
-      if (filters.babyChair && !t.babyChair) return false;
-      if (filters.public && !t.publicUse) return false; 
-      
-      // 場所タイプ（バックエンドの変数名と合わせる）
-      const typeSelected = filters.type_park || filters.type_station || filters.type_mall;
-      if (typeSelected) {
-        if (filters.type_park && t.typePark) return true;
-        if (filters.type_station && t.typeStation) return true;
-        if (filters.type_mall && t.typeMall) return true;
-        return false;
-      }
-      return true;
-    });
-
-    if (currentLocation) {
-      result = result.map(t => {
-        const dist = calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng);
-        return { ...t, distance: dist };
-      }).sort((a, b) => a.distance - b.distance);
-    }
-
-    setFilteredToilets(result);
-  }, [toilets, filters, currentLocation]);
-
-  // 4. 地図初期化
-  useEffect(() => {
-    if (!window.L) return;
-    const container = window.L.DomUtil.get('map');
-    if (container && container._leaflet_id) container._leaflet_id = null;
-
-    const map = window.L.map('map').setView([36.0825, 140.1120], 13);
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    const layerGroup = window.L.layerGroup().addTo(map);
-    markersRef.current = layerGroup;
-    setMapObj(map);
-
-    return () => { map.remove(); setMapObj(null); };
-  }, []);
-
-  // 5. ピンの描画更新
-  useEffect(() => {
-    if (!mapObj || !markersRef.current || !window.L) return;
-    const layerGroup = markersRef.current;
-    layerGroup.clearLayers();
-
-    filteredToilets.forEach(t => {
-      if (t.lat && t.lng) {
-        const marker = window.L.marker([t.lat, t.lng]).addTo(layerGroup);
-        const distStr = t.distance ? `<br>約 ${Math.round(t.distance * 1000)} m` : "";
-        
-        marker.bindPopup(`
-          <b>${t.name}</b>${distStr}<br>
-          <a href="/detail/${t.id}">詳細を見る</a>
-        `);
-      }
-    });
-    
-    if (currentLocation) {
-      window.L.circleMarker([currentLocation.lat, currentLocation.lng], {
-        color: '#ff5722', radius: 8, fillColor: '#ff5722', fillOpacity: 0.8
-      }).addTo(mapObj).bindPopup("現在地（検索基準）");
-    }
-  }, [filteredToilets, mapObj, currentLocation]);
-
-  const handleFilterChange = (e) => {
-    const { name, checked } = e.target;
-    setFilters(prev => {
-      const next = { ...prev, [name]: checked };
-      if (name.startsWith('type_') && checked) {
-        if (name !== 'type_park') next.type_park = false;
-        if (name !== 'type_station') next.type_station = false;
-        if (name !== 'type_mall') next.type_mall = false;
-      }
-      return next;
-    });
-  };
-
-  const clearAdvanced = () => {
-    setFilters(prev => ({
-      ...prev,
-      babyChair: false, public: false,
-      type_park: false, type_station: false, type_mall: false
-    }));
-  };
-
-  return (
-    <main className="search-main">
-      <div className="container">
-        {/* UI部分は提供いただいたものと同じです */}
-        <section className="place-search">
-          <div className="place-search__row">
-            <input 
-              type="search" 
-              className="input-search"
-              placeholder="住所、駅、施設名、郵便番号など" 
-              value={placeQuery}
-              onChange={(e) => setPlaceQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()}
-            />
-            <div className="place-search__btns">
-              <button className="btn btn-sub" onClick={handlePlaceSearch}>目的地の周辺を検索</button>
-              <button className="btn btn-sub" onClick={handleCurrentLocation}>📍 現在地に戻す</button>
-            </div>
-          </div>
-          <p className="place-search__status">{searchStatus}</p>
-        </section>
-
-        <section className="filters">
-          <label><input type="checkbox" name="wheelchair" checked={filters.wheelchair} onChange={handleFilterChange} /> 車椅子対応</label>
-          <label><input type="checkbox" name="diaper" checked={filters.diaper} onChange={handleFilterChange} /> オムツ替え</label>
-          <label><input type="checkbox" name="open24h" checked={filters.open24h} onChange={handleFilterChange} /> 24時間</label>
-        </section>
-
-        <details className="filters-advanced">
-          <summary className="filters-advanced__summary">
-            詳細内容を選択する（任意）
-            <span className="filters-advanced__hint-wrap">
-              <span className="filters-advanced__hint">絞り込み：{advCount}件</span>
-              <span className="filters-advanced__hint">場所：{typeLabel}</span>
-            </span>
-          </summary>
-          <div className="filters-advanced__body">
-            <fieldset className="filters-advanced__group">
-              <legend>設備</legend>
-              <label className="chip">
-                <input type="checkbox" name="babyChair" checked={filters.babyChair} onChange={handleFilterChange} />
-                <span>ベビーチェアあり</span>
-              </label>
-            </fieldset>
-            <fieldset className="filters-advanced__group">
-              <legend>利用条件</legend>
-              <label className="chip">
-                <input type="checkbox" name="public" checked={filters.public} onChange={handleFilterChange} />
-                <span>誰でも利用可</span>
-              </label>
-            </fieldset>
-            <fieldset className="filters-advanced__group">
-              <legend>場所タイプ</legend>
-              <label className="chip chip--type">
-                <input type="checkbox" name="type_park" checked={filters.type_park} onChange={handleFilterChange} />
-                <span>公園</span>
-              </label>
-              <label className="chip chip--type">
-                <input type="checkbox" name="type_station" checked={filters.type_station} onChange={handleFilterChange} />
-                <span>駅・公共施設</span>
-              </label>
-              <label className="chip chip--type">
-                <input type="checkbox" name="type_mall" checked={filters.type_mall} onChange={handleFilterChange} />
-                <span>商業施設</span>
-              </label>
-            </fieldset>
-            <div className="filters-advanced__actions" style={{ textAlign: 'right' }}>
-              <button type="button" className="btn btn-sub" onClick={clearAdvanced}>✖ 詳細条件をクリア</button>
-            </div>
-          </div>
-        </details>
-
-        <div className="search-layout">
-          <section className="panel panel--map">
-            <header className="panel-head">
-              <h2 className="panel-title">地図</h2>
-              <div className="panel-meta">ピンをクリックすると詳細を開けます</div>
-            </header>
-            <div className="map-area">
-              <div id="map"></div>
-            </div>
-          </section>
-
-          <section className="panel panel--list">
-            <header className="panel-head">
-              <h2 className="panel-title">検索結果</h2>
-              <div className="panel-meta">
-                並び順：{currentLocation ? "近い順" : "おすすめ順"} / {filteredToilets.length}件
-              </div>
-            </header>
-            <div className="list-area">
-              {filteredToilets.map(t => (
-                <div key={t.id} className="toilet-card" onClick={() => navigate(`/detail/${t.id}`)}>
-                  <div className="toilet-name">{t.name}</div>
-                  <div className="toilet-meta">
-                    {t.wheelchair && <span>♿</span>}
-                    {t.diaper && <span>👶</span>}
-                    {t.open24h && <span>🕒</span>}
-                    {t.distance && <span>📍 約 {Math.round(t.distance * 1000)} m</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-export default Search;
 </file>
 
 <file path="toilet-frontend/src/search.css">
@@ -3857,6 +3369,399 @@ export default defineConfig({
 })
 </file>
 
+<file path="toilet-frontend/src/App.jsx">
+import { Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import Home from './pages/Home';
+import Search from './pages/Search';
+import Detail from './pages/Detail';
+import Favorites from './pages/Favorites';
+import Register from './pages/Register';
+import Conditions from './pages/Conditions';
+
+function App() {
+  return (
+    <>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/search" element={<Search />} />
+        
+        {/* ★この行があるか確認！（ここがないと画面は空白になります） */}
+        <Route path="/conditions" element={<Conditions />} />
+        
+        <Route path="/detail/:id" element={<Detail />} />
+        <Route path="/favorites" element={<Favorites />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    </>
+  );
+}
+
+export default App;
+</file>
+
+<file path="toilet-frontend/src/index.css">
+/* =========================================
+   css/pages/index.css
+   トップページ専用スタイル（スマホ・PC共通）
+========================================= */
+
+/* --- 全体のレイアウト調整 --- */
+body {
+  background-color: #f9f9f9; /* 全体の背景色 */
+}
+
+.top-main {
+  padding: 30px 0 60px;
+  min-height: 80vh; /* 画面の高さを確保 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* --- 1. ヘッダー（ロゴ） --- */
+/* HTML内の .logo クラスに対する装飾 */
+.site-header {
+  padding: 15px 0;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* スマホは中央寄せ */
+  color: #333;
+}
+
+.logo-icon {
+  font-size: 1.8rem;
+  margin: 0 4px;
+}
+/* toilet-frontend/src/index.css の .logo-now を書き換え */
+.logo-now {
+  background-color: #1e88e5; /* メインカラーの青（または #f57c00 のオレンジ） */
+  color: #fff;               /* 文字は白 */
+  font-size: 0.9em;          /* 少し小さく */
+  padding: 2px 8px;          /* 内側の余白 */
+  border-radius: 6px;        /* 角を丸く */
+  margin-right: 6px;         /* アイコンとの隙間を開ける */
+  transform: translateY(3px); /* 少し位置調整 */
+}
+.logo-main { color: #1e88e5; }
+
+
+/* --- 2. ヒーローエリア（キャッチコピー） --- */
+.hero {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-top: 20px;
+}
+
+.catch {
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #1e88e5;
+  margin-bottom: 16px;
+}
+
+.sub {
+  font-size: 0.95rem;
+  color: #546e7a;
+  line-height: 1.6;
+  font-weight: bold;
+}
+
+
+/* --- 3. アクションエリア（ボタン群） --- */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+  margin: 0 auto; /* 中央寄せ */
+  width: 100%;
+}
+
+/* ボタン（大）の補正 */
+.btn-primary, .btn-secondary {
+  padding: 18px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 12px;
+}
+
+/* サブボタンの横並びエリア */
+.sub-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sub-actions .btn {
+  flex: 1; /* 等幅にする */
+  font-size: 0.9rem;
+  padding: 12px;
+  text-align: center;
+}
+
+/* トイレ登録ボタン周り */
+/* .btn を足して優先度を上げ、確実に青色を適用させます */
+.btn.btn-register {
+  background-color: #fff;
+  color: #1e88e5;
+  border: 2px solid #1e88e5; /* 太さを 2px から 1px に変更 */
+  margin-top: 10px;
+  text-align: center;
+}
+.register-note {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: -10px; /* ボタンに近づける */
+  margin-bottom: 20px;
+}
+
+
+/* --- 4. 使い方エリア --- */
+.howto {
+  margin-top: 60px;
+  background: #fff;
+  padding: 40px 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.howto-title {
+  text-align: center;
+  font-size: 1.4rem;
+  color: #333;
+  margin-bottom: 30px;
+  font-weight: bold;
+}
+
+.howto-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.howto-steps li {
+  display: flex;
+  gap: 15px;
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.howto-steps li:last-child {
+  border-bottom: none;
+}
+
+/* ステップ番号の丸 */
+.step-num {
+  background: #e3f2fd;
+  color: #1e88e5;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0; /* 潰れないようにする */
+}
+
+.step-head {
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #333;
+}
+.step-text {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.howto-cta {
+  text-align: center;
+  margin-top: 30px;
+}
+.howto-toplink {
+  display: block;
+  margin-top: 20px;
+  color: #999;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.howto-note {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: #aaa;
+  text-align: center;
+}
+
+
+/* =========================================
+   ★PC用レイアウト（画面幅900px以上）
+   ここが「見せ方を変える」魔法の部分です
+========================================= */
+@media (min-width: 900px) {
+
+  /* --- 全体設定 --- */
+  body {
+    background-color: #f0f4f8; /* PCでは少し色味を変えてリッチに */
+  }
+
+  .site-header .container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .logo {
+    justify-content: flex-start; /* 左寄せ */
+  }
+
+  /* --- メインエリアをグリッド（格子状）にする --- */
+  .top-main .container {
+    display: grid;
+    /* 左カラム(可変) + 右カラム(400px固定) */
+    grid-template-columns: 1fr 400px; 
+    gap: 60px;
+    align-items: center; /* 上下中央揃え */
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  /* --- 左側：ヒーローエリア（文字） --- */
+  .hero {
+    grid-column: 1 / 2; /* 左の列に配置 */
+    text-align: left;   /* 左揃え */
+    padding-top: 0;
+    margin-bottom: 0;
+  }
+
+  .catch {
+    font-size: 3rem; /* 文字を大きく */
+    margin-bottom: 24px;
+  }
+  .sub {
+    font-size: 1.2rem; /* 説明文も大きく */
+  }
+
+  /* --- 右側：アクションエリア（操作パネル） --- */
+  .actions {
+    grid-column: 2 / 3; /* 右の列に配置 */
+    background: #fff;
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(30, 136, 229, 0.15); /* 浮き上がらせる影 */
+  }
+
+  /* --- 下段：使い方エリア --- */
+  .howto {
+    grid-column: 1 / -1; /* 横幅いっぱいに広げる */
+    margin-top: 80px;
+    background: none;    /* 背景を消してなじませる */
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .howto-title {
+    font-size: 1.8rem;
+    margin-bottom: 40px;
+  }
+
+  /* ステップを横4列に並べる */
+  .howto-steps {
+    flex-direction: row; 
+    gap: 20px;
+  }
+
+  .howto-steps li {
+    flex: 1; /* 4等分 */
+    flex-direction: column; /* 中身は縦並び */
+    align-items: center;
+    text-align: center;
+    background: #fff;
+    padding: 30px 20px;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  }
+
+  .step-num {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+  }
+  
+  .howto-cta {
+    display: none; /* PC画面では下の「今すぐ探す」ボタンは不要なので隠す */
+  }
+}
+
+/* =========================================
+   追加：ヒーロー画像のスタイル
+========================================= */
+
+/* スマホ：文字の下に少し小さく表示 */
+.hero-img {
+  width: 120px;       /* 小さめに */
+  height: auto;
+  margin: 20px auto 0; /* 上に隙間、中央寄せ */
+  display: block;
+  opacity: 0.9;
+}
+
+/* --- 修正版：PC用レイアウト（一部抜粋） --- */
+@media (min-width: 900px) {
+
+  /* ...（body や .top-main などの設定はそのまま）... */
+  /* --- 左側：ヒーローエリア（文字と画像を整理） --- */
+  .hero {
+    grid-column: 1 / 2;
+    text-align: left;
+    padding-top: 0;
+    margin-bottom: 0;
+    
+    /* ★ここを変更：Flexboxで縦に並べつつ、配置を制御 */
+    display: flex;
+    flex-direction: column; /* 縦並び */
+    align-items: flex-start; /* 左寄せ */
+  }
+
+  .catch {
+    font-size: 3rem;
+    margin-bottom: 24px;
+    width: 100%; /* 幅いっぱいに */
+  }
+  
+  .sub {
+    font-size: 1.2rem;
+    max-width: 100%; /* 幅制限を解除 */
+    margin-bottom: 20px;
+  }
+
+  /* ★ここを変更：画像の位置調整 */
+  .hero-img {
+    position: static; /* 絶対配置をやめる（これで重なりません） */
+    width: 220px;     /* サイズはお好みで */
+    margin-top: 10px;
+    margin-left: auto; /* 右端に寄せる魔法 */
+    align-self: flex-end; /* コンテナ内の右側に配置 */
+    opacity: 1;
+  }
+
+  /* ...（.actions や .howto など、これより下の部分はそのまま）... */
+}
+</file>
+
 <file path="toilet-frontend/src/pages/Detail.test.jsx">
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -3905,6 +3810,432 @@ describe('Detail Page', () => {
     expect(errorMsg).toBeInTheDocument();
   });
 });
+</file>
+
+<file path="toilet-frontend/src/pages/Home.jsx">
+import { Link } from 'react-router-dom';
+import '../base.css';       // ★追加
+import '../components.css'; // ★追加
+import '../index.css';      // ★追加（CSSフォルダを作っていない場合はこのパスでOK）
+
+function Home() {
+  return (
+    <>
+      <main className="top-main" id="top">
+        <div className="container">
+
+          <section className="hero">
+            <h1 className="catch">
+              困った“いま”に、<br />
+              いちばん近いトイレ。
+            </h1>
+
+            <p className="sub">
+              現在地と条件から、今すぐ使えるトイレを探せます。<br />
+              子ども連れや車椅子の方にも配慮した情報を掲載。
+            </p>
+
+            {/* 画像を表示 */}
+            <img src="/images/hero.png" alt="イメージ画像" className="hero-img" />
+          </section>
+
+          <section className="actions">
+            <Link to="/search" className="btn btn-primary">🚽 近くのトイレを探す</Link>
+            {/* ▼▼▼ ここを修正しました (/search → /conditions) ▼▼▼ */}
+            <Link to="/conditions" className="btn btn-secondary">⚙️ 条件を指定して探す</Link>
+
+            <div className="sub-actions">
+              <Link to="/favorites" className="btn btn-sub">⭐ よく使うトイレ</Link>
+              <button className="btn btn-sub" onClick={() => alert('位置情報を更新します（仮）')}>
+                📍 現在地を更新
+              </button>
+            </div>
+
+            {/* ✅ 副CTA：トイレ登録（検索の次に控えめに置く） */}
+            <Link to="/register" className="btn btn-sub btn-register">
+              ➕ トイレを登録する
+            </Link>
+            <p className="register-note">写真・設備情報を追加できます（任意）</p>
+          </section>
+
+          {/* 使い方 */}
+          <section className="howto" id="howto">
+            <h2 className="howto-title">使い方（30秒）</h2>
+
+            <ol className="howto-steps">
+              <li>
+                <span className="step-num">1</span>
+                <div className="step-body">
+                  <div className="step-head">「近くのトイレを探す」を押す</div>
+                  <div className="step-text">検索ページで近い順に一覧表示します。</div>
+                </div>
+              </li>
+
+              <li>
+                <span className="step-num">2</span>
+                <div className="step-body">
+                  <div className="step-head">位置情報を許可（距離表示）</div>
+                  <div className="step-text">許可すると距離が表示され、近い順に並び替えます。</div>
+                </div>
+              </li>
+
+              <li>
+                <span className="step-num">3</span>
+                <div className="step-body">
+                  <div className="step-head">条件をチェック（車椅子 / オムツ / 24時間）</div>
+                  <div className="step-text">必要な設備だけに絞り込めます。</div>
+                </div>
+              </li>
+
+              <li>
+                <span className="step-num">4</span>
+                <div className="step-body">
+                  <div className="step-head">トイレを登録する（任意）</div>
+                  <div className="step-text">
+                    見つけたトイレを、自分用に登録できます。<br />
+                    写真や設備情報も追加できます（公開はされません）。
+                  </div>
+                </div>
+              </li>
+            </ol>
+
+            <div className="howto-cta">
+              <Link to="/search" className="btn btn-primary">🚽 今すぐ探す</Link>
+              <a href="#top" className="howto-toplink">ページ上部へ</a>
+            </div>
+
+            <p className="howto-note">
+              ※ 位置情報を許可しない場合は、距離は表示されません（条件検索は利用できます）。
+            </p>
+          </section>
+
+        </div>
+      </main>
+
+      <footer style={{ textAlign: 'center', padding: '20px', fontSize: '0.8rem', color: '#666' }}>
+        <p>※本サイトは開発中のポートフォリオ（デモ）です。<br />
+          登録したデータはブラウザ内にのみ保存され、他者とは共有されません。</p>
+        <p>&copy; 2026 Imatoilet Project</p>
+      </footer>
+    </>
+  );
+}
+
+export default Home;
+</file>
+
+<file path="toilet-frontend/src/pages/Search.jsx">
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { loadUserToilets, calcDistance } from '../utils';
+import '../search.css';
+
+// アイコン
+import SettingsIcon from '@mui/icons-material/Settings';
+
+function Search() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const [toilets, setToilets] = useState([]);
+  const [filteredToilets, setFilteredToilets] = useState([]);
+  
+  // --- 1. 検索条件の取得 (URLパラメータから) ---
+  const filters = {
+    // 既存フィルター (Booleanフラグ)
+    wheelchair: searchParams.get('wheelchair') === 'true',
+    diaper: searchParams.get('diaper') === 'true',
+    open24h: searchParams.get('open24h') === 'true',
+    babyChair: searchParams.get('babyChair') === 'true',
+    public: searchParams.get('public') === 'true',
+    type_park: searchParams.get('type_park') === 'true',
+    type_station: searchParams.get('type_station') === 'true',
+    type_mall: searchParams.get('type_mall') === 'true',
+
+    // --- 新設計フィルター (追加) ---
+    // 施設カテゴリ (文字列: station, commercial 等)
+    facilityCategory: searchParams.get('facilityCategory') || '',
+
+    // 詳細設備 (新項目は t.equipment 文字列内を検索する)
+    ostomate: searchParams.get('ostomate') === 'true',
+    nursing_room: searchParams.get('nursing_room') === 'true',
+    washlet: searchParams.get('washlet') === 'true',
+    visual_support: searchParams.get('visual_support') === 'true',
+    gender_separated: searchParams.get('gender_separated') === 'true',
+    unisex: searchParams.get('unisex') === 'true',
+    free: searchParams.get('free') === 'true',
+    paid: searchParams.get('paid') === 'true'
+  };
+
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [mapObj, setMapObj] = useState(null);
+  const markersRef = useRef(null);
+  
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [searchStatus, setSearchStatus] = useState("");
+
+  // 2. APIからデータを取得
+  useEffect(() => {
+    async function fetchData() {
+      let data = [];
+      try {
+        const res = await fetch('http://localhost:8080/api/toilets');
+        const json = await res.json();
+        data = [...json];
+      } catch (err) {
+        console.error("API Error:", err);
+      }
+      const userData = loadUserToilets();
+      data = [...data, ...userData];
+      setToilets(data);
+      // ここでは setFilteredToilets しない（下の useEffect でフィルタリングされるため）
+    }
+    fetchData();
+  }, []);
+
+  // 3. 現在地取得
+  useEffect(() => {
+    handleCurrentLocation();
+  }, []);
+
+  const handleCurrentLocation = () => {
+    setSearchStatus("現在地を取得中...");
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setCurrentLocation({ lat, lng });
+          setSearchStatus("現在地を表示しました");
+          if (mapObj) mapObj.setView([lat, lng], 15);
+        },
+        (err) => setSearchStatus("現在地の取得に失敗しました")
+      );
+    }
+  };
+
+  const handlePlaceSearch = async () => {
+    if (!placeQuery) return;
+    setSearchStatus("検索中...");
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeQuery)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const hit = data[0];
+        const lat = parseFloat(hit.lat);
+        const lng = parseFloat(hit.lon);
+        setCurrentLocation({ lat, lng });
+        setSearchStatus(`「${hit.display_name.split(',')[0]}」周辺を表示`);
+        if (mapObj) mapObj.setView([lat, lng], 15);
+      } else {
+        setSearchStatus("見つかりませんでした");
+      }
+    } catch (e) {
+      setSearchStatus("検索エラーが発生しました");
+    }
+  };
+
+  // --- 4. フィルタリング処理（filtersが変わるたびに実行） ---
+  useEffect(() => {
+    let result = toilets.filter(t => {
+      // (A) 既存フラグのチェック
+      if (filters.wheelchair && !t.wheelchair) return false;
+      if (filters.diaper && !t.diaper) return false;
+      if (filters.open24h && !t.open24h) return false;
+      if (filters.babyChair && !t.babyChair) return false;
+      if (filters.public && !t.publicUse) return false; 
+      
+      // 場所タイプ (旧仕様)
+      const typeSelected = filters.type_park || filters.type_station || filters.type_mall;
+      if (typeSelected) {
+        if (filters.type_park && t.typePark) return true;
+        if (filters.type_station && t.typeStation) return true;
+        if (filters.type_mall && t.typeMall) return true;
+        // 旧タイプフィルタがONなのに、どれもマッチしない場合は除外したいが
+        // 既存ロジックに合わせて「他条件がなければ戻す」形にするか、厳密にするか。
+        // ここでは「タイプ指定があれば、マッチしなければ除外」とします。
+        if (!filters.type_park && !filters.type_station && !filters.type_mall) {
+            // ここには来ない
+        } else {
+            // どれか一つでもHITすればOKだが、ここまで来た時点でHITしていない
+            return false;
+        }
+      }
+
+      // (B) 新・施設カテゴリのチェック (facilityCategory)
+      if (filters.facilityCategory) {
+        // データ側に facilityCategory がない、または一致しない場合は除外
+        if (!t.facilityCategory || t.facilityCategory !== filters.facilityCategory) {
+          return false;
+        }
+      }
+
+      // (C) 新・詳細設備のチェック (t.equipment 文字列に含まれるか)
+      // equipment は "wheelchair,ostomate,washlet" のようなカンマ区切り文字列を想定
+      const eqStr = t.equipment || ""; // null対策
+
+      if (filters.ostomate && !eqStr.includes('ostomate')) return false;
+      if (filters.nursing_room && !eqStr.includes('nursing_room')) return false;
+      if (filters.washlet && !eqStr.includes('washlet')) return false;
+      if (filters.visual_support && !eqStr.includes('visual_support')) return false;
+      if (filters.gender_separated && !eqStr.includes('gender_separated')) return false;
+      if (filters.unisex && !eqStr.includes('unisex')) return false;
+      if (filters.free && !eqStr.includes('free')) return false;
+      if (filters.paid && !eqStr.includes('paid')) return false;
+
+      return true;
+    });
+
+    // 距離順ソート
+    if (currentLocation) {
+      result = result.map(t => {
+        const dist = calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng);
+        return { ...t, distance: dist };
+      }).sort((a, b) => a.distance - b.distance);
+    }
+
+    setFilteredToilets(result);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toilets, searchParams, currentLocation]); 
+
+  // 5. 地図初期化
+  useEffect(() => {
+    if (!window.L) return;
+    const container = window.L.DomUtil.get('map');
+    if (container && container._leaflet_id) container._leaflet_id = null;
+
+    const map = window.L.map('map').setView([36.0825, 140.1120], 13);
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const layerGroup = window.L.layerGroup().addTo(map);
+    markersRef.current = layerGroup;
+    setMapObj(map);
+
+    return () => { map.remove(); setMapObj(null); };
+  }, []);
+
+  // 6. ピン描画更新
+  useEffect(() => {
+    if (!mapObj || !markersRef.current || !window.L) return;
+    const layerGroup = markersRef.current;
+    layerGroup.clearLayers();
+
+    filteredToilets.forEach(t => {
+      if (t.lat && t.lng) {
+        const marker = window.L.marker([t.lat, t.lng]).addTo(layerGroup);
+        const distStr = t.distance ? `<br>約 ${Math.round(t.distance * 1000)} m` : "";
+        
+        // ピンのポップアップ内容
+        marker.bindPopup(`
+          <b>${t.name}</b>${distStr}<br>
+          <span style="font-size:0.85rem; color:#666;">
+            ${t.facilityCategory ? `[${t.facilityCategory}]` : ''} 
+            ${t.wheelchair ? '♿' : ''}
+            ${t.diaper ? '👶' : ''}
+          </span><br>
+          <a href="/detail/${t.id}">詳細を見る</a>
+        `);
+      }
+    });
+    
+    if (currentLocation) {
+      window.L.circleMarker([currentLocation.lat, currentLocation.lng], {
+        color: '#ff5722', radius: 8, fillColor: '#ff5722', fillOpacity: 0.8
+      }).addTo(mapObj).bindPopup("現在地（検索基準）");
+    }
+  }, [filteredToilets, mapObj, currentLocation]);
+
+  // 条件指定画面へ遷移
+  const goConditions = () => {
+    navigate('/conditions');
+  };
+
+  return (
+    <main className="search-main">
+      <div className="container">
+        
+        {/* 目的地検索エリア */}
+        <section className="place-search">
+          <div className="place-search__row">
+            <input 
+              type="search" 
+              className="input-search"
+              placeholder="住所、駅、施設名、郵便番号など" 
+              value={placeQuery}
+              onChange={(e) => setPlaceQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()}
+            />
+            <div className="place-search__btns">
+              <button className="btn btn-sub" onClick={handlePlaceSearch}>目的地の周辺を検索</button>
+              <button className="btn btn-sub" onClick={handleCurrentLocation}>📍 現在地に戻す</button>
+            </div>
+          </div>
+          <p className="place-search__status">{searchStatus}</p>
+        </section>
+
+        {/* 条件指定への導線 */}
+        <div style={{ margin: '10px 0 24px', padding: '16px', background: '#f0f7ff', borderRadius: '16px', textAlign: 'center' }}>
+           <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#444', fontWeight: 'bold' }}>
+             条件を指定すると、もっと探しやすくなります<br/>
+             <span style={{fontSize: '0.85rem', color: '#666', fontWeight: 'normal'}}>（施設タイプ・オストメイト・授乳室など）</span>
+           </p>
+           <button
+             className="btn btn-secondary"
+             onClick={goConditions}
+             style={{ background: '#fff', border: '2px solid #1e88e5', color: '#1e88e5', padding: '10px 24px', fontSize: '0.95rem', maxWidth: '300px', margin: '0 auto' }}
+           >
+             <SettingsIcon fontSize="small" sx={{ mr: 0.5, mb: 0.2 }} /> 条件を指定して探す
+           </button>
+         </div>
+
+        <div className="search-layout">
+          <section className="panel panel--map">
+            <header className="panel-head">
+              <h2 className="panel-title">地図</h2>
+              <div className="panel-meta">ピンをクリックすると詳細を開けます</div>
+            </header>
+            <div className="map-area">
+              <div id="map"></div>
+            </div>
+          </section>
+
+          <section className="panel panel--list">
+            <header className="panel-head">
+              <h2 className="panel-title">検索結果</h2>
+              <div className="panel-meta">
+                並び順：{currentLocation ? "近い順" : "おすすめ順"} / {filteredToilets.length}件
+              </div>
+            </header>
+            <div className="list-area">
+              {filteredToilets.map(t => (
+                <div key={t.id} className="toilet-card" onClick={() => navigate(`/detail/${t.id}`)}>
+                  <div className="toilet-name">{t.name}</div>
+                  <div className="toilet-meta">
+                    {/* アイコン表示を少し拡張 */}
+                    {t.facilityCategory === 'station' && <span title="駅・交通">🚉</span>}
+                    {t.facilityCategory === 'commercial' && <span title="商業施設">🛍️</span>}
+                    {t.facilityCategory === 'park' && <span title="公園">🌳</span>}
+                    
+                    {t.wheelchair && <span>♿</span>}
+                    {t.diaper && <span>👶</span>}
+                    {t.open24h && <span>🕒</span>}
+                    
+                    {t.distance && <span>📍 約 {Math.round(t.distance * 1000)} m</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default Search;
 </file>
 
 <file path="toilet-frontend/vitest.config.js">
