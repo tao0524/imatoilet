@@ -21,4 +21,10 @@ public class ToiletApiController {
     public Toilet createToilet(@RequestBody Toilet toilet) {
         return toiletRepository.save(toilet);
     }
+
+    // ★追加：削除用のAPIエンドポイント
+    @DeleteMapping("/{id}")
+    public void deleteToilet(@PathVariable Long id) {
+        toiletRepository.deleteById(id);
+    }
 }

@@ -8,6 +8,7 @@ import '../search.css';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SearchIcon from '@mui/icons-material/Search';
 import CheckIcon from '@mui/icons-material/Check';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'; // ★追加
 
 // カテゴリアイコン
 import TrainIcon from '@mui/icons-material/Train';
@@ -38,6 +39,7 @@ function Conditions() {
 
   // 3. 新仕様の設備条件
   const [newConditions, setNewConditions] = useState({
+    parking: false, // ★追加
     ostomate: false,
     nursing_room: false,
     washlet: false,
@@ -72,7 +74,7 @@ function Conditions() {
       params.append('facilityCategory', facilityCategory);
     }
 
-    // 3. 新設備の追加
+    // 3. 新設備の追加 (parkingもここで自動的に追加される)
     Object.keys(newConditions).forEach(key => {
       if (newConditions[key]) params.append(key, 'true');
     });
@@ -107,7 +109,6 @@ function Conditions() {
         {/* フォーム全体 */}
         <div style={{ display: 'grid', gap: '24px' }}>
 
-          {/* ★順序入れ替え：設備・特徴を上に配置 */}
           <section className="panel" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display:'flex', alignItems:'center', gap:'8px' }}>
               <CheckIcon color="primary" /> 設備・特徴
@@ -115,12 +116,20 @@ function Conditions() {
             </h3>
 
             <div className="filters" style={{ border: 'none', padding: 0, gap: '10px' }}>
-              {/* 重要設備（ハイライト） */}
+              
+              {/* ★追加：駐車場（目立たせる） */}
+              <FilterChip 
+                label="🚗 駐車場あり" 
+                name="parking" 
+                checked={newConditions.parking} 
+                onChange={handleNewConditionChange} 
+                highlight 
+              />
+
               <FilterChip label="♿ 車椅子対応" name="wheelchair" checked={filters.wheelchair} onChange={handleFilterChange} highlight />
               <FilterChip label="👶 オムツ替え" name="diaper" checked={filters.diaper} onChange={handleFilterChange} highlight />
               <FilterChip label="➕ オストメイト" name="ostomate" checked={newConditions.ostomate} onChange={handleNewConditionChange} highlight />
               
-              {/* その他設備 */}
               <FilterChip label="🕒 24時間利用" name="open24h" checked={filters.open24h} onChange={handleFilterChange} />
               <FilterChip label="🍼 授乳室" name="nursing_room" checked={newConditions.nursing_room} onChange={handleNewConditionChange} />
               <FilterChip label="🚽 ウォシュレット" name="washlet" checked={newConditions.washlet} onChange={handleNewConditionChange} />
@@ -131,7 +140,6 @@ function Conditions() {
             </div>
           </section>
 
-          {/* ★順序入れ替え：施設の種類を下に配置 */}
           <section className="panel" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display:'flex', alignItems:'center', gap:'8px' }}>
               <CategoryIcon color="primary" /> 施設の種類
@@ -139,8 +147,6 @@ function Conditions() {
             </h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-              
-              {/* 「指定なし」ボタン */}
               <label 
                 className={`select-card ${facilityCategory === "" ? "active" : ""}`}
                 style={{
@@ -160,7 +166,6 @@ function Conditions() {
                 <span style={{ fontWeight: 'bold', color: facilityCategory==="" ? '#1e88e5':'#666' }}>指定なし</span>
               </label>
 
-              {/* 各カテゴリオプション */}
               {categoryOptions.map(opt => (
                 <label 
                   key={opt.val}
@@ -189,7 +194,6 @@ function Conditions() {
 
         </div>
 
-        {/* 検索実行ボタン */}
         <div style={{ marginTop: '40px', textAlign: 'center', position: 'sticky', bottom: '20px', zIndex: 10 }}>
           <button 
             className="btn btn-primary" 
@@ -210,7 +214,6 @@ function Conditions() {
   );
 }
 
-// サブコンポーネント
 function FilterChip({ label, name, checked, onChange, highlight }) {
   return (
     <label 

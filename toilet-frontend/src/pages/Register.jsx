@@ -5,6 +5,9 @@ import './Register.css';
 // アイコン
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'; // 駐車場用
+import StarIcon from '@mui/icons-material/Star';       // 星（塗）
+import StarBorderIcon from '@mui/icons-material/StarBorder'; // 星（枠）
 
 function Register() {
   const navigate = useNavigate();
@@ -19,6 +22,9 @@ function Register() {
     lat: '',
     lng: '',
     
+    // 新機能：清潔度（1〜5）
+    cleanliness: 3, 
+
     // 新設計：施設カテゴリ (単一選択)
     facilityCategory: '', 
     
@@ -31,7 +37,8 @@ function Register() {
       nursing_room: false,
       washlet: false,
       gender_separated: false,
-      free: false
+      free: false,
+      parking: false // ★追加：駐車場
     }
   });
 
@@ -84,12 +91,17 @@ function Register() {
         }
       }));
     } else {
-      // 通常のフィールド (name, facilityCategory等)
+      // 通常のフィールド
       setFormData(prev => ({
         ...prev,
         [name]: value
       }));
     }
+  };
+
+  // 清潔度スターをクリックした時のハンドラ
+  const handleStarClick = (rating) => {
+    setFormData(prev => ({ ...prev, cleanliness: rating }));
   };
 
   // 4. 送信処理 (新データ形式に変換してPOST)
@@ -107,14 +119,17 @@ function Register() {
 
     // --- 送信データの構築 ---
     // チェックがついている設備キーを配列化し、カンマ区切り文字列にする
-    // 例: "wheelchair,ostomate,free"
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
+
+    // ★重要：清潔度を説明文に「隠しタグ」として埋め込む
+    // 例: "改札横です。[clean:4]"
+    const finalDescription = `${formData.description} [clean:${formData.cleanliness}]`;
 
     const payload = {
       name: formData.name,
       address: formData.address,
-      description: formData.description,
+      description: finalDescription, // 加工後の説明文を送信
       lat: formData.lat,
       lng: formData.lng,
       
@@ -191,6 +206,28 @@ function Register() {
                 <input type="text" name="name" className="input" placeholder="例：つくば駅前公衆トイレ" value={formData.name} onChange={handleChange} required />
               </div>
 
+              {/* ★追加：清潔度入力 */}
+              <div className="form-row">
+                <label className="form-label">清潔度（5段階）</label>
+                <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <div key={star} onClick={() => handleStarClick(star)}>
+                      {star <= formData.cleanliness ? (
+                        <StarIcon sx={{ color: '#ffb400', fontSize: 32 }} />
+                      ) : (
+                        <StarBorderIcon sx={{ color: '#ccc', fontSize: 32 }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p style={{fontSize:'0.8rem', color:'#666', marginTop:'4px'}}>
+                  {formData.cleanliness === 5 ? "最高に綺麗！" : 
+                   formData.cleanliness === 4 ? "綺麗" :
+                   formData.cleanliness === 3 ? "普通" :
+                   formData.cleanliness === 2 ? "少し汚い" : "汚い"}
+                </p>
+              </div>
+
               <div className="form-row">
                 <label className="form-label">施設タイプ <span className="req">必須</span></label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop:'8px' }}>
@@ -222,11 +259,16 @@ function Register() {
               <div className="form-row">
                 <label className="form-label">設備・特徴</label>
                 <div className="checks">
+                  {/* ★追加：駐車場 */}
+                  <label className="check-label" style={{background:'#e8f5e9', border:'1px solid #c8e6c9'}}>
+                    <input type="checkbox" name="parking" checked={formData.conditions.parking} onChange={handleChange} />
+                    <DirectionsCarIcon fontSize="small" color="success" /> 駐車場あり
+                  </label>
+
                   <label className="check-label"><input type="checkbox" name="wheelchair" checked={formData.conditions.wheelchair} onChange={handleChange} /> ♿ 車椅子</label>
                   <label className="check-label"><input type="checkbox" name="diaper" checked={formData.conditions.diaper} onChange={handleChange} /> 👶 オムツ</label>
                   <label className="check-label"><input type="checkbox" name="open24h" checked={formData.conditions.open24h} onChange={handleChange} /> 🕒 24時間</label>
                   <label className="check-label"><input type="checkbox" name="ostomate" checked={formData.conditions.ostomate} onChange={handleChange} /> ➕ オストメイト</label>
-                  {/* ★修正箇所：onChange を handleChange に統一しました */}
                   <label className="check-label"><input type="checkbox" name="nursing_room" checked={formData.conditions.nursing_room} onChange={handleChange} /> 🍼 授乳室</label>
                   <label className="check-label"><input type="checkbox" name="washlet" checked={formData.conditions.washlet} onChange={handleChange} /> 🚽 ウォシュレット</label>
                   <label className="check-label"><input type="checkbox" name="gender_separated" checked={formData.conditions.gender_separated} onChange={handleChange} /> 🚻 男女別</label>
