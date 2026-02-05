@@ -3,6 +3,9 @@ package com.imatoilet.backend;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore; // ★追加
+import lombok.EqualsAndHashCode; // ★追加
+import lombok.ToString; // ★追加
 
 @Entity
 @Table(name = "equipment")
@@ -13,9 +16,12 @@ public class Equipment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Toiletテーブルとの紐付け（多対1）
+    // 修正後:
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "toilet_id", nullable = false)
+    @JsonIgnore             // ★親に戻らない（重要）
+    @ToString.Exclude       // ★Lombokの無限ループ防止
+    @EqualsAndHashCode.Exclude // ★Lombokの無限ループ防止
     private Toilet toilet;
 
     // 設備の種類

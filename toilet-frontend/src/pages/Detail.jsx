@@ -57,7 +57,7 @@ function Detail() {
       setIsFavorite(favs.includes(id));
     }
 
-    // データ受信後の処理（清潔度タグの解析）
+    // データ受信後の処理 (修正版)
     function processToiletData(data) {
       if (!data) {
         setToilet(null);
@@ -65,18 +65,11 @@ function Detail() {
         return;
       }
 
-      // ★清潔度タグ [clean:N] の解析と除去
-      let desc = data.description || "";
-      let cleanScore = 0;
-      
-      const match = desc.match(/\[clean:(\d)\]/);
-      if (match) {
-        cleanScore = parseInt(match[1], 10);
-        desc = desc.replace(/\[clean:\d\]/, "").trim();
-      }
+      // ★修正: 解析ロジックを削除し、DBの値をそのまま使う
+      // 値がなければ 0（星なし）とする
+      setCleanliness(data.cleanliness || 0); 
+      setDisplayDesc(data.description || ""); 
 
-      setCleanliness(cleanScore);
-      setDisplayDesc(desc);
       setToilet(data);
       setLoading(false);
     }

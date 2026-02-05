@@ -105,7 +105,7 @@ function Register() {
     setFormData(prev => ({ ...prev, cleanliness: rating }));
   };
 
-  // 4. 送信処理 (新データ形式に変換してPOST)
+  // 4. 送信処理 (修正版)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -118,27 +118,23 @@ function Register() {
 
     setLoading(true);
 
-    // --- 送信データの構築 ---
-    // チェックがついている設備キーを配列化し、カンマ区切り文字列にする
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
 
-    // ★重要：清潔度を説明文に「隠しタグ」として埋め込む
-    // 例: "改札横です。[clean:4]"
-    const finalDescription = `${formData.description} [clean:${formData.cleanliness}]`;
-
+    // ★修正: descriptionへの埋め込みを廃止し、cleanlinessを独立送信
     const payload = {
       name: formData.name,
       address: formData.address,
-      description: finalDescription, // 加工後の説明文を送信
+      description: formData.description, // 加工せずそのまま送信
       lat: formData.lat,
       lng: formData.lng,
       
-      // 新フィールド
+      cleanliness: formData.cleanliness, // ★独立フィールドとして送信
+      
       facilityCategory: formData.facilityCategory,
       equipment: equipmentStr,
 
-      // 旧フィールド (互換性用)
+      // 旧フィールド互換性
       wheelchair: formData.conditions.wheelchair,
       diaper: formData.conditions.diaper,
       open24h: formData.conditions.open24h
