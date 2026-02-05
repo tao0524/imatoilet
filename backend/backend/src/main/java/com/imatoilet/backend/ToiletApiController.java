@@ -6,7 +6,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/toilets")
-@CrossOrigin(origins = "*") 
+// 変更: プロパティ値から許可オリジンを読み込む
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class ToiletApiController {
 
     @Autowired
@@ -22,7 +23,6 @@ public class ToiletApiController {
         return toiletRepository.save(toilet);
     }
 
-    // ★追加：削除用のAPIエンドポイント
     @DeleteMapping("/{id}")
     public void deleteToilet(@PathVariable Long id) {
         toiletRepository.deleteById(id);

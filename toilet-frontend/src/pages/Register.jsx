@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Register.css'; 
+import { API_BASE_URL } from '../config/api';
 
 // アイコン
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -144,7 +145,7 @@ function Register() {
     };
 
     try {
-      const res = await fetch('http://localhost:8080/api/toilets', {
+      const res = await fetch(API_BASE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

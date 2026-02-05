@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { loadUserToilets } from '../utils'; // 自分で登録したデータを読み込む関数
 import './Favorites.css'; // さっき作ったCSSを読み込み
+import { API_BASE_URL } from '../config/api';
 
 // アイコン素材の読み込み
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -36,7 +37,7 @@ function Favorites() {
       
       // バックエンドAPIから取得
       try {
-        const res = await fetch('http://localhost:8080/api/toilets');
+        const res = await fetch(API_BASE_URL);
         const apiData = await res.json();
         allToilets = [...apiData];
       } catch (err) {

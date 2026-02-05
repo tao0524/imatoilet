@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom'; // useNavigateを追加
 import { loadUserToilets, saveUserToilets } from '../utils'; // saveUserToiletsを追加
+import { API_BASE_URL } from '../config/api';
 
 // アイコンのインポート
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -42,7 +43,7 @@ function Detail() {
       } else {
         // 2. APIから検索
         try {
-          const res = await fetch(`http://localhost:8080/api/toilets`);
+          const res = await fetch(API_BASE_URL);
           const data = await res.json();
           const found = data.find(t => String(t.id) === id);
           processToiletData(found);
@@ -110,8 +111,8 @@ function Detail() {
         navigate('/search');
       } else {
         // APIデータの削除
-        const res = await fetch(`http://localhost:8080/api/toilets/${id}`, {
-          method: 'DELETE'
+        const res = await fetch(`${API_BASE_URL}/${id}`, {
+          method: "DELETE",
         });
         
         if (res.ok) {

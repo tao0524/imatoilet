@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { loadUserToilets, calcDistance } from '../utils';
 import '../search.css';
+import { API_BASE_URL } from '../config/api';
 
 // アイコン
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -52,7 +53,7 @@ function Search() {
     async function fetchData() {
       let data = [];
       try {
-        const res = await fetch('http://localhost:8080/api/toilets');
+        const res = await fetch(API_BASE_URL);
         const json = await res.json();
         data = [...json];
       } catch (err) {

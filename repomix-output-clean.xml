@@ -828,33 +828,6 @@ public class HelloController {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
-package com.imatoilet.backend;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/toilets")
-@CrossOrigin(origins = "*") 
-public class ToiletApiController {
-
-    @Autowired
-    private ToiletRepository toiletRepository;
-
-    @GetMapping
-    public List<Toilet> getAllToilets() {
-        return toiletRepository.findAll();
-    }
-
-    @PostMapping
-    public Toilet createToilet(@RequestBody Toilet toilet) {
-        return toiletRepository.save(toilet);
-    }
-}
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
 package com.imatoilet.backend;
 
@@ -2748,6 +2721,39 @@ public class Toilet {
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
+package com.imatoilet.backend;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/toilets")
+@CrossOrigin(origins = "*") 
+public class ToiletApiController {
+
+    @Autowired
+    private ToiletRepository toiletRepository;
+
+    @GetMapping
+    public List<Toilet> getAllToilets() {
+        return toiletRepository.findAll();
+    }
+
+    @PostMapping
+    public Toilet createToilet(@RequestBody Toilet toilet) {
+        return toiletRepository.save(toilet);
+    }
+
+    // ★追加：削除用のAPIエンドポイント
+    @DeleteMapping("/{id}")
+    public void deleteToilet(@PathVariable Long id) {
+        toiletRepository.deleteById(id);
+    }
+}
+</file>
+
 <file path="toilet-frontend/src/App.jsx">
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
@@ -3141,436 +3147,6 @@ body {
 }
 </file>
 
-<file path="toilet-frontend/src/pages/Conditions.jsx">
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import '../base.css';
-import '../components.css';
-import '../search.css';
-
-// アイコン
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import SearchIcon from '@mui/icons-material/Search';
-import CheckIcon from '@mui/icons-material/Check';
-
-// カテゴリアイコン
-import TrainIcon from '@mui/icons-material/Train';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import ParkIcon from '@mui/icons-material/Park';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import HotelIcon from '@mui/icons-material/Hotel';
-import CategoryIcon from '@mui/icons-material/Category';
-
-function Conditions() {
-  const navigate = useNavigate();
-
-  // --- 状態管理 ---
-  // 1. 旧仕様のフィルター
-  const [filters, setFilters] = useState({
-    wheelchair: false,
-    diaper: false,
-    open24h: false,
-    babyChair: false,
-    public: false,
-    type_park: false,
-    type_station: false,
-    type_mall: false
-  });
-
-  // 2. 新仕様のカテゴリー
-  const [facilityCategory, setFacilityCategory] = useState("");
-
-  // 3. 新仕様の設備条件
-  const [newConditions, setNewConditions] = useState({
-    ostomate: false,
-    nursing_room: false,
-    washlet: false,
-    visual_support: false,
-    gender_separated: false,
-    unisex: false,
-    free: false,
-    paid: false
-  });
-
-  // --- ハンドラ ---
-  const handleFilterChange = (e) => {
-    const { name, checked } = e.target;
-    setFilters(prev => ({ ...prev, [name]: checked }));
-  };
-
-  const handleNewConditionChange = (e) => {
-    const { name, checked } = e.target;
-    setNewConditions(prev => ({ ...prev, [name]: checked }));
-  };
-
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-
-    // 1. 既存フラグの追加
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) params.append(key, 'true');
-    });
-
-    // 2. 新カテゴリの追加
-    if (facilityCategory) {
-      params.append('facilityCategory', facilityCategory);
-    }
-
-    // 3. 新設備の追加
-    Object.keys(newConditions).forEach(key => {
-      if (newConditions[key]) params.append(key, 'true');
-    });
-
-    navigate(`/search?${params.toString()}`);
-  };
-
-  // 施設カテゴリオプション定義
-  const categoryOptions = [
-    { val: 'station', label: '駅・交通', icon: <TrainIcon fontSize="small"/> },
-    { val: 'commercial', label: '商業施設', icon: <StorefrontIcon fontSize="small"/> },
-    { val: 'park', label: '公園・屋外', icon: <ParkIcon fontSize="small"/> },
-    { val: 'public', label: '公共施設', icon: <CategoryIcon fontSize="small"/> },
-    { val: 'medical', label: '医療・福祉', icon: <LocalHospitalIcon fontSize="small"/> },
-    { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="small"/> },
-  ];
-
-  return (
-    <main className="container" style={{ padding: '20px 16px', maxWidth: '800px' }}>
-        
-        {/* ヘッダー */}
-        <div style={{ marginBottom: '24px' }}>
-          <Link to="/" className="back-link">
-            <ArrowBackIcon fontSize="small" /> トップに戻る
-          </Link>
-          <h1 style={{ marginTop:'12px', fontSize:'1.6rem' }}>条件を指定して探す</h1>
-          <p style={{ color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
-            探しているトイレの条件を選択してください。
-          </p>
-        </div>
-
-        {/* フォーム全体 */}
-        <div style={{ display: 'grid', gap: '24px' }}>
-
-          {/* ★順序入れ替え：設備・特徴を上に配置 */}
-          <section className="panel" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display:'flex', alignItems:'center', gap:'8px' }}>
-              <CheckIcon color="primary" /> 設備・特徴
-              <span style={{ fontSize:'0.8rem', color:'#888', fontWeight:'normal' }}>（複数選択可）</span>
-            </h3>
-
-            <div className="filters" style={{ border: 'none', padding: 0, gap: '10px' }}>
-              {/* 重要設備（ハイライト） */}
-              <FilterChip label="♿ 車椅子対応" name="wheelchair" checked={filters.wheelchair} onChange={handleFilterChange} highlight />
-              <FilterChip label="👶 オムツ替え" name="diaper" checked={filters.diaper} onChange={handleFilterChange} highlight />
-              <FilterChip label="➕ オストメイト" name="ostomate" checked={newConditions.ostomate} onChange={handleNewConditionChange} highlight />
-              
-              {/* その他設備 */}
-              <FilterChip label="🕒 24時間利用" name="open24h" checked={filters.open24h} onChange={handleFilterChange} />
-              <FilterChip label="🍼 授乳室" name="nursing_room" checked={newConditions.nursing_room} onChange={handleNewConditionChange} />
-              <FilterChip label="🚽 ウォシュレット" name="washlet" checked={newConditions.washlet} onChange={handleNewConditionChange} />
-              <FilterChip label="🚻 男女別" name="gender_separated" checked={newConditions.gender_separated} onChange={handleNewConditionChange} />
-              <FilterChip label="👶 ベビーチェア" name="babyChair" checked={filters.babyChair} onChange={handleFilterChange} />
-              <FilterChip label="💰 無料" name="free" checked={newConditions.free} onChange={handleNewConditionChange} />
-              <FilterChip label="誰でも利用可" name="public" checked={filters.public} onChange={handleFilterChange} />
-            </div>
-          </section>
-
-          {/* ★順序入れ替え：施設の種類を下に配置 */}
-          <section className="panel" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display:'flex', alignItems:'center', gap:'8px' }}>
-              <CategoryIcon color="primary" /> 施設の種類
-              <span style={{ fontSize:'0.8rem', color:'#888', fontWeight:'normal' }}>（1つ選択）</span>
-            </h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-              
-              {/* 「指定なし」ボタン */}
-              <label 
-                className={`select-card ${facilityCategory === "" ? "active" : ""}`}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  padding: '12px', borderRadius: '12px', border: '1px solid #ddd', cursor: 'pointer',
-                  backgroundColor: facilityCategory === "" ? '#e3f2fd' : '#fff',
-                  borderColor: facilityCategory === "" ? '#1e88e5' : '#eee',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <input 
-                  type="radio" name="facilityCategory" value="" 
-                  checked={facilityCategory === ""} 
-                  onChange={(e) => setFacilityCategory(e.target.value)} 
-                  style={{ display: 'none' }} 
-                />
-                <span style={{ fontWeight: 'bold', color: facilityCategory==="" ? '#1e88e5':'#666' }}>指定なし</span>
-              </label>
-
-              {/* 各カテゴリオプション */}
-              {categoryOptions.map(opt => (
-                <label 
-                  key={opt.val}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '12px', borderRadius: '12px', border: '1px solid #ddd', cursor: 'pointer',
-                    backgroundColor: facilityCategory === opt.val ? '#e3f2fd' : '#fff',
-                    borderColor: facilityCategory === opt.val ? '#1e88e5' : '#eee',
-                    color: facilityCategory === opt.val ? '#1e88e5' : '#555',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                  }}
-                >
-                  <input 
-                    type="radio" name="facilityCategory" value={opt.val} 
-                    checked={facilityCategory === opt.val} 
-                    onChange={(e) => setFacilityCategory(e.target.value)} 
-                    style={{ display: 'none' }} 
-                  />
-                  <div style={{ marginBottom: '4px' }}>{opt.icon}</div>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{opt.label}</span>
-                </label>
-              ))}
-            </div>
-          </section>
-
-        </div>
-
-        {/* 検索実行ボタン */}
-        <div style={{ marginTop: '40px', textAlign: 'center', position: 'sticky', bottom: '20px', zIndex: 10 }}>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleSearch} 
-            style={{ 
-              maxWidth: '400px', 
-              boxShadow: '0 8px 25px rgba(30,136,229,0.4)',
-              height: '56px',
-              fontSize: '1.1rem'
-            }}
-          >
-            <SearchIcon sx={{ mr: 1 }} />
-            この条件で検索する
-          </button>
-        </div>
-
-    </main>
-  );
-}
-
-// サブコンポーネント
-function FilterChip({ label, name, checked, onChange, highlight }) {
-  return (
-    <label 
-      className="chip"
-      style={{
-        backgroundColor: checked ? (highlight ? '#e3f2fd' : '#f0f4f8') : '#fff',
-        borderColor: checked ? '#1e88e5' : '#ddd',
-        color: checked ? '#1e88e5' : '#444',
-        fontWeight: checked ? 'bold' : 'normal',
-        padding: '10px 16px',
-        margin: '0',
-        borderRadius: '99px',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px'
-      }}
-    >
-      <input 
-        type="checkbox" 
-        name={name} 
-        checked={checked} 
-        onChange={onChange}
-        style={{ display: 'none' }}
-      />
-      {checked && <CheckIcon fontSize="inherit" />}
-      <span>{label}</span>
-    </label>
-  );
-}
-
-export default Conditions;
-</file>
-
-<file path="toilet-frontend/src/pages/Detail.jsx">
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { loadUserToilets } from '../utils';
-
-// アイコンのインポート
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import DirectionsIcon from '@mui/icons-material/Directions';
-import StarIcon from '@mui/icons-material/Star';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import WcIcon from '@mui/icons-material/Wc';
-import AccessibleIcon from '@mui/icons-material/Accessible';
-import BabyChangingStationIcon from '@mui/icons-material/BabyChangingStation';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-
-// --- 追加アイコン（新機能用） ---
-import ChildCareIcon from '@mui/icons-material/ChildCare';         // 授乳室
-import MedicalServicesIcon from '@mui/icons-material/MedicalServices'; // オストメイト
-import WaterDropIcon from '@mui/icons-material/WaterDrop';         // ウォシュレット
-import MoneyOffIcon from '@mui/icons-material/MoneyOff';           // 無料
-import CategoryIcon from '@mui/icons-material/Category';           // カテゴリ
-
-function Detail() {
-  const { id } = useParams(); // URLからIDを取得
-  const [toilet, setToilet] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  // お気に入りの読み込みキー
-  const FAV_KEY = "imatoilet_favorites";
-
-  useEffect(() => {
-    async function fetchToilet() {
-      // 1. ローカルデータ（ユーザー登録分）から検索
-      // IDが "u_" で始まる場合はローカルデータ
-      if (id.startsWith('u_')) {
-        const userToilets = loadUserToilets();
-        const found = userToilets.find(t => t.id === id);
-        setToilet(found);
-        setLoading(false);
-      } else {
-        // 2. バックエンドAPIから検索
-        try {
-          // IDは数値型に変換して比較する必要があるかも知れませんが、APIパスは文字列でOK
-          const res = await fetch(`http://localhost:8080/api/toilets`);
-          const data = await res.json();
-          // APIには個別のGETエンドポイントを作っていないため、全件から探します
-          const found = data.find(t => String(t.id) === id);
-          setToilet(found);
-        } catch (error) {
-          console.error("Fetch error:", error);
-        } finally {
-          setLoading(false);
-        }
-      }
-      
-      // お気に入り状態の確認
-      const favs = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
-      setIsFavorite(favs.includes(id));
-    }
-
-    fetchToilet();
-  }, [id]);
-
-  // お気に入り切り替え処理
-  const toggleFavorite = () => {
-    let favs = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
-    if (isFavorite) {
-      favs = favs.filter(favId => favId !== id);
-    } else {
-      favs.push(id);
-    }
-    localStorage.setItem(FAV_KEY, JSON.stringify(favs));
-    setIsFavorite(!isFavorite);
-  };
-
-  if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
-  if (!toilet) return <div className="container" style={{padding:'20px'}}>データが見つかりませんでした。<br /><Link to="/search">検索に戻る</Link></div>;
-
-  // Googleマップのナビ用URL
-  const googleMapUrl = `https://www.google.com/maps/dir/?api=1&destination=${toilet.lat},${toilet.lng}`;
-
-  // --- 新機能：データ解析 ---
-  // 1. 施設カテゴリの日本語マッピング
-  const categoryMap = {
-    station: '駅・交通',
-    commercial: '商業施設',
-    convenience: 'コンビニ・店',
-    park: '公園・屋外',
-    public: '公共施設',
-    medical: '医療・福祉',
-    hotel_tourism: '観光・宿泊',
-    other: 'その他'
-  };
-
-  // 2. equipment文字列（カンマ区切り）を配列に変換
-  const eqList = toilet.equipment ? toilet.equipment.split(',').filter(Boolean) : [];
-
-  // 3. 設備があるかどうかの判定（既存フラグ + 新リスト）
-  const hasAnyEquipment = toilet.wheelchair || toilet.diaper || toilet.open24h || eqList.length > 0;
-
-  return (
-    <main className="detail-main">
-      <div className="container">
-        
-        {/* ナビゲーション */}
-        <div className="detail-nav">
-          <Link to="/search" className="back-link">
-            <ArrowBackIcon fontSize="small" /> 検索結果に戻る
-          </Link>
-        </div>
-
-        {/* メインカード */}
-        <article className="detail-card">
-          
-          {/* 画像（あれば表示） */}
-          {toilet.image && (
-            <div className="detail-image">
-              <img src={toilet.image} alt={toilet.name} />
-            </div>
-          )}
-
-          <header className="detail-header">
-            <h1 className="detail-title">{toilet.name}</h1>
-            <button className="fav-btn" onClick={toggleFavorite}>
-              {isFavorite ? <StarIcon sx={{color: '#ffc107'}} /> : <StarBorderIcon />}
-              <span>{isFavorite ? '登録済み' : 'お気に入り'}</span>
-            </button>
-          </header>
-
-          <div className="detail-tags">
-             {/* --- 新機能：施設カテゴリ表示 --- */}
-             {toilet.facilityCategory && categoryMap[toilet.facilityCategory] && (
-               <span className="tag" style={{background:'#e3f2fd', color:'#0d47a1', border:'1px solid #bbdefb', fontWeight:'bold'}}>
-                 <CategoryIcon fontSize="small" /> {categoryMap[toilet.facilityCategory]}
-               </span>
-             )}
-
-             {/* --- 既存設備アイコン (Booleanフラグ準拠) --- */}
-             {toilet.wheelchair && <span className="tag tag-ok"><AccessibleIcon fontSize="small"/> 車椅子OK</span>}
-             {toilet.diaper && <span className="tag tag-ok"><BabyChangingStationIcon fontSize="small"/> オムツ替え</span>}
-             {toilet.open24h && <span className="tag tag-ok"><AccessTimeIcon fontSize="small"/> 24時間</span>}
-
-             {/* --- 新機能：追加設備アイコン (equipment文字列解析) --- */}
-             {eqList.includes('ostomate') && <span className="tag tag-ok"><MedicalServicesIcon fontSize="small"/> オストメイト</span>}
-             {eqList.includes('nursing_room') && <span className="tag tag-ok"><ChildCareIcon fontSize="small"/> 授乳室</span>}
-             {eqList.includes('washlet') && <span className="tag tag-ok"><WaterDropIcon fontSize="small"/> ウォシュレット</span>}
-             {eqList.includes('gender_separated') && <span className="tag tag-ok"><WcIcon fontSize="small"/> 男女別</span>}
-             {eqList.includes('free') && <span className="tag tag-ok"><MoneyOffIcon fontSize="small"/> 無料</span>}
-
-             {/* 設備情報なしの場合 */}
-             {!hasAnyEquipment && <span className="tag">設備情報なし</span>}
-          </div>
-
-          <section className="detail-info">
-            <h3 className="info-label">住所</h3>
-            <p className="info-text">{toilet.address || "不明"}</p>
-
-            <h3 className="info-label">詳細・備考</h3>
-            <p className="info-text">{toilet.description || "情報なし"}</p>
-          </section>
-
-          {/* アクションボタン */}
-          <footer className="detail-actions">
-            <a href={googleMapUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary nav-btn">
-              <DirectionsIcon sx={{mr: 1}} />
-              Googleマップでナビ開始
-            </a>
-          </footer>
-
-        </article>
-      </div>
-    </main>
-  );
-}
-
-export default Detail;
-</file>
-
 <file path="toilet-frontend/src/pages/Detail.test.jsx">
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -3733,6 +3309,533 @@ function Home() {
 export default Home;
 </file>
 
+<file path="toilet-frontend/vitest.config.js">
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom', // ブラウザのふりをする設定
+    globals: true,        // describeやtestをimportなしで使えるようにする
+    setupFiles: './src/setupTests.js', // ★この行を追加（セットアップファイルを読み込む）
+  },
+});
+</file>
+
+<file path="toilet-frontend/src/pages/Conditions.jsx">
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import '../base.css';
+import '../components.css';
+import '../search.css';
+
+// アイコン
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SearchIcon from '@mui/icons-material/Search';
+import CheckIcon from '@mui/icons-material/Check';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'; // ★追加
+
+// カテゴリアイコン
+import TrainIcon from '@mui/icons-material/Train';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ParkIcon from '@mui/icons-material/Park';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import HotelIcon from '@mui/icons-material/Hotel';
+import CategoryIcon from '@mui/icons-material/Category';
+
+function Conditions() {
+  const navigate = useNavigate();
+
+  // --- 状態管理 ---
+  // 1. 旧仕様のフィルター
+  const [filters, setFilters] = useState({
+    wheelchair: false,
+    diaper: false,
+    open24h: false,
+    babyChair: false,
+    public: false,
+    type_park: false,
+    type_station: false,
+    type_mall: false
+  });
+
+  // 2. 新仕様のカテゴリー
+  const [facilityCategory, setFacilityCategory] = useState("");
+
+  // 3. 新仕様の設備条件
+  const [newConditions, setNewConditions] = useState({
+    parking: false, // ★追加
+    ostomate: false,
+    nursing_room: false,
+    washlet: false,
+    visual_support: false,
+    gender_separated: false,
+    unisex: false,
+    free: false,
+    paid: false
+  });
+
+  // --- ハンドラ ---
+  const handleFilterChange = (e) => {
+    const { name, checked } = e.target;
+    setFilters(prev => ({ ...prev, [name]: checked }));
+  };
+
+  const handleNewConditionChange = (e) => {
+    const { name, checked } = e.target;
+    setNewConditions(prev => ({ ...prev, [name]: checked }));
+  };
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+
+    // 1. 既存フラグの追加
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, 'true');
+    });
+
+    // 2. 新カテゴリの追加
+    if (facilityCategory) {
+      params.append('facilityCategory', facilityCategory);
+    }
+
+    // 3. 新設備の追加 (parkingもここで自動的に追加される)
+    Object.keys(newConditions).forEach(key => {
+      if (newConditions[key]) params.append(key, 'true');
+    });
+
+    navigate(`/search?${params.toString()}`);
+  };
+
+  // 施設カテゴリオプション定義
+  const categoryOptions = [
+    { val: 'station', label: '駅・交通', icon: <TrainIcon fontSize="small"/> },
+    { val: 'commercial', label: '商業施設', icon: <StorefrontIcon fontSize="small"/> },
+    { val: 'park', label: '公園・屋外', icon: <ParkIcon fontSize="small"/> },
+    { val: 'public', label: '公共施設', icon: <CategoryIcon fontSize="small"/> },
+    { val: 'medical', label: '医療・福祉', icon: <LocalHospitalIcon fontSize="small"/> },
+    { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="small"/> },
+  ];
+
+  return (
+    <main className="container" style={{ padding: '20px 16px', maxWidth: '800px' }}>
+        
+        {/* ヘッダー */}
+        <div style={{ marginBottom: '24px' }}>
+          <Link to="/" className="back-link">
+            <ArrowBackIcon fontSize="small" /> トップに戻る
+          </Link>
+          <h1 style={{ marginTop:'12px', fontSize:'1.6rem' }}>条件を指定して探す</h1>
+          <p style={{ color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
+            探しているトイレの条件を選択してください。
+          </p>
+        </div>
+
+        {/* フォーム全体 */}
+        <div style={{ display: 'grid', gap: '24px' }}>
+
+          <section className="panel" style={{ padding: '20px' }}>
+            <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display:'flex', alignItems:'center', gap:'8px' }}>
+              <CheckIcon color="primary" /> 設備・特徴
+              <span style={{ fontSize:'0.8rem', color:'#888', fontWeight:'normal' }}>（複数選択可）</span>
+            </h3>
+
+            <div className="filters" style={{ border: 'none', padding: 0, gap: '10px' }}>
+              
+              {/* ★追加：駐車場（目立たせる） */}
+              <FilterChip 
+                label="🚗 駐車場あり" 
+                name="parking" 
+                checked={newConditions.parking} 
+                onChange={handleNewConditionChange} 
+                highlight 
+              />
+
+              <FilterChip label="♿ 車椅子対応" name="wheelchair" checked={filters.wheelchair} onChange={handleFilterChange} highlight />
+              <FilterChip label="👶 オムツ替え" name="diaper" checked={filters.diaper} onChange={handleFilterChange} highlight />
+              <FilterChip label="➕ オストメイト" name="ostomate" checked={newConditions.ostomate} onChange={handleNewConditionChange} highlight />
+              
+              <FilterChip label="🕒 24時間利用" name="open24h" checked={filters.open24h} onChange={handleFilterChange} />
+              <FilterChip label="🍼 授乳室" name="nursing_room" checked={newConditions.nursing_room} onChange={handleNewConditionChange} />
+              <FilterChip label="🚽 ウォシュレット" name="washlet" checked={newConditions.washlet} onChange={handleNewConditionChange} />
+              <FilterChip label="🚻 男女別" name="gender_separated" checked={newConditions.gender_separated} onChange={handleNewConditionChange} />
+              <FilterChip label="👶 ベビーチェア" name="babyChair" checked={filters.babyChair} onChange={handleFilterChange} />
+              <FilterChip label="💰 無料" name="free" checked={newConditions.free} onChange={handleNewConditionChange} />
+              <FilterChip label="誰でも利用可" name="public" checked={filters.public} onChange={handleFilterChange} />
+            </div>
+          </section>
+
+          <section className="panel" style={{ padding: '20px' }}>
+            <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display:'flex', alignItems:'center', gap:'8px' }}>
+              <CategoryIcon color="primary" /> 施設の種類
+              <span style={{ fontSize:'0.8rem', color:'#888', fontWeight:'normal' }}>（1つ選択）</span>
+            </h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+              <label 
+                className={`select-card ${facilityCategory === "" ? "active" : ""}`}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  padding: '12px', borderRadius: '12px', border: '1px solid #ddd', cursor: 'pointer',
+                  backgroundColor: facilityCategory === "" ? '#e3f2fd' : '#fff',
+                  borderColor: facilityCategory === "" ? '#1e88e5' : '#eee',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <input 
+                  type="radio" name="facilityCategory" value="" 
+                  checked={facilityCategory === ""} 
+                  onChange={(e) => setFacilityCategory(e.target.value)} 
+                  style={{ display: 'none' }} 
+                />
+                <span style={{ fontWeight: 'bold', color: facilityCategory==="" ? '#1e88e5':'#666' }}>指定なし</span>
+              </label>
+
+              {categoryOptions.map(opt => (
+                <label 
+                  key={opt.val}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    padding: '12px', borderRadius: '12px', border: '1px solid #ddd', cursor: 'pointer',
+                    backgroundColor: facilityCategory === opt.val ? '#e3f2fd' : '#fff',
+                    borderColor: facilityCategory === opt.val ? '#1e88e5' : '#eee',
+                    color: facilityCategory === opt.val ? '#1e88e5' : '#555',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                  }}
+                >
+                  <input 
+                    type="radio" name="facilityCategory" value={opt.val} 
+                    checked={facilityCategory === opt.val} 
+                    onChange={(e) => setFacilityCategory(e.target.value)} 
+                    style={{ display: 'none' }} 
+                  />
+                  <div style={{ marginBottom: '4px' }}>{opt.icon}</div>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+
+        </div>
+
+        <div style={{ marginTop: '40px', textAlign: 'center', position: 'sticky', bottom: '20px', zIndex: 10 }}>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleSearch} 
+            style={{ 
+              maxWidth: '400px', 
+              boxShadow: '0 8px 25px rgba(30,136,229,0.4)',
+              height: '56px',
+              fontSize: '1.1rem'
+            }}
+          >
+            <SearchIcon sx={{ mr: 1 }} />
+            この条件で検索する
+          </button>
+        </div>
+
+    </main>
+  );
+}
+
+function FilterChip({ label, name, checked, onChange, highlight }) {
+  return (
+    <label 
+      className="chip"
+      style={{
+        backgroundColor: checked ? (highlight ? '#e3f2fd' : '#f0f4f8') : '#fff',
+        borderColor: checked ? '#1e88e5' : '#ddd',
+        color: checked ? '#1e88e5' : '#444',
+        fontWeight: checked ? 'bold' : 'normal',
+        padding: '10px 16px',
+        margin: '0',
+        borderRadius: '99px',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px'
+      }}
+    >
+      <input 
+        type="checkbox" 
+        name={name} 
+        checked={checked} 
+        onChange={onChange}
+        style={{ display: 'none' }}
+      />
+      {checked && <CheckIcon fontSize="inherit" />}
+      <span>{label}</span>
+    </label>
+  );
+}
+
+export default Conditions;
+</file>
+
+<file path="toilet-frontend/src/pages/Detail.jsx">
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom'; // useNavigateを追加
+import { loadUserToilets, saveUserToilets } from '../utils'; // saveUserToiletsを追加
+
+// アイコンのインポート
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DirectionsIcon from '@mui/icons-material/Directions';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import WcIcon from '@mui/icons-material/Wc';
+import AccessibleIcon from '@mui/icons-material/Accessible';
+import BabyChangingStationIcon from '@mui/icons-material/BabyChangingStation';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever'; // ★追加：削除アイコン
+
+// --- 追加アイコン ---
+import ChildCareIcon from '@mui/icons-material/ChildCare';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import MoneyOffIcon from '@mui/icons-material/MoneyOff';
+import CategoryIcon from '@mui/icons-material/Category';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+
+function Detail() {
+  const { id } = useParams();
+  const navigate = useNavigate(); // ★追加
+  const [toilet, setToilet] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [cleanliness, setCleanliness] = useState(null);
+  const [displayDesc, setDisplayDesc] = useState("");
+
+  const FAV_KEY = "imatoilet_favorites";
+
+  useEffect(() => {
+    async function fetchToilet() {
+      // 1. ローカルデータから検索
+      if (id.startsWith('u_')) {
+        const userToilets = loadUserToilets();
+        const found = userToilets.find(t => t.id === id);
+        processToiletData(found);
+      } else {
+        // 2. APIから検索
+        try {
+          const res = await fetch(`http://localhost:8080/api/toilets`);
+          const data = await res.json();
+          const found = data.find(t => String(t.id) === id);
+          processToiletData(found);
+        } catch (error) {
+          console.error("Fetch error:", error);
+          setLoading(false);
+        }
+      }
+      
+      const favs = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
+      setIsFavorite(favs.includes(id));
+    }
+
+    // データ受信後の処理（清潔度タグの解析）
+    function processToiletData(data) {
+      if (!data) {
+        setToilet(null);
+        setLoading(false);
+        return;
+      }
+
+      // ★清潔度タグ [clean:N] の解析と除去
+      let desc = data.description || "";
+      let cleanScore = 0;
+      
+      const match = desc.match(/\[clean:(\d)\]/);
+      if (match) {
+        cleanScore = parseInt(match[1], 10);
+        desc = desc.replace(/\[clean:\d\]/, "").trim();
+      }
+
+      setCleanliness(cleanScore);
+      setDisplayDesc(desc);
+      setToilet(data);
+      setLoading(false);
+    }
+
+    fetchToilet();
+  }, [id]);
+
+  const toggleFavorite = () => {
+    let favs = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
+    if (isFavorite) {
+      favs = favs.filter(favId => favId !== id);
+    } else {
+      favs.push(id);
+    }
+    localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+    setIsFavorite(!isFavorite);
+  };
+
+  // ★追加：削除ハンドラ
+  const handleDelete = async () => {
+    if (!window.confirm("本当にこのトイレ情報を削除しますか？\n（この操作は取り消せません）")) {
+      return;
+    }
+
+    try {
+      if (id.startsWith('u_')) {
+        // ローカルデータの削除
+        const current = loadUserToilets();
+        const next = current.filter(t => t.id !== id);
+        saveUserToilets(next);
+        alert("削除しました（ブラウザ保存データ）");
+        navigate('/search');
+      } else {
+        // APIデータの削除
+        const res = await fetch(`http://localhost:8080/api/toilets/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (res.ok) {
+          alert("削除しました");
+          navigate('/search');
+        } else {
+          alert("削除に失敗しました");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert("エラーが発生しました");
+    }
+  };
+
+  if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
+  if (!toilet) return <div className="container" style={{padding:'20px'}}>データが見つかりませんでした。<br /><Link to="/search">検索に戻る</Link></div>;
+
+  const googleMapUrl = `https://www.google.com/maps/dir/?api=1&destination=${toilet.lat},${toilet.lng}`;
+
+  const categoryMap = {
+    station: '駅・交通',
+    commercial: '商業施設',
+    convenience: 'コンビニ・店',
+    park: '公園・屋外',
+    public: '公共施設',
+    medical: '医療・福祉',
+    hotel_tourism: '観光・宿泊',
+    other: 'その他'
+  };
+
+  const eqList = toilet.equipment ? toilet.equipment.split(',').filter(Boolean) : [];
+  const hasAnyEquipment = toilet.wheelchair || toilet.diaper || toilet.open24h || eqList.length > 0;
+
+  return (
+    <main className="detail-main">
+      <div className="container">
+        
+        <div className="detail-nav">
+          <Link to="/search" className="back-link">
+            <ArrowBackIcon fontSize="small" /> 検索結果に戻る
+          </Link>
+        </div>
+
+        <article className="detail-card">
+          
+          {toilet.image && (
+            <div className="detail-image">
+              <img src={toilet.image} alt={toilet.name} />
+            </div>
+          )}
+
+          <header className="detail-header">
+            <div>
+              <h1 className="detail-title">{toilet.name}</h1>
+              {cleanliness > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', color: '#ffb400', marginTop: '4px' }}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    star <= cleanliness ? <StarIcon key={star} fontSize="small" /> : <StarBorderIcon key={star} fontSize="small" />
+                  ))}
+                  <span style={{ fontSize: '0.85rem', color: '#666', marginLeft: '6px' }}>
+                    (清潔度: {cleanliness})
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <button className="fav-btn" onClick={toggleFavorite}>
+              {isFavorite ? <StarIcon sx={{color: '#ffc107'}} /> : <StarBorderIcon />}
+              <span>{isFavorite ? '登録済み' : 'お気に入り'}</span>
+            </button>
+          </header>
+
+          <div className="detail-tags">
+             {toilet.facilityCategory && categoryMap[toilet.facilityCategory] && (
+               <span className="tag" style={{background:'#e3f2fd', color:'#0d47a1', border:'1px solid #bbdefb', fontWeight:'bold'}}>
+                 <CategoryIcon fontSize="small" /> {categoryMap[toilet.facilityCategory]}
+               </span>
+             )}
+
+             {eqList.includes('parking') && (
+               <span className="tag tag-ok" style={{background:'#e8f5e9', color:'#2e7d32', borderColor:'#c8e6c9'}}>
+                 <DirectionsCarIcon fontSize="small"/> 駐車場あり
+               </span>
+             )}
+
+             {toilet.wheelchair && <span className="tag tag-ok"><AccessibleIcon fontSize="small"/> 車椅子OK</span>}
+             {toilet.diaper && <span className="tag tag-ok"><BabyChangingStationIcon fontSize="small"/> オムツ替え</span>}
+             {toilet.open24h && <span className="tag tag-ok"><AccessTimeIcon fontSize="small"/> 24時間</span>}
+
+             {eqList.includes('ostomate') && <span className="tag tag-ok"><MedicalServicesIcon fontSize="small"/> オストメイト</span>}
+             {eqList.includes('nursing_room') && <span className="tag tag-ok"><ChildCareIcon fontSize="small"/> 授乳室</span>}
+             {eqList.includes('washlet') && <span className="tag tag-ok"><WaterDropIcon fontSize="small"/> ウォシュレット</span>}
+             {eqList.includes('gender_separated') && <span className="tag tag-ok"><WcIcon fontSize="small"/> 男女別</span>}
+             {eqList.includes('free') && <span className="tag tag-ok"><MoneyOffIcon fontSize="small"/> 無料</span>}
+
+             {!hasAnyEquipment && !eqList.includes('parking') && <span className="tag">設備情報なし</span>}
+          </div>
+
+          <section className="detail-info">
+            <h3 className="info-label">住所</h3>
+            <p className="info-text">{toilet.address || "不明"}</p>
+
+            <h3 className="info-label">詳細・備考</h3>
+            <p className="info-text">{displayDesc || "情報なし"}</p>
+          </section>
+
+          <footer className="detail-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <a href={googleMapUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary nav-btn">
+              <DirectionsIcon sx={{mr: 1}} />
+              Googleマップでナビ開始
+            </a>
+
+            {/* ★追加：削除ボタン */}
+            <button 
+              onClick={handleDelete}
+              style={{ 
+                background: 'transparent', 
+                border: '1px solid #ef5350', 
+                color: '#ef5350', 
+                padding: '12px', 
+                borderRadius: '14px', 
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: '10px'
+              }}
+            >
+              <DeleteForeverIcon sx={{ mr: 1 }} />
+              この情報を削除する
+            </button>
+          </footer>
+
+        </article>
+      </div>
+    </main>
+  );
+}
+
+export default Detail;
+</file>
+
 <file path="toilet-frontend/src/pages/Register.jsx">
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -3741,6 +3844,9 @@ import './Register.css';
 // アイコン
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'; // 駐車場用
+import StarIcon from '@mui/icons-material/Star';       // 星（塗）
+import StarBorderIcon from '@mui/icons-material/StarBorder'; // 星（枠）
 
 function Register() {
   const navigate = useNavigate();
@@ -3755,6 +3861,9 @@ function Register() {
     lat: '',
     lng: '',
     
+    // 新機能：清潔度（1〜5）
+    cleanliness: 3, 
+
     // 新設計：施設カテゴリ (単一選択)
     facilityCategory: '', 
     
@@ -3767,7 +3876,8 @@ function Register() {
       nursing_room: false,
       washlet: false,
       gender_separated: false,
-      free: false
+      free: false,
+      parking: false // ★追加：駐車場
     }
   });
 
@@ -3820,12 +3930,17 @@ function Register() {
         }
       }));
     } else {
-      // 通常のフィールド (name, facilityCategory等)
+      // 通常のフィールド
       setFormData(prev => ({
         ...prev,
         [name]: value
       }));
     }
+  };
+
+  // 清潔度スターをクリックした時のハンドラ
+  const handleStarClick = (rating) => {
+    setFormData(prev => ({ ...prev, cleanliness: rating }));
   };
 
   // 4. 送信処理 (新データ形式に変換してPOST)
@@ -3843,14 +3958,17 @@ function Register() {
 
     // --- 送信データの構築 ---
     // チェックがついている設備キーを配列化し、カンマ区切り文字列にする
-    // 例: "wheelchair,ostomate,free"
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
+
+    // ★重要：清潔度を説明文に「隠しタグ」として埋め込む
+    // 例: "改札横です。[clean:4]"
+    const finalDescription = `${formData.description} [clean:${formData.cleanliness}]`;
 
     const payload = {
       name: formData.name,
       address: formData.address,
-      description: formData.description,
+      description: finalDescription, // 加工後の説明文を送信
       lat: formData.lat,
       lng: formData.lng,
       
@@ -3927,6 +4045,28 @@ function Register() {
                 <input type="text" name="name" className="input" placeholder="例：つくば駅前公衆トイレ" value={formData.name} onChange={handleChange} required />
               </div>
 
+              {/* ★追加：清潔度入力 */}
+              <div className="form-row">
+                <label className="form-label">清潔度（5段階）</label>
+                <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <div key={star} onClick={() => handleStarClick(star)}>
+                      {star <= formData.cleanliness ? (
+                        <StarIcon sx={{ color: '#ffb400', fontSize: 32 }} />
+                      ) : (
+                        <StarBorderIcon sx={{ color: '#ccc', fontSize: 32 }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p style={{fontSize:'0.8rem', color:'#666', marginTop:'4px'}}>
+                  {formData.cleanliness === 5 ? "最高に綺麗！" : 
+                   formData.cleanliness === 4 ? "綺麗" :
+                   formData.cleanliness === 3 ? "普通" :
+                   formData.cleanliness === 2 ? "少し汚い" : "汚い"}
+                </p>
+              </div>
+
               <div className="form-row">
                 <label className="form-label">施設タイプ <span className="req">必須</span></label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop:'8px' }}>
@@ -3958,11 +4098,16 @@ function Register() {
               <div className="form-row">
                 <label className="form-label">設備・特徴</label>
                 <div className="checks">
+                  {/* ★追加：駐車場 */}
+                  <label className="check-label" style={{background:'#e8f5e9', border:'1px solid #c8e6c9'}}>
+                    <input type="checkbox" name="parking" checked={formData.conditions.parking} onChange={handleChange} />
+                    <DirectionsCarIcon fontSize="small" color="success" /> 駐車場あり
+                  </label>
+
                   <label className="check-label"><input type="checkbox" name="wheelchair" checked={formData.conditions.wheelchair} onChange={handleChange} /> ♿ 車椅子</label>
                   <label className="check-label"><input type="checkbox" name="diaper" checked={formData.conditions.diaper} onChange={handleChange} /> 👶 オムツ</label>
                   <label className="check-label"><input type="checkbox" name="open24h" checked={formData.conditions.open24h} onChange={handleChange} /> 🕒 24時間</label>
                   <label className="check-label"><input type="checkbox" name="ostomate" checked={formData.conditions.ostomate} onChange={handleChange} /> ➕ オストメイト</label>
-                  {/* ★修正箇所：onChange を handleChange に統一しました */}
                   <label className="check-label"><input type="checkbox" name="nursing_room" checked={formData.conditions.nursing_room} onChange={handleChange} /> 🍼 授乳室</label>
                   <label className="check-label"><input type="checkbox" name="washlet" checked={formData.conditions.washlet} onChange={handleChange} /> 🚽 ウォシュレット</label>
                   <label className="check-label"><input type="checkbox" name="gender_separated" checked={formData.conditions.gender_separated} onChange={handleChange} /> 🚻 男女別</label>
@@ -3991,20 +4136,6 @@ function Register() {
 }
 
 export default Register;
-</file>
-
-<file path="toilet-frontend/vitest.config.js">
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom', // ブラウザのふりをする設定
-    globals: true,        // describeやtestをimportなしで使えるようにする
-    setupFiles: './src/setupTests.js', // ★この行を追加（セットアップファイルを読み込む）
-  },
-});
 </file>
 
 <file path="toilet-frontend/src/pages/Search.jsx">
