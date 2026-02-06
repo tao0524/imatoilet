@@ -647,98 +647,6 @@ try {
 Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
 </file>
 
-<file path="backend/backend/pom.xml">
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.9</version>
-    <relativePath/> </parent>
-  <groupId>com.imatoilet</groupId>
-  <artifactId>backend</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>backend</name>
-  <description>Imatoilet Backend API</description>
-
-  <properties>
-    <java.version>21</java.version>
-  </properties>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-thymeleaf</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-            </exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
-</project>
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/BackendApplication.java">
 package com.imatoilet.backend;
 
@@ -780,40 +688,6 @@ public class DataLoader implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // 現在は何もしない設定です
-    }
-}
-</file>
-
-<file path="backend/backend/src/main/java/com/imatoilet/backend/Equipment.java">
-package com.imatoilet.backend;
-
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Entity
-@Table(name = "equipment")
-@Data
-@NoArgsConstructor
-public class Equipment {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    // Toiletテーブルとの紐付け（多対1）
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "toilet_id", nullable = false)
-    private Toilet toilet;
-
-    // 設備の種類
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private EquipmentType type;
-
-    // コンストラクタ
-    public Equipment(Toilet toilet, EquipmentType type) {
-        this.toilet = toilet;
-        this.type = type;
     }
 }
 </file>
@@ -906,17 +780,6 @@ public class HelloController {
         repository.deleteById(id); // 指定されたIDのデータを削除する
         return "redirect:/";       // 一覧画面に戻る
     }
-}
-</file>
-
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
-package com.imatoilet.backend;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 }
 </file>
 
@@ -2442,88 +2305,6 @@ function ListPanel({ filteredToilets, currentLocation }) {
 export default ListPanel;
 </file>
 
-<file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
-import { useEffect, useRef, useState } from 'react';
-
-function MapPanel({ filteredToilets, currentLocation }) {
-  const [mapObj, setMapObj] = useState(null);
-  const markersRef = useRef(null);
-
-  // 地図初期化
-  useEffect(() => {
-    if (!window.L) return;
-    
-    // 既に地図がある場合はクリーンアップ（通常はReactのstrict mode等で2回呼ばれるのを防ぐ）
-    const container = window.L.DomUtil.get('map');
-    if (container && container._leaflet_id) {
-        container._leaflet_id = null;
-    }
-
-    const map = window.L.map('map').setView([36.0825, 140.1120], 13);
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    const layerGroup = window.L.layerGroup().addTo(map);
-    markersRef.current = layerGroup;
-    setMapObj(map);
-
-    return () => {
-      map.remove();
-      setMapObj(null);
-    };
-  }, []);
-
-  // ピン描画更新
-  useEffect(() => {
-    if (!mapObj || !markersRef.current || !window.L) return;
-    const layerGroup = markersRef.current;
-    layerGroup.clearLayers();
-
-    filteredToilets.forEach(t => {
-      if (t.lat && t.lng) {
-        const marker = window.L.marker([t.lat, t.lng]).addTo(layerGroup);
-        const distStr = t.distance ? `<br>約 ${Math.round(t.distance * 1000)} m` : "";
-        
-        // ピンのポップアップ内容
-        marker.bindPopup(`
-          <b>${t.name}</b>${distStr}<br>
-          <span style="font-size:0.85rem; color:#666;">
-            ${t.facilityCategory ? `[${t.facilityCategory}]` : ''} 
-            ${t.wheelchair ? '♿' : ''}
-            ${t.diaper ? '👶' : ''}
-          </span><br>
-          <a href="/detail/${t.id}">詳細を見る</a>
-        `);
-      }
-    });
-    
-    if (currentLocation) {
-      window.L.circleMarker([currentLocation.lat, currentLocation.lng], {
-        color: '#ff5722', radius: 8, fillColor: '#ff5722', fillOpacity: 0.8
-      }).addTo(mapObj).bindPopup("現在地（検索基準）");
-      
-      // 現在地が変わったらそこを中心に移動
-      mapObj.setView([currentLocation.lat, currentLocation.lng], 15);
-    }
-  }, [filteredToilets, mapObj, currentLocation]);
-
-  return (
-    <section className="panel panel--map">
-      <header className="panel-head">
-        <h2 className="panel-title">地図</h2>
-        <div className="panel-meta">ピンをクリックすると詳細を開けます</div>
-      </header>
-      <div className="map-area">
-        <div id="map"></div>
-      </div>
-    </section>
-  );
-}
-
-export default MapPanel;
-</file>
-
 <file path="toilet-frontend/src/pages/Search/PlaceSearch.jsx">
 import React from 'react';
 
@@ -2977,108 +2758,158 @@ export default defineConfig({
 })
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
+<file path="backend/backend/pom.xml">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.9</version>
+    <relativePath/> </parent>
+  <groupId>com.imatoilet</groupId>
+  <artifactId>backend</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>backend</name>
+  <description>Imatoilet Backend API</description>
+
+  <properties>
+    <java.version>21</java.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/Equipment.java">
 package com.imatoilet.backend;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.PrePersist; // 追加
-import jakarta.persistence.PreUpdate;  // 追加
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore; // ★追加
+import lombok.EqualsAndHashCode; // ★追加
+import lombok.ToString; // ★追加
 
 @Entity
-@Table(name = "toilet")
+@Table(name = "equipment")
 @Data
-public class Toilet {
+@NoArgsConstructor
+public class Equipment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // --- 既存フィールド（後方互換性のため維持） ---
-    private String name;
-    private Double lat;
-    private Double lng;
-    private String address;
-    private Boolean publicUse;
-    private Boolean diaper;
-    private Boolean wheelchair;
-    private Boolean typePark;
-    private Boolean typeStation;
-    private Boolean typeMall;
-    private String description;
-    private Boolean open24h;
+    // 修正後:
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "toilet_id", nullable = false)
+    @JsonIgnore             // ★親に戻らない（重要）
+    @ToString.Exclude       // ★Lombokの無限ループ防止
+    @EqualsAndHashCode.Exclude // ★Lombokの無限ループ防止
+    private Toilet toilet;
 
-    // --- 新設計フィールド（Step A0: 追加済み） ---
-    private String facilityCategory; // station, commercial, park, etc.
-    private String locationCategory; // downtown, residential, etc.
-    private String equipment;        // wheelchair, diaper_table, open_24h, etc. (カンマ区切り)
-    private String usageConditions;  // staff_required, customer_only, etc.
-    private String atmosphere;       // clean, bright, etc.
+    // 設備の種類
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EquipmentType type;
 
-    // --- Step A1: 互換レイヤー（自動同期ロジック） ---
-    
-    @PrePersist
-    @PreUpdate
-    public void syncCompatibility() {
-        syncOldToNew();
-        syncNewToOld();
+    // コンストラクタ
+    public Equipment(Toilet toilet, EquipmentType type) {
+        this.toilet = toilet;
+        this.type = type;
     }
+}
+</file>
 
-    // 旧仕様の入力 → 新フィールドへ反映
-    private void syncOldToNew() {
-        // 1. 施設カテゴリの変換
-        // (まだ新カテゴリが空の場合のみ、旧フラグから推測して埋める)
-        if (this.facilityCategory == null || this.facilityCategory.isEmpty()) {
-            if (Boolean.TRUE.equals(typeStation)) this.facilityCategory = "station";
-            else if (Boolean.TRUE.equals(typePark)) this.facilityCategory = "park";
-            else if (Boolean.TRUE.equals(typeMall)) this.facilityCategory = "commercial";
-        }
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
+package com.imatoilet.backend;
 
-        // 2. 設備の変換（カンマ区切り文字列として構築）
-        // 現在の equipment 文字列を取得（nullなら空文字）
-        String currentEq = (this.equipment == null) ? "" : this.equipment;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.lang.NonNull; // ★追加: これが必要です
+import java.util.List;
 
-        // "wheelchair" フラグがあれば、文字列に追加
-        if (Boolean.TRUE.equals(wheelchair) && !currentEq.contains("wheelchair")) {
-            currentEq = addTag(currentEq, "wheelchair");
-        }
-        // "diaper" フラグがあれば、文字列に追加
-        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper_table")) {
-            currentEq = addTag(currentEq, "diaper_table");
-        }
-        // "open24h" フラグがあれば、文字列に追加
-        if (Boolean.TRUE.equals(open24h) && !currentEq.contains("open_24h")) {
-            currentEq = addTag(currentEq, "open_24h");
-        }
-        
-        this.equipment = currentEq;
-    }
+public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 
-    // 新仕様の入力 → 旧フラグへ反映（逆変換）
-    private void syncNewToOld() {
-        if (this.facilityCategory != null) {
-            if (this.facilityCategory.equals("station")) this.typeStation = true;
-            else if (this.facilityCategory.equals("park")) this.typePark = true;
-            else if (this.facilityCategory.equals("commercial")) this.typeMall = true;
-        }
-
-        if (this.equipment != null) {
-            if (this.equipment.contains("wheelchair")) this.wheelchair = true;
-            if (this.equipment.contains("diaper_table")) this.diaper = true;
-            if (this.equipment.contains("open_24h")) this.open24h = true;
-        }
-    }
-
-    // ユーティリティ: カンマ区切りでタグを追加
-    private String addTag(String current, String tag) {
-        if (current == null || current.isEmpty()) {
-            return tag;
-        }
-        return current + "," + tag;
-    }
+    // ★N+1対策
+    @Override
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @NonNull // ★追加: 親クラスのルールに合わせて「nullは返しません」と宣言
+    List<Toilet> findAll();
 }
 </file>
 
@@ -3853,6 +3684,101 @@ function Home() {
 export default Home;
 </file>
 
+<file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
+import { useEffect, useRef, useState } from 'react';
+
+function MapPanel({ filteredToilets, currentLocation }) {
+  const [mapObj, setMapObj] = useState(null);
+  const markersRef = useRef(null);
+
+  // 1. 地図の初期化処理
+  useEffect(() => {
+    // Leafletが読み込まれていない、または既に地図がある場合は何もしない
+    if (!window.L || mapObj) return;
+
+    // 地図を表示する領域(DOM)があるか確認
+    const container = document.getElementById('map');
+    if (!container) return;
+
+    // ★修正点: 無理やりIDを消す裏技コード(_leaflet_id = null)を削除しました
+
+    // 地図インスタンスを作成
+    const map = window.L.map('map').setView([36.0825, 140.1120], 13);
+    
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const layerGroup = window.L.layerGroup().addTo(map);
+    markersRef.current = layerGroup;
+    setMapObj(map);
+
+    // ★重要: Reactのクリーンアップ機能（コンポーネントが消える時に実行される）
+    return () => {
+      if (map) {
+        map.remove(); // 地図を正しく破棄する
+      }
+      setMapObj(null);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 初回のみ実行
+
+  // 2. ピン（マーカー）の描画更新
+  useEffect(() => {
+    if (!mapObj || !markersRef.current || !window.L) return;
+    
+    const layerGroup = markersRef.current;
+    layerGroup.clearLayers(); // 既存のピンを一度消す
+
+    // トイレのピンを立てる
+    filteredToilets.forEach(t => {
+      if (t.lat && t.lng) {
+        const marker = window.L.marker([t.lat, t.lng]).addTo(layerGroup);
+        const distStr = t.distance ? `<br>約 ${Math.round(t.distance * 1000)} m` : "";
+        
+        // ピンをクリックした時のポップアップ
+        marker.bindPopup(`
+          <b>${t.name}</b>${distStr}<br>
+          <span style="font-size:0.85rem; color:#666;">
+            ${t.facilityCategory ? `[${t.facilityCategory}]` : ''} 
+            ${t.cleanliness ? '⭐'.repeat(t.cleanliness) : ''}
+          </span><br>
+          <div style="margin-top:4px;">
+            ${t.wheelchair ? '♿' : ''}
+            ${t.diaper ? '👶' : ''}
+          </div>
+          <a href="/detail/${t.id}" style="display:inline-block; margin-top:4px;">詳細を見る</a>
+        `);
+      }
+    });
+    
+    // 現在地の表示
+    if (currentLocation) {
+      window.L.circleMarker([currentLocation.lat, currentLocation.lng], {
+        color: '#ff5722', radius: 8, fillColor: '#ff5722', fillOpacity: 0.8
+      }).addTo(mapObj).bindPopup("現在地（検索基準）");
+      
+      // 現在地が変わったらそこを中心に移動
+      mapObj.setView([currentLocation.lat, currentLocation.lng], 15);
+    }
+  }, [filteredToilets, mapObj, currentLocation]);
+
+  return (
+    <section className="panel panel--map">
+      <header className="panel-head">
+        <h2 className="panel-title">地図</h2>
+        <div className="panel-meta">ピンをクリックすると詳細を開けます</div>
+      </header>
+      <div className="map-area">
+        <div id="map"></div>
+      </div>
+    </section>
+  );
+}
+
+export default MapPanel;
+</file>
+
 <file path="toilet-frontend/vitest.config.js">
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
@@ -3867,35 +3793,114 @@ export default defineConfig({
 });
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
+<file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
 package com.imatoilet.backend;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+
+// ★追加1：リストを使うためのインポート
+import java.util.ArrayList;
 import java.util.List;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
-@RestController
-@RequestMapping("/api/toilets")
-// 変更: プロパティ値から許可オリジンを読み込む
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
-public class ToiletApiController {
+@Entity
+@Table(name = "toilet")
+@Data
+public class Toilet {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Autowired
-    private ToiletRepository toiletRepository;
+    // --- 既存フィールド ---
+    
+    @NotBlank(message = "名前は必須です")
+    @Size(max = 100, message = "名前は100文字以内で入力してください")
+    private String name;
 
-    @GetMapping
-    public List<Toilet> getAllToilets() {
-        return toiletRepository.findAll();
+    @NotNull(message = "緯度は必須です")
+    private Double lat;
+
+    @NotNull(message = "経度は必須です")
+    private Double lng;
+
+    private String address;
+    private Boolean publicUse;
+    private Boolean diaper;
+    private Boolean wheelchair;
+    private Boolean typePark;
+    private Boolean typeStation;
+    private Boolean typeMall;
+
+    @Size(max = 500, message = "説明は500文字以内で入力してください")
+    private String description;
+    
+    private Boolean open24h;
+
+    // --- 新設計フィールド ---
+    private String facilityCategory;
+    private String locationCategory;
+    private String equipment; // ※これはCSV用として残します
+    private String usageConditions;
+    private String atmosphere;
+
+    @Min(value = 1, message = "清潔度は1以上である必要があります")
+    @Max(value = 5, message = "清潔度は5以下である必要があります")
+    private Integer cleanliness;
+
+    // ★追加2：equipmentテーブルと繋がるリスト（N+1対策の窓口）
+    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
+    @ToString.Exclude           // エラー防止（無限ループ対策）
+    @EqualsAndHashCode.Exclude  // エラー防止（無限ループ対策）
+    private List<Equipment> equipmentList = new ArrayList<>();
+
+    // --- 互換性メソッド ---
+    @PrePersist
+    @PreUpdate
+    public void syncCompatibility() {
+        syncOldToNew();
+        syncNewToOld();
     }
 
-    @PostMapping
-    public Toilet createToilet(@RequestBody Toilet toilet) {
-        return toiletRepository.save(toilet);
+    private void syncOldToNew() {
+        if (this.facilityCategory == null || this.facilityCategory.isEmpty()) {
+            if (Boolean.TRUE.equals(typeStation)) this.facilityCategory = "station";
+            else if (Boolean.TRUE.equals(typePark)) this.facilityCategory = "park";
+            else if (Boolean.TRUE.equals(typeMall)) this.facilityCategory = "commercial";
+        }
+        String currentEq = (this.equipment == null) ? "" : this.equipment;
+        if (Boolean.TRUE.equals(wheelchair) && !currentEq.contains("wheelchair")) {
+            currentEq = addTag(currentEq, "wheelchair");
+        }
+        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper_table")) {
+            currentEq = addTag(currentEq, "diaper_table");
+        }
+        if (Boolean.TRUE.equals(open24h) && !currentEq.contains("open_24h")) {
+            currentEq = addTag(currentEq, "open_24h");
+        }
+        this.equipment = currentEq;
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteToilet(@PathVariable Long id) {
-        toiletRepository.deleteById(id);
+    private void syncNewToOld() {
+        if (this.facilityCategory != null) {
+            if (this.facilityCategory.equals("station")) this.typeStation = true;
+            else if (this.facilityCategory.equals("park")) this.typePark = true;
+            else if (this.facilityCategory.equals("commercial")) this.typeMall = true;
+        }
+        if (this.equipment != null) {
+            if (this.equipment.contains("wheelchair")) this.wheelchair = true;
+            if (this.equipment.contains("diaper_table")) this.diaper = true;
+            if (this.equipment.contains("open_24h")) this.open24h = true;
+        }
+    }
+
+    private String addTag(String current, String tag) {
+        if (current == null || current.isEmpty()) {
+            return tag;
+        }
+        return current + "," + tag;
     }
 }
 </file>
@@ -4154,6 +4159,41 @@ function FilterChip({ label, name, checked, onChange, highlight }) {
 export default Conditions;
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
+package com.imatoilet.backend;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid; // ★追加：バリデーション機能を使うためのインポート
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/toilets")
+// 環境変数またはデフォルト値から許可オリジンを読み込む設定
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
+public class ToiletApiController {
+
+    @Autowired
+    private ToiletRepository toiletRepository;
+
+    @GetMapping
+    public List<Toilet> getAllToilets() {
+        return toiletRepository.findAll();
+    }
+
+    // ★修正：@Valid を追加することで、Toilet.java に書いたルールでチェックを実行します
+    @PostMapping
+    public Toilet createToilet(@RequestBody @Valid Toilet toilet) {
+        return toiletRepository.save(toilet);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteToilet(@PathVariable Long id) {
+        toiletRepository.deleteById(id);
+    }
+}
+</file>
+
 <file path="toilet-frontend/package.json">
 {
   "name": "toilet-frontend",
@@ -4258,7 +4298,7 @@ function Detail() {
       setIsFavorite(favs.includes(id));
     }
 
-    // データ受信後の処理（清潔度タグの解析）
+    // データ受信後の処理 (修正版)
     function processToiletData(data) {
       if (!data) {
         setToilet(null);
@@ -4266,18 +4306,11 @@ function Detail() {
         return;
       }
 
-      // ★清潔度タグ [clean:N] の解析と除去
-      let desc = data.description || "";
-      let cleanScore = 0;
-      
-      const match = desc.match(/\[clean:(\d)\]/);
-      if (match) {
-        cleanScore = parseInt(match[1], 10);
-        desc = desc.replace(/\[clean:\d\]/, "").trim();
-      }
+      // ★修正: 解析ロジックを削除し、DBの値をそのまま使う
+      // 値がなければ 0（星なし）とする
+      setCleanliness(data.cleanliness || 0); 
+      setDisplayDesc(data.description || ""); 
 
-      setCleanliness(cleanScore);
-      setDisplayDesc(desc);
       setToilet(data);
       setLoading(false);
     }
@@ -4566,7 +4599,7 @@ function Register() {
     setFormData(prev => ({ ...prev, cleanliness: rating }));
   };
 
-  // 4. 送信処理 (新データ形式に変換してPOST)
+  // 4. 送信処理 (修正版)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -4579,27 +4612,23 @@ function Register() {
 
     setLoading(true);
 
-    // --- 送信データの構築 ---
-    // チェックがついている設備キーを配列化し、カンマ区切り文字列にする
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
 
-    // ★重要：清潔度を説明文に「隠しタグ」として埋め込む
-    // 例: "改札横です。[clean:4]"
-    const finalDescription = `${formData.description} [clean:${formData.cleanliness}]`;
-
+    // ★修正: descriptionへの埋め込みを廃止し、cleanlinessを独立送信
     const payload = {
       name: formData.name,
       address: formData.address,
-      description: finalDescription, // 加工後の説明文を送信
+      description: formData.description, // 加工せずそのまま送信
       lat: formData.lat,
       lng: formData.lng,
       
-      // 新フィールド
+      cleanliness: formData.cleanliness, // ★独立フィールドとして送信
+      
       facilityCategory: formData.facilityCategory,
       equipment: equipmentStr,
 
-      // 旧フィールド (互換性用)
+      // 旧フィールド互換性
       wheelchair: formData.conditions.wheelchair,
       diaper: formData.conditions.diaper,
       open24h: formData.conditions.open24h
