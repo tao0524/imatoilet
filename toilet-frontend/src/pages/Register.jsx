@@ -2,19 +2,21 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Register.css'; 
 import { API_BASE_URL } from '../config/api';
+import { uploadToCloudinary } from '../utils';
 
 // アイコン
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'; // 駐車場用
-import StarIcon from '@mui/icons-material/Star';       // 星（塗）
-import StarBorderIcon from '@mui/icons-material/StarBorder'; // 星（枠）
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'; // ★追加: 画像用アイコン
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 function Register() {
   const navigate = useNavigate();
-  const mapRef = useRef(null);      // 地図インスタンス
-  const markerRef = useRef(null);   // ピン
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
 
   // --- フォームの状態管理 ---
   const [formData, setFormData] = useState({
@@ -23,15 +25,9 @@ function Register() {
     description: '',
     lat: '',
     lng: '',
-    image: '', // ★追加: 画像URL
-    
-    // 新機能：清潔度（1〜5）
+    image: '', 
     cleanliness: 3, 
-
-    // 新設計：施設カテゴリ (単一選択)
     facilityCategory: '', 
-    
-    // 新設計：設備・条件 (チェックボックス管理用)
     conditions: {
       wheelchair: false,
       diaper: false,
@@ -41,11 +37,12 @@ function Register() {
       washlet: false,
       gender_separated: false,
       free: false,
-      parking: false // ★追加：駐車場
+      parking: false
     }
   });
 
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // 1. 地図の初期化
   useEffect(() => {
@@ -80,34 +77,41 @@ function Register() {
     });
   };
 
-  // 3. 入力変更ハンドラ (階層データに対応)
+  // 3. 入力変更ハンドラ
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    // 設備チェックボックスの場合
+    const { name, value, checked } = e.target;
     if (name in formData.conditions) {
       setFormData(prev => ({
         ...prev,
-        conditions: {
-          ...prev.conditions,
-          [name]: checked
-        }
+        conditions: { ...prev.conditions, [name]: checked }
       }));
     } else {
-      // 通常のフィールド
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  // 清潔度スターをクリックした時のハンドラ
+  // 画像アップロードハンドラ
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const uploadedUrl = await uploadToCloudinary(file);
+      setFormData(prev => ({ ...prev, image: uploadedUrl }));
+    } catch (err) {
+      console.error(err);
+      alert("画像のアップロードに失敗しました。\n" + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleStarClick = (rating) => {
     setFormData(prev => ({ ...prev, cleanliness: rating }));
   };
 
-  // 4. 送信処理 (修正版)
+  // 4. 送信処理
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -129,14 +133,10 @@ function Register() {
       description: formData.description,
       lat: formData.lat,
       lng: formData.lng,
-      
       cleanliness: formData.cleanliness,
-      image: formData.image, // ★追加: 画像URL
-      
+      image: formData.image,
       facilityCategory: formData.facilityCategory,
       equipment: equipmentStr,
-
-      // 旧フィールド互換性
       wheelchair: formData.conditions.wheelchair,
       diaper: formData.conditions.diaper,
       open24h: formData.conditions.open24h
@@ -176,7 +176,6 @@ function Register() {
 
         <form className="register-grid" onSubmit={handleSubmit}>
           
-          {/* 左カラム：地図 */}
           <section className="panel panel--map">
             <div className="panel__head panel__head--tight">
               <h2 className="panel__title panel__title--small">1. 場所を指定 <span className="req">必須</span></h2>
@@ -193,7 +192,6 @@ function Register() {
             </div>
           </section>
 
-          {/* 右カラム：入力フォーム */}
           <section className="panel">
             <div className="panel__head">
               <h2 className="panel__title">2. トイレの情報</h2>
@@ -205,20 +203,54 @@ function Register() {
                 <input type="text" name="name" className="input" placeholder="例：つくば駅前公衆トイレ" value={formData.name} onChange={handleChange} required />
               </div>
 
-              {/* ★追加：画像URL入力欄 */}
+              {/* ★復活：住所入力欄 */}
+              <div className="form-row">
+                <label className="form-label">住所</label>
+                <input type="text" name="address" className="input" placeholder="例：茨城県つくば市吾妻1-1" value={formData.address} onChange={handleChange} />
+              </div>
+
               <div className="form-row">
                 <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
-                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真のURL <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意）</span>
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真 <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意）</span>
                 </label>
+                
+                <div style={{ marginBottom: '8px' }}>
+                  <label 
+                    className={`btn btn-sub ${uploading ? 'btn-disabled' : ''}`} 
+                    style={{ 
+                      display: 'inline-flex', 
+                      width: 'auto', 
+                      padding: '8px 16px', 
+                      fontSize: '0.9rem',
+                      cursor: uploading ? 'wait' : 'pointer',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {uploading ? 'アップロード中...' : (
+                      <>
+                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を選択してアップロード
+                      </>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleFileChange} 
+                      disabled={uploading}
+                      style={{ display: 'none' }} 
+                    />
+                  </label>
+                </div>
+
                 <input 
                   type="url" 
                   name="image" 
                   className="input" 
-                  placeholder="https://example.com/photo.jpg" 
+                  placeholder="https://... (自動入力されます)" 
                   value={formData.image} 
                   onChange={handleChange} 
                 />
-                {/* プレビュー表示 */}
+
                 {formData.image && (
                   <div style={{ marginTop: '10px' }}>
                     <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
@@ -226,13 +258,12 @@ function Register() {
                       src={formData.image} 
                       alt="プレビュー" 
                       style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
-                      onError={(e) => e.target.style.display = 'none'} // リンク切れ対策
+                      onError={(e) => e.target.style.display = 'none'} 
                     />
                   </div>
                 )}
               </div>
 
-              {/* 清潔度入力 */}
               <div className="form-row">
                 <label className="form-label">清潔度（5段階）</label>
                 <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
@@ -285,12 +316,10 @@ function Register() {
               <div className="form-row">
                 <label className="form-label">設備・特徴</label>
                 <div className="checks">
-                  {/* 駐車場 */}
                   <label className="check-label" style={{background:'#e8f5e9', border:'1px solid #c8e6c9'}}>
                     <input type="checkbox" name="parking" checked={formData.conditions.parking} onChange={handleChange} />
                     <DirectionsCarIcon fontSize="small" color="success" /> 駐車場あり
                   </label>
-
                   <label className="check-label"><input type="checkbox" name="wheelchair" checked={formData.conditions.wheelchair} onChange={handleChange} /> ♿ 車椅子</label>
                   <label className="check-label"><input type="checkbox" name="diaper" checked={formData.conditions.diaper} onChange={handleChange} /> 👶 オムツ</label>
                   <label className="check-label"><input type="checkbox" name="open24h" checked={formData.conditions.open24h} onChange={handleChange} /> 🕒 24時間</label>
@@ -308,7 +337,7 @@ function Register() {
               </div>
 
               <div className="form-footer">
-                <button type="submit" className="btn btn-primary" disabled={loading}>
+                <button type="submit" className="btn btn-primary" disabled={loading || uploading}>
                   <AddLocationAltIcon sx={{ mr: 1 }} />
                   {loading ? '送信中...' : '登録する'}
                 </button>

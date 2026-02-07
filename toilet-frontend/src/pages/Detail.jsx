@@ -13,7 +13,7 @@ import AccessibleIcon from '@mui/icons-material/Accessible';
 import BabyChangingStationIcon from '@mui/icons-material/BabyChangingStation';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import EditIcon from '@mui/icons-material/Edit'; // ★ここに追加されています
+import EditIcon from '@mui/icons-material/Edit';
 
 // --- 追加アイコン ---
 import ChildCareIcon from '@mui/icons-material/ChildCare';
@@ -151,114 +151,118 @@ function Detail() {
 
         <article className="detail-card">
           
+          {/* 画像エリア（左側になる予定） */}
           {toilet.image && (
             <div className="detail-image">
               <img src={toilet.image} alt={toilet.name} />
             </div>
           )}
 
-          <header className="detail-header">
-            <div>
-              <h1 className="detail-title">{toilet.name}</h1>
-              {cleanliness > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', color: '#ffb400', marginTop: '4px' }}>
-                  {[1, 2, 3, 4, 5].map(star => (
-                    star <= cleanliness ? <StarIcon key={star} fontSize="small" /> : <StarBorderIcon key={star} fontSize="small" />
-                  ))}
-                  <span style={{ fontSize: '0.85rem', color: '#666', marginLeft: '6px' }}>
-                    (清潔度: {cleanliness})
-                  </span>
-                </div>
-              )}
+          {/* ★追加: 文字情報をまとめるラッパー（右側になる予定） */}
+          <div className="detail-content">
+
+            <header className="detail-header">
+              <div>
+                <h1 className="detail-title">{toilet.name}</h1>
+                {cleanliness > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#ffb400', marginTop: '4px' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      star <= cleanliness ? <StarIcon key={star} fontSize="small" /> : <StarBorderIcon key={star} fontSize="small" />
+                    ))}
+                    <span style={{ fontSize: '0.85rem', color: '#666', marginLeft: '6px' }}>
+                      (清潔度: {cleanliness})
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <button className="fav-btn" onClick={toggleFavorite}>
+                {isFavorite ? <StarIcon sx={{color: '#ffc107'}} /> : <StarBorderIcon />}
+                <span>{isFavorite ? '登録済み' : 'お気に入り'}</span>
+              </button>
+            </header>
+
+            <div className="detail-tags">
+               {toilet.facilityCategory && categoryMap[toilet.facilityCategory] && (
+                 <span className="tag" style={{background:'#e3f2fd', color:'#0d47a1', border:'1px solid #bbdefb', fontWeight:'bold'}}>
+                   <CategoryIcon fontSize="small" /> {categoryMap[toilet.facilityCategory]}
+                 </span>
+               )}
+
+               {eqList.includes('parking') && (
+                 <span className="tag tag-ok" style={{background:'#e8f5e9', color:'#2e7d32', borderColor:'#c8e6c9'}}>
+                   <DirectionsCarIcon fontSize="small"/> 駐車場あり
+                 </span>
+               )}
+
+               {toilet.wheelchair && <span className="tag tag-ok"><AccessibleIcon fontSize="small"/> 車椅子OK</span>}
+               {toilet.diaper && <span className="tag tag-ok"><BabyChangingStationIcon fontSize="small"/> オムツ替え</span>}
+               {toilet.open24h && <span className="tag tag-ok"><AccessTimeIcon fontSize="small"/> 24時間</span>}
+
+               {eqList.includes('ostomate') && <span className="tag tag-ok"><MedicalServicesIcon fontSize="small"/> オストメイト</span>}
+               {eqList.includes('nursing_room') && <span className="tag tag-ok"><ChildCareIcon fontSize="small"/> 授乳室</span>}
+               {eqList.includes('washlet') && <span className="tag tag-ok"><WaterDropIcon fontSize="small"/> ウォシュレット</span>}
+               {eqList.includes('gender_separated') && <span className="tag tag-ok"><WcIcon fontSize="small"/> 男女別</span>}
+               {eqList.includes('free') && <span className="tag tag-ok"><MoneyOffIcon fontSize="small"/> 無料</span>}
+
+               {!hasAnyEquipment && !eqList.includes('parking') && <span className="tag">設備情報なし</span>}
             </div>
 
-            <button className="fav-btn" onClick={toggleFavorite}>
-              {isFavorite ? <StarIcon sx={{color: '#ffc107'}} /> : <StarBorderIcon />}
-              <span>{isFavorite ? '登録済み' : 'お気に入り'}</span>
-            </button>
-          </header>
+            <section className="detail-info">
+              <h3 className="info-label">住所</h3>
+              <p className="info-text">{toilet.address || "不明"}</p>
 
-          <div className="detail-tags">
-             {toilet.facilityCategory && categoryMap[toilet.facilityCategory] && (
-               <span className="tag" style={{background:'#e3f2fd', color:'#0d47a1', border:'1px solid #bbdefb', fontWeight:'bold'}}>
-                 <CategoryIcon fontSize="small" /> {categoryMap[toilet.facilityCategory]}
-               </span>
-             )}
+              <h3 className="info-label">詳細・備考</h3>
+              <p className="info-text">{displayDesc || "情報なし"}</p>
+            </section>
 
-             {eqList.includes('parking') && (
-               <span className="tag tag-ok" style={{background:'#e8f5e9', color:'#2e7d32', borderColor:'#c8e6c9'}}>
-                 <DirectionsCarIcon fontSize="small"/> 駐車場あり
-               </span>
-             )}
+            <footer className="detail-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <a href={googleMapUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary nav-btn">
+                <DirectionsIcon sx={{mr: 1}} />
+                Googleマップでナビ開始
+              </a>
 
-             {toilet.wheelchair && <span className="tag tag-ok"><AccessibleIcon fontSize="small"/> 車椅子OK</span>}
-             {toilet.diaper && <span className="tag tag-ok"><BabyChangingStationIcon fontSize="small"/> オムツ替え</span>}
-             {toilet.open24h && <span className="tag tag-ok"><AccessTimeIcon fontSize="small"/> 24時間</span>}
+              <button 
+                onClick={() => navigate(`/edit/${id}`)}
+                style={{ 
+                  background: '#fff', 
+                  border: '1px solid #1e88e5', 
+                  color: '#1e88e5', 
+                  padding: '12px', 
+                  borderRadius: '14px', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <EditIcon sx={{ mr: 1 }} />
+                情報を編集する
+              </button>
 
-             {eqList.includes('ostomate') && <span className="tag tag-ok"><MedicalServicesIcon fontSize="small"/> オストメイト</span>}
-             {eqList.includes('nursing_room') && <span className="tag tag-ok"><ChildCareIcon fontSize="small"/> 授乳室</span>}
-             {eqList.includes('washlet') && <span className="tag tag-ok"><WaterDropIcon fontSize="small"/> ウォシュレット</span>}
-             {eqList.includes('gender_separated') && <span className="tag tag-ok"><WcIcon fontSize="small"/> 男女別</span>}
-             {eqList.includes('free') && <span className="tag tag-ok"><MoneyOffIcon fontSize="small"/> 無料</span>}
+              <button 
+                onClick={handleDelete}
+                style={{ 
+                  background: 'transparent', 
+                  border: '1px solid #ef5350', 
+                  color: '#ef5350', 
+                  padding: '12px', 
+                  borderRadius: '14px', 
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: '0px'
+                }}
+              >
+                <DeleteForeverIcon sx={{ mr: 1 }} />
+                この情報を削除する
+              </button>
+            </footer>
 
-             {!hasAnyEquipment && !eqList.includes('parking') && <span className="tag">設備情報なし</span>}
-          </div>
-
-          <section className="detail-info">
-            <h3 className="info-label">住所</h3>
-            <p className="info-text">{toilet.address || "不明"}</p>
-
-            <h3 className="info-label">詳細・備考</h3>
-            <p className="info-text">{displayDesc || "情報なし"}</p>
-          </section>
-
-          <footer className="detail-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <a href={googleMapUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary nav-btn">
-              <DirectionsIcon sx={{mr: 1}} />
-              Googleマップでナビ開始
-            </a>
-
-            {/* ★ここに追加された編集ボタン */}
-            <button 
-              onClick={() => navigate(`/edit/${id}`)}
-              style={{ 
-                background: '#fff', 
-                border: '1px solid #1e88e5', 
-                color: '#1e88e5', 
-                padding: '12px', 
-                borderRadius: '14px', 
-                fontWeight: 'bold', 
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <EditIcon sx={{ mr: 1 }} />
-              情報を編集する
-            </button>
-
-            {/* 削除ボタン */}
-            <button 
-              onClick={handleDelete}
-              style={{ 
-                background: 'transparent', 
-                border: '1px solid #ef5350', 
-                color: '#ef5350', 
-                padding: '12px', 
-                borderRadius: '14px', 
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: '0px' // 少し調整
-              }}
-            >
-              <DeleteForeverIcon sx={{ mr: 1 }} />
-              この情報を削除する
-            </button>
-          </footer>
+          </div>{/* detail-content end */}
 
         </article>
       </div>

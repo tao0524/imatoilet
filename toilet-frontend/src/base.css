@@ -175,16 +175,25 @@ body{
   border: 1px solid #eef0f6;
 }
 
-/* 画像エリア */
+/* 画像エリアの枠 */
 .detail-image {
   margin: -24px -24px 20px;
-  height: 200px;
+  
+  width: auto;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  
   background: #eee;
+  position: relative; /* 念のため */
 }
+
+/* 画像本体 */
 .detail-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  
+  object-fit: cover; 
+  display: block;
 }
 
 /* ヘッダー周り */
@@ -271,4 +280,68 @@ body{
 }
 .nav-btn:hover {
   background: #3367d6;
+}
+
+/* =========================
+   Detail Page: PC Layout Fix
+   (画面幅800px以上で適用)
+========================= */
+@media (min-width: 800px) {
+  
+  /* カード全体を左右2列にする */
+  .detail-card {
+    display: grid;
+    grid-template-columns: 45% 1fr; /* 画像45%、残り文字 */
+    gap: 32px; /* 画像と文字の隙間 */
+    padding: 32px; /* カードの内側の余白を増やす */
+    align-items: start; /* 上揃え */
+  }
+
+  /* 画像エリアの調整 */
+  .detail-image {
+    /* モバイル用のマイナスマージンをリセット */
+    margin: 0;
+    
+    /* 高さを固定せず、アスペクト比を維持 */
+    height: auto; 
+    aspect-ratio: 4 / 3; /* 標準的な写真の比率 */
+    
+    /* 角を丸くする */
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  /* 画像本体 */
+  .detail-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 枠いっぱいに表示（トリミングあり） */
+    /* もし全体を表示したい場合は contain に変えてください */
+  }
+
+  /* 文字情報のエリア */
+  .detail-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* タグエリアを少し広げる */
+  .detail-tags {
+    margin-bottom: 24px;
+  }
+  
+  /* ボタンエリアを横並びにする（任意） */
+  .detail-actions {
+    margin-top: auto; /* 下に寄せる */
+    display: grid !important; /* 強制的にグリッド */
+    grid-template-columns: 1fr 1fr; /* 2列 */
+    gap: 12px;
+  }
+  
+  /* ナビボタンだけは全幅にする */
+  .nav-btn {
+    grid-column: 1 / -1;
+  }
 }
