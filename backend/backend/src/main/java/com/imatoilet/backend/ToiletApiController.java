@@ -6,22 +6,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Objects; // 追加：Nullチェック用
-
 import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/toilets")
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
+// ★削除済み: @CrossOrigin は WebConfig に集約
 public class ToiletApiController {
 
     @Autowired
     private ToiletRepository toiletRepository;
 
-    /**
-     * トイレ一覧取得・検索API
-     */
     @GetMapping
     public ResponseEntity<List<Toilet>> getToilets(
             @RequestParam(required = false) Double lat,
@@ -63,7 +58,6 @@ public class ToiletApiController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
-        // 安全対策: IDがnullの場合は例外を投げる（警告回避のため明示）
         if (id == null) {
              throw new IllegalArgumentException("ID must not be null");
         }
@@ -84,7 +78,6 @@ public class ToiletApiController {
     
     @PutMapping("/{id}")
     public ResponseEntity<Toilet> updateToilet(@PathVariable Long id, @RequestBody @Valid Toilet toiletDetails) {
-        // 安全対策: IDのNullチェック
         if (id == null) {
              throw new IllegalArgumentException("ID must not be null");
         }
@@ -111,7 +104,6 @@ public class ToiletApiController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
-        // 安全対策: IDのNullチェック
         if (id == null) {
              throw new IllegalArgumentException("ID must not be null");
         }

@@ -52,6 +52,9 @@ backend/backend/src/main/java/com/imatoilet/backend/DataLoader.java
 backend/backend/src/main/java/com/imatoilet/backend/Equipment.java
 backend/backend/src/main/java/com/imatoilet/backend/EquipmentRepository.java
 backend/backend/src/main/java/com/imatoilet/backend/EquipmentType.java
+backend/backend/src/main/java/com/imatoilet/backend/exception/ErrorResponse.java
+backend/backend/src/main/java/com/imatoilet/backend/exception/GlobalExceptionHandler.java
+backend/backend/src/main/java/com/imatoilet/backend/exception/ResourceNotFoundException.java
 backend/backend/src/main/java/com/imatoilet/backend/HelloController.java
 backend/backend/src/main/java/com/imatoilet/backend/Toilet.java
 backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java
@@ -76,6 +79,7 @@ toilet-frontend/src/App.jsx
 toilet-frontend/src/assets/react.svg
 toilet-frontend/src/base.css
 toilet-frontend/src/components.css
+toilet-frontend/src/components/ErrorBoundary.jsx
 toilet-frontend/src/components/Header.jsx
 toilet-frontend/src/components/Header.test.jsx
 toilet-frontend/src/components/ToiletCard.jsx
@@ -725,6 +729,124 @@ public enum EquipmentType {
     PAID,             // 有料
     OPEN_24H,         // 24時間
     PARKING           // 駐車場
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/exception/ErrorResponse.java">
+package com.imatoilet.backend.exception;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ErrorResponse {
+    private int status;
+    private String message;
+    private LocalDateTime timestamp;
+    private String path;
+
+    // Validationなど「項目ごとのエラー」を返すため（必要なときだけ入る）
+    private Map<String, String> errors;
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/exception/GlobalExceptionHandler.java">
+package com.imatoilet.backend.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // 1) リソースが見つからない (404)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException ex, WebRequest request) {
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getDescription(false),
+                null
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    // 2) バリデーションエラー (400)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(
+            MethodArgumentNotValidException ex, WebRequest request) {
+
+        // FieldErrorだけを安全に取り出す
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(fe ->
+                errors.put(fe.getField(), fe.getDefaultMessage())
+        );
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "入力内容に誤りがあります",
+                LocalDateTime.now(),
+                request.getDescription(false),
+                errors
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    // 3) その他の予期せぬ例外 (500)
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGlobalException(
+            Exception ex, WebRequest request) {
+
+        // 開発中はスタックトレースを出力
+        ex.printStackTrace();
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "サーバー内部エラーが発生しました。しばらく経ってから再度お試しください。",
+                LocalDateTime.now(),
+                request.getDescription(false),
+                null
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/exception/ResourceNotFoundException.java">
+package com.imatoilet.backend.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class ResourceNotFoundException extends RuntimeException {
+
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+
+    public ResourceNotFoundException(String resourceName, String fieldName, Object fieldValue) {
+        super(String.format("%s が見つかりません: %s='%s'", resourceName, fieldName, fieldValue));
+    }
 }
 </file>
 
@@ -1475,6 +1597,94 @@ body{
 }
 </file>
 
+<file path="toilet-frontend/src/components/ErrorBoundary.jsx">
+import React from 'react';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          padding: '40px 20px',
+          textAlign: 'center',
+          maxWidth: '600px',
+          margin: '0 auto',
+          fontFamily: 'sans-serif'
+        }}>
+          <h2 style={{ color: '#d32f2f', marginBottom: '16px' }}>予期せぬエラーが発生しました</h2>
+          <p style={{ color: '#666', marginBottom: '24px', lineHeight: '1.6' }}>
+            申し訳ありません。アプリに問題が発生しました。<br />
+            ページを再読み込みするか、トップページに戻ってください。
+          </p>
+          
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+            <button 
+              onClick={() => window.location.reload()} 
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#666',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              再読み込み
+            </button>
+            <a 
+              href="/" 
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '4px'
+              }}
+            >
+              トップへ戻る
+            </a>
+          </div>
+
+          {/* 開発環境でのみエラー詳細を表示 */}
+          {import.meta.env.DEV && this.state.error && (
+            <div style={{ marginTop: '40px', textAlign: 'left' }}>
+              <details style={{ backgroundColor: '#f5f5f5', padding: '10px', borderRadius: '4px' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>エラー詳細（開発者用）</summary>
+                <pre style={{ 
+                  marginTop: '10px', 
+                  fontSize: '12px', 
+                  overflow: 'auto',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {this.state.error.toString()}
+                </pre>
+              </details>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;
+</file>
+
 <file path="toilet-frontend/src/components/Header.jsx">
 import { Link } from 'react-router-dom';
 
@@ -1797,22 +2007,6 @@ export const useToiletSearch = () => {
     handleCurrentLocation
   };
 };
-</file>
-
-<file path="toilet-frontend/src/main.jsx">
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom' // ★追加
-import './index.css'
-import App from './App.jsx'
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <BrowserRouter> {/* ★アプリ全体をこれで包みます */}
-      <App />
-    </BrowserRouter>
-  </StrictMode>,
-)
 </file>
 
 <file path="toilet-frontend/src/mocks/handlers.js">
@@ -2895,24 +3089,6 @@ public class Equipment {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
-package com.imatoilet.backend;
-
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.lang.NonNull; // ★追加: これが必要です
-import java.util.List;
-
-public interface ToiletRepository extends JpaRepository<Toilet, Long> {
-
-    // ★N+1対策
-    @Override
-    @EntityGraph(attributePaths = {"equipmentList"})
-    @NonNull // ★追加: 親クラスのルールに合わせて「nullは返しません」と宣言
-    List<Toilet> findAll();
-}
-</file>
-
 <file path="backend/backend/src/main/resources/application.properties">
 # PostgreSQL への接続設定
 spring.datasource.url=jdbc:postgresql://localhost:5432/imatoilet
@@ -3324,6 +3500,25 @@ body {
 
   /* ...（.actions や .howto など、これより下の部分はそのまま）... */
 }
+</file>
+
+<file path="toilet-frontend/src/main.jsx">
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx' // 追加
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <ErrorBoundary> {/* アプリ全体を囲む */}
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ErrorBoundary>
+  </React.StrictMode>,
+)
 </file>
 
 <file path="toilet-frontend/src/pages/Detail.test.jsx">
@@ -3905,6 +4100,60 @@ public class Toilet {
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
+package com.imatoilet.backend;
+
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNull;
+import java.util.List;
+
+public interface ToiletRepository extends JpaRepository<Toilet, Long> {
+
+    // N+1対策済みの全件取得
+    @Override
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @NonNull
+    List<Toilet> findAll();
+
+    // 1. 位置情報検索 (PostgreSQLネイティブクエリ / 半径km指定)
+    @Query(value = "SELECT * FROM toilet t WHERE " +
+           "(6371 * acos(least(1.0, greatest(-1.0, " +
+           "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
+           "  cos(radians(t.lng) - radians(:lng)) + " +
+           "  sin(radians(:lat)) * sin(radians(t.lat))" +
+           ")))) <= :radius", nativeQuery = true)
+    List<Toilet> findWithinRadius(
+        @Param("lat") Double lat,
+        @Param("lng") Double lng,
+        @Param("radius") Double radius
+    );
+
+    // 2. 条件検索 (JPQL / 正規化されたEquipmentテーブルとのJOIN)
+    // S0フェーズ: EquipmentTypeのリストに含まれる設備を持つトイレを検索
+    // キーワードは name, address, description, equipment(CSV) を対象にする
+    @Query("SELECT DISTINCT t FROM Toilet t " +
+           "LEFT JOIN t.equipmentList e " +
+           "WHERE " +
+           "(:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) AND " +
+           "(:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) AND " +
+           "(:keyword IS NULL OR " +
+           "  t.name LIKE %:keyword% OR " +
+           "  t.address LIKE %:keyword% OR " +
+           "  t.description LIKE %:keyword% OR " +
+           "  t.equipment LIKE %:keyword%) AND " +
+           "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes)")
+    List<Toilet> searchBySpecs(
+        @Param("facilityCategory") String facilityCategory,
+        @Param("minCleanliness") Integer minCleanliness,
+        @Param("keyword") String keyword,
+        @Param("equipmentTypes") List<EquipmentType> equipmentTypes
+    );
+}
+</file>
+
 <file path="toilet-frontend/src/pages/Conditions.jsx">
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -4159,41 +4408,6 @@ function FilterChip({ label, name, checked, onChange, highlight }) {
 export default Conditions;
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
-package com.imatoilet.backend;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid; // ★追加：バリデーション機能を使うためのインポート
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/toilets")
-// 環境変数またはデフォルト値から許可オリジンを読み込む設定
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
-public class ToiletApiController {
-
-    @Autowired
-    private ToiletRepository toiletRepository;
-
-    @GetMapping
-    public List<Toilet> getAllToilets() {
-        return toiletRepository.findAll();
-    }
-
-    // ★修正：@Valid を追加することで、Toilet.java に書いたルールでチェックを実行します
-    @PostMapping
-    public Toilet createToilet(@RequestBody @Valid Toilet toilet) {
-        return toiletRepository.save(toilet);
-    }
-
-    @DeleteMapping("/{id}")
-    public void deleteToilet(@PathVariable Long id) {
-        toiletRepository.deleteById(id);
-    }
-}
-</file>
-
 <file path="toilet-frontend/package.json">
 {
   "name": "toilet-frontend",
@@ -4235,6 +4449,134 @@ public class ToiletApiController {
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.5"
   }
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.exception.ResourceNotFoundException;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.Objects; // 追加：Nullチェック用
+
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/toilets")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
+public class ToiletApiController {
+
+    @Autowired
+    private ToiletRepository toiletRepository;
+
+    /**
+     * トイレ一覧取得・検索API
+     */
+    @GetMapping
+    public ResponseEntity<List<Toilet>> getToilets(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false, defaultValue = "5.0") Double radius,
+            @RequestParam(required = false) String facilityCategory,
+            @RequestParam(required = false) Integer minCleanliness,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) List<String> equipment
+    ) {
+        List<Toilet> results;
+
+        if (lat != null && lng != null) {
+            results = toiletRepository.findWithinRadius(lat, lng, radius);
+        }
+        else if (facilityCategory != null || minCleanliness != null || keyword != null || (equipment != null && !equipment.isEmpty())) {
+            
+            List<EquipmentType> types = null;
+            if (equipment != null && !equipment.isEmpty()) {
+                types = new ArrayList<>();
+                for (String eq : equipment) {
+                    try {
+                        types.add(EquipmentType.valueOf(eq));
+                    } catch (IllegalArgumentException e) {
+                        // 無効な値は無視
+                    }
+                }
+                if (types.isEmpty()) types = null;
+            }
+
+            results = toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
+        }
+        else {
+            results = toiletRepository.findAll();
+        }
+
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
+        // 安全対策: IDがnullの場合は例外を投げる（警告回避のため明示）
+        if (id == null) {
+             throw new IllegalArgumentException("ID must not be null");
+        }
+        
+        Toilet toilet = toiletRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", id));
+        return ResponseEntity.ok(toilet);
+    }
+
+    @PostMapping
+    public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
+        if (toilet.getCleanliness() == null) {
+            toilet.setCleanliness(3);
+        }
+        Toilet saved = toiletRepository.save(toilet);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<Toilet> updateToilet(@PathVariable Long id, @RequestBody @Valid Toilet toiletDetails) {
+        // 安全対策: IDのNullチェック
+        if (id == null) {
+             throw new IllegalArgumentException("ID must not be null");
+        }
+
+        Toilet toilet = toiletRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", id));
+
+        toilet.setName(toiletDetails.getName());
+        toilet.setAddress(toiletDetails.getAddress());
+        toilet.setDescription(toiletDetails.getDescription());
+        toilet.setLat(toiletDetails.getLat());
+        toilet.setLng(toiletDetails.getLng());
+        toilet.setCleanliness(toiletDetails.getCleanliness());
+        toilet.setFacilityCategory(toiletDetails.getFacilityCategory());
+        toilet.setEquipment(toiletDetails.getEquipment());
+        
+        toilet.setWheelchair(toiletDetails.getWheelchair());
+        toilet.setDiaper(toiletDetails.getDiaper());
+        toilet.setOpen24h(toiletDetails.getOpen24h());
+
+        final Toilet updatedToilet = toiletRepository.save(toilet);
+        return ResponseEntity.ok(updatedToilet);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
+        // 安全対策: IDのNullチェック
+        if (id == null) {
+             throw new IllegalArgumentException("ID must not be null");
+        }
+
+        if (!toiletRepository.existsById(id)) {
+            throw new ResourceNotFoundException("トイレ", "id", id);
+        }
+        toiletRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }
 </file>
 
