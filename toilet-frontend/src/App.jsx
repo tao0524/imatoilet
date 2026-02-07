@@ -6,6 +6,7 @@ import Detail from './pages/Detail';
 import Favorites from './pages/Favorites';
 import Register from './pages/Register';
 import Conditions from './pages/Conditions';
+import Edit from './pages/Edit'; // ★追加
 
 function App() {
   return (
@@ -14,11 +15,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
-        
-        {/* ★この行があるか確認！（ここがないと画面は空白になります） */}
         <Route path="/conditions" element={<Conditions />} />
-        
         <Route path="/detail/:id" element={<Detail />} />
+        <Route path="/edit/:id" element={<Edit />} /> {/* ★追加 */}
         <Route path="/favorites" element={<Favorites />} />
         <Route path="/register" element={<Register />} />
       </Routes>

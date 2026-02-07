@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom'; // useNavigateを追加
-import { loadUserToilets, saveUserToilets } from '../utils'; // saveUserToiletsを追加
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { loadUserToilets, saveUserToilets } from '../utils';
 import { API_BASE_URL } from '../config/api';
 
 // アイコンのインポート
@@ -12,7 +12,8 @@ import WcIcon from '@mui/icons-material/Wc';
 import AccessibleIcon from '@mui/icons-material/Accessible';
 import BabyChangingStationIcon from '@mui/icons-material/BabyChangingStation';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever'; // ★追加：削除アイコン
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import EditIcon from '@mui/icons-material/Edit'; // ★ここに追加されています
 
 // --- 追加アイコン ---
 import ChildCareIcon from '@mui/icons-material/ChildCare';
@@ -24,7 +25,7 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 
 function Detail() {
   const { id } = useParams();
-  const navigate = useNavigate(); // ★追加
+  const navigate = useNavigate();
   const [toilet, setToilet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -57,7 +58,7 @@ function Detail() {
       setIsFavorite(favs.includes(id));
     }
 
-    // データ受信後の処理 (修正版)
+    // データ受信後の処理
     function processToiletData(data) {
       if (!data) {
         setToilet(null);
@@ -65,8 +66,6 @@ function Detail() {
         return;
       }
 
-      // ★修正: 解析ロジックを削除し、DBの値をそのまま使う
-      // 値がなければ 0（星なし）とする
       setCleanliness(data.cleanliness || 0); 
       setDisplayDesc(data.description || ""); 
 
@@ -88,7 +87,7 @@ function Detail() {
     setIsFavorite(!isFavorite);
   };
 
-  // ★追加：削除ハンドラ
+  // 削除ハンドラ
   const handleDelete = async () => {
     if (!window.confirm("本当にこのトイレ情報を削除しますか？\n（この操作は取り消せません）")) {
       return;
@@ -124,7 +123,7 @@ function Detail() {
   if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
   if (!toilet) return <div className="container" style={{padding:'20px'}}>データが見つかりませんでした。<br /><Link to="/search">検索に戻る</Link></div>;
 
-  const googleMapUrl = `https://www.google.com/maps/dir/?api=1&destination=${toilet.lat},${toilet.lng}`;
+  const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${toilet.lat},${toilet.lng}`;
 
   const categoryMap = {
     station: '駅・交通',
@@ -219,7 +218,27 @@ function Detail() {
               Googleマップでナビ開始
             </a>
 
-            {/* ★追加：削除ボタン */}
+            {/* ★ここに追加された編集ボタン */}
+            <button 
+              onClick={() => navigate(`/edit/${id}`)}
+              style={{ 
+                background: '#fff', 
+                border: '1px solid #1e88e5', 
+                color: '#1e88e5', 
+                padding: '12px', 
+                borderRadius: '14px', 
+                fontWeight: 'bold', 
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <EditIcon sx={{ mr: 1 }} />
+              情報を編集する
+            </button>
+
+            {/* 削除ボタン */}
             <button 
               onClick={handleDelete}
               style={{ 
@@ -233,7 +252,7 @@ function Detail() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginTop: '10px'
+                marginTop: '0px' // 少し調整
               }}
             >
               <DeleteForeverIcon sx={{ mr: 1 }} />
