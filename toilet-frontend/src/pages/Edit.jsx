@@ -10,6 +10,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'; // ★追加
 
 function Edit() {
   const { id } = useParams();
@@ -27,6 +28,7 @@ function Edit() {
     description: '',
     lat: '',
     lng: '',
+    image: '', // ★追加
     cleanliness: 3, 
     facilityCategory: '', 
     conditions: {
@@ -86,6 +88,7 @@ function Edit() {
       description: data.description || '',
       lat: data.lat,
       lng: data.lng,
+      image: data.image || '', // ★追加: データの読み込み
       cleanliness: data.cleanliness || 3,
       facilityCategory: data.facilityCategory || '',
       conditions: {
@@ -176,6 +179,7 @@ function Edit() {
         lat: formData.lat,
         lng: formData.lng,
         cleanliness: formData.cleanliness,
+        image: formData.image, // ★追加: 画像の保存
         facilityCategory: formData.facilityCategory,
         equipment: equipmentStr,
         wheelchair: formData.conditions.wheelchair,
@@ -251,6 +255,32 @@ function Edit() {
               <div className="form-row">
                 <label className="form-label">名前 <span className="req">必須</span></label>
                 <input type="text" name="name" className="input" value={formData.name} onChange={handleChange} required />
+              </div>
+
+              {/* ★追加：画像URL入力欄 */}
+              <div className="form-row">
+                <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真のURL
+                </label>
+                <input 
+                  type="url" 
+                  name="image" 
+                  className="input" 
+                  placeholder="https://example.com/photo.jpg" 
+                  value={formData.image} 
+                  onChange={handleChange} 
+                />
+                {formData.image && (
+                  <div style={{ marginTop: '10px' }}>
+                    <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
+                    <img 
+                      src={formData.image} 
+                      alt="プレビュー" 
+                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
+                      onError={(e) => e.target.style.display = 'none'} 
+                    />
+                  </div>
+                )}
               </div>
 
               {/* 清潔度 */}

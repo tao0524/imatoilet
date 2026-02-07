@@ -54,6 +54,10 @@ public class Toilet {
     @Max(value = 5, message = "清潔度は5以下である必要があります")
     private Integer cleanliness;
 
+    // ★追加: 画像URL (TEXT型に対応)
+    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    private String image;
+
     // ★追加2：equipmentテーブルと繋がるリスト（N+1対策の窓口）
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
     @ToString.Exclude           // エラー防止（無限ループ対策）

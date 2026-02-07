@@ -94,6 +94,9 @@ public class ToiletApiController {
         toilet.setFacilityCategory(toiletDetails.getFacilityCategory());
         toilet.setEquipment(toiletDetails.getEquipment());
         
+        // ★追加: 画像URLの更新
+        toilet.setImage(toiletDetails.getImage());
+        
         toilet.setWheelchair(toiletDetails.getWheelchair());
         toilet.setDiaper(toiletDetails.getDiaper());
         toilet.setOpen24h(toiletDetails.getOpen24h());

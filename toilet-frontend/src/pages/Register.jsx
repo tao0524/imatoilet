@@ -9,6 +9,7 @@ import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'; // 駐車場用
 import StarIcon from '@mui/icons-material/Star';       // 星（塗）
 import StarBorderIcon from '@mui/icons-material/StarBorder'; // 星（枠）
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'; // ★追加: 画像用アイコン
 
 function Register() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ function Register() {
     description: '',
     lat: '',
     lng: '',
+    image: '', // ★追加: 画像URL
     
     // 新機能：清潔度（1〜5）
     cleanliness: 3, 
@@ -121,15 +123,15 @@ function Register() {
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
 
-    // ★修正: descriptionへの埋め込みを廃止し、cleanlinessを独立送信
     const payload = {
       name: formData.name,
       address: formData.address,
-      description: formData.description, // 加工せずそのまま送信
+      description: formData.description,
       lat: formData.lat,
       lng: formData.lng,
       
-      cleanliness: formData.cleanliness, // ★独立フィールドとして送信
+      cleanliness: formData.cleanliness,
+      image: formData.image, // ★追加: 画像URL
       
       facilityCategory: formData.facilityCategory,
       equipment: equipmentStr,
@@ -203,7 +205,34 @@ function Register() {
                 <input type="text" name="name" className="input" placeholder="例：つくば駅前公衆トイレ" value={formData.name} onChange={handleChange} required />
               </div>
 
-              {/* ★追加：清潔度入力 */}
+              {/* ★追加：画像URL入力欄 */}
+              <div className="form-row">
+                <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真のURL <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意）</span>
+                </label>
+                <input 
+                  type="url" 
+                  name="image" 
+                  className="input" 
+                  placeholder="https://example.com/photo.jpg" 
+                  value={formData.image} 
+                  onChange={handleChange} 
+                />
+                {/* プレビュー表示 */}
+                {formData.image && (
+                  <div style={{ marginTop: '10px' }}>
+                    <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
+                    <img 
+                      src={formData.image} 
+                      alt="プレビュー" 
+                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
+                      onError={(e) => e.target.style.display = 'none'} // リンク切れ対策
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* 清潔度入力 */}
               <div className="form-row">
                 <label className="form-label">清潔度（5段階）</label>
                 <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
@@ -256,7 +285,7 @@ function Register() {
               <div className="form-row">
                 <label className="form-label">設備・特徴</label>
                 <div className="checks">
-                  {/* ★追加：駐車場 */}
+                  {/* 駐車場 */}
                   <label className="check-label" style={{background:'#e8f5e9', border:'1px solid #c8e6c9'}}>
                     <input type="checkbox" name="parking" checked={formData.conditions.parking} onChange={handleChange} />
                     <DirectionsCarIcon fontSize="small" color="success" /> 駐車場あり
