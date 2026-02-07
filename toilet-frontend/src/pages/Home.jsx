@@ -1,9 +1,39 @@
-import { Link } from 'react-router-dom';
-import '../base.css';       // ★追加
-import '../components.css'; // ★追加
-import '../index.css';      // ★追加（CSSフォルダを作っていない場合はこのパスでOK）
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import '../base.css';
+import '../components.css';
+import '../index.css';
 
 function Home() {
+  const navigate = useNavigate();
+  const [locLoading, setLocLoading] = useState(false);
+
+  // 現在地を取得して検索ページへ飛ぶハンドラ
+  const handleCurrentLocationSearch = () => {
+    if (!navigator.geolocation) {
+      alert("お使いのブラウザは位置情報に対応していません");
+      return;
+    }
+
+    setLocLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setLocLoading(false);
+        // 取得した座標を持って検索ページへ移動
+        // radiusはバックエンドのデフォルト(5km)に任せるため指定しない、または明示的に送る
+        navigate(`/search?lat=${latitude}&lng=${longitude}`);
+      },
+      (err) => {
+        setLocLoading(false);
+        console.error(err);
+        alert("現在地の取得に失敗しました。\n位置情報の利用が許可されているか確認してください。");
+      },
+      { timeout: 10000 }
+    );
+  };
+
   return (
     <>
       <main className="top-main" id="top">
@@ -26,17 +56,22 @@ function Home() {
 
           <section className="actions">
             <Link to="/search" className="btn btn-primary">🚽 近くのトイレを探す</Link>
-            {/* ▼▼▼ ここを修正しました (/search → /conditions) ▼▼▼ */}
             <Link to="/conditions" className="btn btn-secondary">⚙️ 条件を指定して探す</Link>
 
             <div className="sub-actions">
               <Link to="/favorites" className="btn btn-sub">⭐ よく使うトイレ</Link>
-              <button className="btn btn-sub" onClick={() => alert('位置情報を更新します（仮）')}>
-                📍 現在地を更新
+              
+              {/* ★ここを修正: アラートではなく実際の検索機能を実装 */}
+              <button 
+                className="btn btn-sub" 
+                onClick={handleCurrentLocationSearch}
+                disabled={locLoading}
+              >
+                {locLoading ? '📡 取得中...' : '📍 現在地周辺'}
               </button>
             </div>
 
-            {/* ✅ 副CTA：トイレ登録（検索の次に控えめに置く） */}
+            {/* ✅ 副CTA：トイレ登録 */}
             <Link to="/register" className="btn btn-sub btn-register">
               ➕ トイレを登録する
             </Link>
@@ -100,7 +135,7 @@ function Home() {
       <footer style={{ textAlign: 'center', padding: '20px', fontSize: '0.8rem', color: '#666' }}>
         <p>※本サイトは開発中のポートフォリオ（デモ）です。<br />
           登録したデータはブラウザ内にのみ保存され、他者とは共有されません。</p>
-        <p>&copy; 2026 Imatoilet Project</p>
+        <p>© 2026 Imatoilet Project</p>
       </footer>
     </>
   );
