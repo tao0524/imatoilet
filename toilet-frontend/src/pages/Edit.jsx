@@ -1,8 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { loadUserToilets, saveUserToilets, uploadToCloudinary } from '../utils';
 import { API_BASE_URL } from '../config/api';
 import './Register.css'; 
+
+// ★Google Maps用
+import { Marker } from '@react-google-maps/api';
+import { SafeGoogleMap } from '../components/SafeGoogleMap';
 
 // アイコン
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -16,8 +20,6 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 function Edit() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const mapRef = useRef(null);
-  const markerRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -106,40 +108,22 @@ function Edit() {
     setLoading(false);
   };
 
-  // --- 2. 地図の初期化 ---
-  useEffect(() => {
-    if (!loading && formData.lat && formData.lng) {
-       initMap(formData.lat, formData.lng);
+  // ★Google Maps: 地図をクリックした時の処理
+  const handleMapClick = (e) => {
+    if (e.latLng) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setFormData(prev => ({ ...prev, lat, lng }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
+  };
 
-  const initMap = (lat, lng) => {
-    if (!window.L) return;
-    
-    if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
+  // ★Google Maps: ピンをドラッグした時の処理
+  const handleMarkerDragEnd = (e) => {
+    if (e.latLng) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setFormData(prev => ({ ...prev, lat, lng }));
     }
-
-    const map = window.L.map('edit-map').setView([lat, lng], 15);
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-    
-    const marker = window.L.marker([lat, lng], { draggable: true }).addTo(map);
-    markerRef.current = marker;
-    mapRef.current = map;
-
-    marker.on('dragend', (e) => {
-      const pos = e.target.getLatLng();
-      setFormData(prev => ({ ...prev, lat: pos.lat, lng: pos.lng }));
-    });
-    
-    map.on('click', (e) => {
-      marker.setLatLng(e.latlng);
-      setFormData(prev => ({ ...prev, lat: e.latlng.lat, lng: e.latlng.lng }));
-    });
   };
 
   const handleChange = (e) => {
@@ -247,7 +231,25 @@ function Edit() {
               <h2 className="panel__title panel__title--small">場所の修正</h2>
               <p className="panel__sub">ピンをドラッグして位置を微調整できます</p>
             </div>
-            <div id="edit-map" className="reg-map-area"></div>
+            
+            {/* ★Google Maps 表示エリア */}
+            <div className="reg-map-area">
+              <SafeGoogleMap
+                center={formData.lat ? { lat: formData.lat, lng: formData.lng } : { lat: 36.0825, lng: 140.1120 }}
+                zoom={15}
+                style={{ width: '100%', height: '100%' }}
+                onClick={handleMapClick}
+              >
+                {formData.lat && formData.lng && (
+                  <Marker
+                    position={{ lat: formData.lat, lng: formData.lng }}
+                    draggable={true}
+                    onDragEnd={handleMarkerDragEnd}
+                  />
+                )}
+              </SafeGoogleMap>
+            </div>
+
             <div className="map-hint">
               <span className="dot"></span>
               <span>選択中: {Number(formData.lat).toFixed(5)}, {Number(formData.lng).toFixed(5)}</span>
@@ -264,7 +266,6 @@ function Edit() {
                 <input type="text" name="name" className="input" value={formData.name} onChange={handleChange} required />
               </div>
 
-              {/* ★復活：住所入力欄 */}
               <div className="form-row">
                 <label className="form-label">住所</label>
                 <input type="text" name="address" className="input" value={formData.address} onChange={handleChange} />

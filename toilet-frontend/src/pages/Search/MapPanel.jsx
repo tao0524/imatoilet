@@ -1,80 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+// toilet-frontend/src/pages/Search/MapPanel.jsx
+import { useState } from 'react';
+import { Marker, InfoWindow } from '@react-google-maps/api';
+import { SafeGoogleMap } from '../../components/SafeGoogleMap';
+import { Link } from 'react-router-dom';
+
+// デフォルトの中心位置 (つくば駅周辺)
+const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
+const CONTAINER_STYLE = { width: '100%', height: '100%' };
 
 function MapPanel({ filteredToilets, currentLocation }) {
-  const [mapObj, setMapObj] = useState(null);
-  const markersRef = useRef(null);
+  // 選択中の（吹き出しを表示する）トイレID
+  const [selectedToiletId, setSelectedToiletId] = useState(null);
 
-  // 1. 地図の初期化処理
-  useEffect(() => {
-    // Leafletが読み込まれていない、または既に地図がある場合は何もしない
-    if (!window.L || mapObj) return;
+  // 表示する中心座標の決定
+  const center = currentLocation 
+    ? { lat: currentLocation.lat, lng: currentLocation.lng }
+    : DEFAULT_CENTER;
 
-    // 地図を表示する領域(DOM)があるか確認
-    const container = document.getElementById('map');
-    if (!container) return;
-
-    // ★修正点: 無理やりIDを消す裏技コード(_leaflet_id = null)を削除しました
-
-    // 地図インスタンスを作成
-    const map = window.L.map('map').setView([36.0825, 140.1120], 13);
-    
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    const layerGroup = window.L.layerGroup().addTo(map);
-    markersRef.current = layerGroup;
-    setMapObj(map);
-
-    // ★重要: Reactのクリーンアップ機能（コンポーネントが消える時に実行される）
-    return () => {
-      if (map) {
-        map.remove(); // 地図を正しく破棄する
-      }
-      setMapObj(null);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 初回のみ実行
-
-  // 2. ピン（マーカー）の描画更新
-  useEffect(() => {
-    if (!mapObj || !markersRef.current || !window.L) return;
-    
-    const layerGroup = markersRef.current;
-    layerGroup.clearLayers(); // 既存のピンを一度消す
-
-    // トイレのピンを立てる
-    filteredToilets.forEach(t => {
-      if (t.lat && t.lng) {
-        const marker = window.L.marker([t.lat, t.lng]).addTo(layerGroup);
-        const distStr = t.distance ? `<br>約 ${Math.round(t.distance * 1000)} m` : "";
-        
-        // ピンをクリックした時のポップアップ
-        marker.bindPopup(`
-          <b>${t.name}</b>${distStr}<br>
-          <span style="font-size:0.85rem; color:#666;">
-            ${t.facilityCategory ? `[${t.facilityCategory}]` : ''} 
-            ${t.cleanliness ? '⭐'.repeat(t.cleanliness) : ''}
-          </span><br>
-          <div style="margin-top:4px;">
-            ${t.wheelchair ? '♿' : ''}
-            ${t.diaper ? '👶' : ''}
-          </div>
-          <a href="/detail/${t.id}" style="display:inline-block; margin-top:4px;">詳細を見る</a>
-        `);
-      }
-    });
-    
-    // 現在地の表示
-    if (currentLocation) {
-      window.L.circleMarker([currentLocation.lat, currentLocation.lng], {
-        color: '#ff5722', radius: 8, fillColor: '#ff5722', fillOpacity: 0.8
-      }).addTo(mapObj).bindPopup("現在地（検索基準）");
-      
-      // 現在地が変わったらそこを中心に移動
-      mapObj.setView([currentLocation.lat, currentLocation.lng], 15);
-    }
-  }, [filteredToilets, mapObj, currentLocation]);
+  // 選択されたトイレデータ
+  const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
 
   return (
     <section className="panel panel--map">
@@ -82,8 +26,85 @@ function MapPanel({ filteredToilets, currentLocation }) {
         <h2 className="panel-title">地図</h2>
         <div className="panel-meta">ピンをクリックすると詳細を開けます</div>
       </header>
+      
       <div className="map-area">
-        <div id="map"></div>
+        <SafeGoogleMap
+          center={center}
+          zoom={14}
+          style={CONTAINER_STYLE}
+        >
+          {/* 1. 現在地のマーカー (青い丸などで表現したいが、まずは標準ピンで区別) */}
+          {currentLocation && (
+            <Marker
+              position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+              title="現在地"
+              icon={{
+                // 現在地を青いドットで表現
+                path: window.google?.maps?.SymbolPath?.CIRCLE,
+                scale: 8,
+                fillColor: "#4285F4",
+                fillOpacity: 1,
+                strokeColor: "white",
+                strokeWeight: 2,
+              }}
+            />
+          )}
+
+          {/* 2. トイレのマーカー一覧 */}
+          {filteredToilets.map((t) => (
+            <Marker
+              key={t.id}
+              position={{ lat: t.lat, lng: t.lng }}
+              title={t.name}
+              onClick={() => setSelectedToiletId(t.id)}
+            />
+          ))}
+
+          {/* 3. 情報ウィンドウ (吹き出し) */}
+          {selectedToilet && (
+            <InfoWindow
+              position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
+              onCloseClick={() => setSelectedToiletId(null)}
+              options={{ pixelOffset: new window.google.maps.Size(0, -30) }}
+            >
+              <div style={{ padding: '4px', maxWidth: '200px' }}>
+                <b style={{ fontSize: '1rem' }}>{selectedToilet.name}</b>
+                {selectedToilet.distance && (
+                  <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                    約 {Math.round(selectedToilet.distance * 1000)} m
+                  </div>
+                )}
+                
+                <div style={{ margin: '6px 0', fontSize: '0.85rem', color: '#444' }}>
+                  {selectedToilet.facilityCategory && `[${selectedToilet.facilityCategory}] `}
+                  {'⭐'.repeat(selectedToilet.cleanliness || 3)}
+                </div>
+
+                <div style={{ marginBottom: '8px' }}>
+                  {selectedToilet.wheelchair && <span title="車椅子" style={{ marginRight:4 }}>♿</span>}
+                  {selectedToilet.diaper && <span title="オムツ" style={{ marginRight:4 }}>👶</span>}
+                  {selectedToilet.open24h && <span title="24時間">🕒</span>}
+                </div>
+
+                <Link 
+                  to={`/detail/${selectedToilet.id}`}
+                  style={{ 
+                    display: 'block', 
+                    textAlign: 'center', 
+                    background: '#1e88e5', 
+                    color: 'white', 
+                    padding: '6px', 
+                    borderRadius: '4px', 
+                    textDecoration: 'none',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  詳細を見る
+                </Link>
+              </div>
+            </InfoWindow>
+          )}
+        </SafeGoogleMap>
       </div>
     </section>
   );

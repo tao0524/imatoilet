@@ -1,8 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Register.css'; 
 import { API_BASE_URL } from '../config/api';
 import { uploadToCloudinary } from '../utils';
+
+// ★Google Maps用コンポーネント
+import { Marker } from '@react-google-maps/api';
+import { SafeGoogleMap } from '../components/SafeGoogleMap';
 
 // アイコン
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -15,8 +19,6 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 function Register() {
   const navigate = useNavigate();
-  const mapRef = useRef(null);
-  const markerRef = useRef(null);
 
   // --- フォームの状態管理 ---
   const [formData, setFormData] = useState({
@@ -44,37 +46,22 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // 1. 地図の初期化
-  useEffect(() => {
-    if (!mapRef.current && window.L) {
-      const map = window.L.map('reg-map').setView([36.0825, 140.1120], 14);
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
-      mapRef.current = map;
-      map.on('click', (e) => handleMapClick(e.latlng.lat, e.latlng.lng));
+  // ★Google Maps: 地図をクリックした時の処理
+  const handleMapClick = (e) => {
+    if (e.latLng) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setFormData(prev => ({ ...prev, lat, lng }));
     }
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        markerRef.current = null;
-      }
-    };
-  }, []);
+  };
 
-  // 2. 地図クリック処理
-  const handleMapClick = (lat, lng) => {
-    const map = mapRef.current;
-    if (!map) return;
-    if (markerRef.current) map.removeLayer(markerRef.current);
-    const marker = window.L.marker([lat, lng], { draggable: true }).addTo(map);
-    markerRef.current = marker;
-    setFormData(prev => ({ ...prev, lat: lat, lng: lng }));
-    marker.on('dragend', (e) => {
-      const pos = e.target.getLatLng();
-      setFormData(prev => ({ ...prev, lat: pos.lat, lng: pos.lng }));
-    });
+  // ★Google Maps: ピンをドラッグした時の処理
+  const handleMarkerDragEnd = (e) => {
+    if (e.latLng) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setFormData(prev => ({ ...prev, lat, lng }));
+    }
   };
 
   // 3. 入力変更ハンドラ
@@ -181,7 +168,25 @@ function Register() {
               <h2 className="panel__title panel__title--small">1. 場所を指定 <span className="req">必須</span></h2>
               <p className="panel__sub">地図をタップしてピンを立ててください</p>
             </div>
-            <div id="reg-map" className="reg-map-area"></div>
+            
+            {/* ★Google Maps 表示エリア */}
+            <div className="reg-map-area">
+              <SafeGoogleMap
+                center={formData.lat ? { lat: formData.lat, lng: formData.lng } : { lat: 36.0825, lng: 140.1120 }}
+                zoom={14}
+                style={{ width: '100%', height: '100%' }}
+                onClick={handleMapClick} // 地図クリックでピン移動
+              >
+                {formData.lat && formData.lng && (
+                  <Marker
+                    position={{ lat: formData.lat, lng: formData.lng }}
+                    draggable={true} // ドラッグ可能にする
+                    onDragEnd={handleMarkerDragEnd} // ドラッグ終了時に座標更新
+                  />
+                )}
+              </SafeGoogleMap>
+            </div>
+
             <div className="map-hint">
               <span className="dot"></span>
               {formData.lat ? (
@@ -203,7 +208,6 @@ function Register() {
                 <input type="text" name="name" className="input" placeholder="例：つくば駅前公衆トイレ" value={formData.name} onChange={handleChange} required />
               </div>
 
-              {/* ★復活：住所入力欄 */}
               <div className="form-row">
                 <label className="form-label">住所</label>
                 <input type="text" name="address" className="input" placeholder="例：茨城県つくば市吾妻1-1" value={formData.address} onChange={handleChange} />
