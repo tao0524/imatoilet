@@ -3,15 +3,13 @@ import { useToiletSearch } from '../../hooks/useToiletSearch';
 import PlaceSearch from './PlaceSearch';
 import MapPanel from './MapPanel';
 import ListPanel from './ListPanel';
-import '../../search.css'; // 既存のCSSを読み込み
+import '../../search.css';
 
-// アイコン
 import SettingsIcon from '@mui/icons-material/Settings';
 
 function Search() {
   const navigate = useNavigate();
   
-  // カスタムフックからロジックとStateを取得
   const {
     filteredToilets,
     currentLocation,
@@ -19,10 +17,12 @@ function Search() {
     setPlaceQuery,
     searchStatus,
     handlePlaceSearch,
-    handleCurrentLocation
+    handleCurrentLocation,
+    handleKeywordSearch, // ★受け取り
+    searchHistory,       // ★受け取り
+    handleHistorySearch  // ★受け取り
   } = useToiletSearch();
 
-  // 条件指定画面へ遷移
   const goConditions = () => {
     navigate('/conditions');
   };
@@ -31,16 +31,17 @@ function Search() {
     <main className="search-main">
       <div className="container">
         
-        {/* 目的地検索エリア */}
         <PlaceSearch
           placeQuery={placeQuery}
           setPlaceQuery={setPlaceQuery}
           handlePlaceSearch={handlePlaceSearch}
           handleCurrentLocation={handleCurrentLocation}
+          handleKeywordSearch={handleKeywordSearch} // ★渡す
           searchStatus={searchStatus}
+          searchHistory={searchHistory}       // ★渡す
+          handleHistorySearch={handleHistorySearch} // ★渡す
         />
 
-        {/* 条件指定への導線 */}
         <div style={{ margin: '10px 0 24px', padding: '16px', background: '#f0f7ff', borderRadius: '16px', textAlign: 'center' }}>
            <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#444', fontWeight: 'bold' }}>
              条件を指定すると、もっと探しやすくなります<br/>
@@ -56,13 +57,11 @@ function Search() {
          </div>
 
         <div className="search-layout">
-          {/* 地図パネル */}
           <MapPanel 
             filteredToilets={filteredToilets}
             currentLocation={currentLocation}
           />
 
-          {/* リストパネル */}
           <ListPanel 
             filteredToilets={filteredToilets}
             currentLocation={currentLocation}

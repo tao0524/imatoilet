@@ -1270,14 +1270,6 @@ class ToiletApiControllerTest {
 }
 </file>
 
-<file path="toilet-frontend/.env.development">
-VITE_API_BASE_URL=http://localhost:8080/api/toilets
-</file>
-
-<file path="toilet-frontend/.env.production">
-VITE_API_BASE_URL=/api/toilets
-</file>
-
 <file path="toilet-frontend/.gitignore">
 # Logs
 logs
@@ -1385,283 +1377,6 @@ If you are developing a production application, we recommend using TypeScript wi
 
 <file path="toilet-frontend/src/assets/react.svg">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
-</file>
-
-<file path="toilet-frontend/src/base.css">
-:root{
-  --bg:#f7f9fb;
-  --ink:#1a1a1a;
-  --primary:#1e88e5;
-  --accent:#f57c00;
-  --muted:#666;
-  --radius:14px;
-}
-
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  font-family:"Noto Sans JP",system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--ink);
-}
-
-/* === src/base.css に追加 === */
-
-a {
-  text-decoration: none; /* 下線を消す */
-  color: inherit;        /* 色を親要素に合わせる */
-}
-
-/* （以下、元々あった .container や body の記述...） */
-
-/* =========================
-   レイアウト：センターカラム
-========================= */
-.container{
-  width: min(1040px, 100%);
-  margin-inline: auto;
-  padding-inline: 16px;
-}
-
-/* 背景を薄くしてカードを浮かせる（任意だがおすすめ） */
-body{
-  background: #f5f7fb;
-}
-
-/* =========================
-   トップページ専用スタイル (B案)
-========================================= */
-.home-wrap {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  background-color: #f0f4f8;
-}
-
-.home-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 30px;
-  width: 100%;
-  max-width: 400px; /* スマホ時は狭く */
-}
-
-/* 左側：ブランドエリア */
-.brand-area {
-  text-align: center;
-  padding: 20px;
-}
-.brand-logo {
-  font-size: 3rem;
-  font-weight: 800;
-  color: #1e88e5;
-  line-height: 1.2;
-  margin-bottom: 10px;
-  display: inline-block;
-}
-.brand-logo .icon {
-  font-size: 4rem;
-  display: block;
-  margin-bottom: 0px;
-}
-.brand-sub {
-  color: #546e7a;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-/* 右側：メニューエリア */
-.menu-area {
-  background: #fff;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(30, 136, 229, 0.15);
-}
-
-.menu-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 16px 20px;
-  margin-bottom: 16px;
-  background: #f8f9fa;
-  border: 2px solid #e1e4e8;
-  border-radius: 12px;
-  color: #333;
-  font-weight: bold;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-.menu-btn:last-child { margin-bottom: 0; }
-
-.menu-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  border-color: #1e88e5;
-  color: #1e88e5;
-}
-
-.menu-btn.primary {
-  background: #1e88e5;
-  border-color: #1e88e5;
-  color: #fff;
-}
-.menu-btn.primary:hover {
-  background: #1976d2;
-  box-shadow: 0 4px 15px rgba(30, 136, 229, 0.4);
-}
-
-.btn-icon { font-size: 1.4rem; margin-right: 12px; }
-.btn-arrow { font-size: 1.2rem; opacity: 0.5; }
-
-/* PC用レイアウト（2カラム化） */
-@media (min-width: 800px) {
-  .home-grid {
-    grid-template-columns: 1fr 1fr; /* 左右2列 */
-    max-width: 900px;
-    align-items: center;
-    gap: 60px;
-  }
-  
-  .brand-area { text-align: left; }
-  .brand-logo { font-size: 4rem; }
-  .brand-logo .icon { display: inline-block; margin-right: 10px; }
-  .brand-sub { font-size: 1.2rem; }
-}
-
-/* =========================
-   詳細ページ (Detail.jsx)
-========================= */
-.detail-main {
-  padding: 20px 0 40px;
-}
-
-.detail-nav {
-  margin-bottom: 16px;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-.back-link:hover {
-  color: var(--primary);
-}
-
-.detail-card {
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  overflow: hidden;
-  padding: 24px;
-  border: 1px solid #eef0f6;
-}
-
-/* 画像エリア */
-.detail-image {
-  margin: -24px -24px 20px;
-  height: 200px;
-  background: #eee;
-}
-.detail-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* ヘッダー周り */
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.detail-title {
-  margin: 0;
-  font-size: 1.5rem;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-/* お気に入りボタン */
-.fav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 0.7rem;
-  gap: 2px;
-  padding: 0;
-  min-width: 60px;
-}
-.fav-btn:hover {
-  color: #ffb300;
-}
-
-/* タグ */
-.detail-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.85rem;
-  padding: 6px 12px;
-  border-radius: 99px;
-  background: #f5f5f5;
-  color: #666;
-}
-.tag-ok {
-  background: #e3f2fd;
-  color: #1565c0;
-  font-weight: bold;
-}
-
-/* 情報エリア */
-.detail-info {
-  margin-bottom: 30px;
-}
-.info-label {
-  font-size: 0.85rem;
-  color: #999;
-  margin: 0 0 6px;
-}
-.info-text {
-  margin: 0 0 20px;
-  font-size: 1rem;
-  line-height: 1.6;
-}
-
-/* ナビボタン */
-.nav-btn {
-  background: #4285f4; /* Google Map Color */
-  color: #fff;
-  border: none;
-  font-size: 1.1rem;
-}
-.nav-btn:hover {
-  background: #3367d6;
-}
 </file>
 
 <file path="toilet-frontend/src/components.css">
@@ -2814,52 +2529,6 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 </file>
 
-<file path="toilet-frontend/src/utils.js">
-// js/utils.js の内容を移植
-export const STORAGE_KEY = "imatoilet_user_toilets_v1";
-
-// ユーザー登録データを読み込む
-export function loadUserToilets() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-// ユーザー登録データを保存する
-export function saveUserToilets(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-}
-
-// ID生成
-export function makeId() {
-  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
-}
-
-// 現在日付 (YYYY-MM-DD)
-export function nowISO() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-// 2点間の距離計算 (Haversine formula)
-export function calcDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-</file>
-
 <file path="toilet-frontend/src/utils.test.js">
 import { describe, it, expect, beforeEach } from 'vitest';
 import { calcDistance, makeId, loadUserToilets, saveUserToilets } from './utils';
@@ -2977,6 +2646,368 @@ public class Equipment {
         this.toilet = toilet;
         this.type = type;
     }
+}
+</file>
+
+<file path="toilet-frontend/.env.development">
+VITE_API_BASE_URL=http://localhost:8080/api/toilets
+VITE_CLOUDINARY_CLOUD_NAME=dgups3p7v
+VITE_CLOUDINARY_UPLOAD_PRESET=imatoilet_user_images
+</file>
+
+<file path="toilet-frontend/.env.production">
+VITE_API_BASE_URL=/api/toilets
+VITE_CLOUDINARY_CLOUD_NAME=dgups3p7v
+VITE_CLOUDINARY_UPLOAD_PRESET=imatoilet_user_images
+</file>
+
+<file path="toilet-frontend/src/base.css">
+:root{
+  --bg:#f7f9fb;
+  --ink:#1a1a1a;
+  --primary:#1e88e5;
+  --accent:#f57c00;
+  --muted:#666;
+  --radius:14px;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:"Noto Sans JP",system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+}
+
+/* === src/base.css に追加 === */
+
+a {
+  text-decoration: none; /* 下線を消す */
+  color: inherit;        /* 色を親要素に合わせる */
+}
+
+/* （以下、元々あった .container や body の記述...） */
+
+/* =========================
+   レイアウト：センターカラム
+========================= */
+.container{
+  width: min(1040px, 100%);
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+/* 背景を薄くしてカードを浮かせる（任意だがおすすめ） */
+body{
+  background: #f5f7fb;
+}
+
+/* =========================
+   トップページ専用スタイル (B案)
+========================================= */
+.home-wrap {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: #f0f4f8;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  width: 100%;
+  max-width: 400px; /* スマホ時は狭く */
+}
+
+/* 左側：ブランドエリア */
+.brand-area {
+  text-align: center;
+  padding: 20px;
+}
+.brand-logo {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #1e88e5;
+  line-height: 1.2;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+.brand-logo .icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 0px;
+}
+.brand-sub {
+  color: #546e7a;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* 右側：メニューエリア */
+.menu-area {
+  background: #fff;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(30, 136, 229, 0.15);
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  background: #f8f9fa;
+  border: 2px solid #e1e4e8;
+  border-radius: 12px;
+  color: #333;
+  font-weight: bold;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.menu-btn:last-child { margin-bottom: 0; }
+
+.menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #1e88e5;
+  color: #1e88e5;
+}
+
+.menu-btn.primary {
+  background: #1e88e5;
+  border-color: #1e88e5;
+  color: #fff;
+}
+.menu-btn.primary:hover {
+  background: #1976d2;
+  box-shadow: 0 4px 15px rgba(30, 136, 229, 0.4);
+}
+
+.btn-icon { font-size: 1.4rem; margin-right: 12px; }
+.btn-arrow { font-size: 1.2rem; opacity: 0.5; }
+
+/* PC用レイアウト（2カラム化） */
+@media (min-width: 800px) {
+  .home-grid {
+    grid-template-columns: 1fr 1fr; /* 左右2列 */
+    max-width: 900px;
+    align-items: center;
+    gap: 60px;
+  }
+  
+  .brand-area { text-align: left; }
+  .brand-logo { font-size: 4rem; }
+  .brand-logo .icon { display: inline-block; margin-right: 10px; }
+  .brand-sub { font-size: 1.2rem; }
+}
+
+/* =========================
+   詳細ページ (Detail.jsx)
+========================= */
+.detail-main {
+  padding: 20px 0 40px;
+}
+
+.detail-nav {
+  margin-bottom: 16px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.back-link:hover {
+  color: var(--primary);
+}
+
+.detail-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid #eef0f6;
+}
+
+/* 画像エリアの枠 */
+.detail-image {
+  margin: -24px -24px 20px;
+  
+  width: auto;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  
+  background: #eee;
+  position: relative; /* 念のため */
+}
+
+/* 画像本体 */
+.detail-image img {
+  width: 100%;
+  height: 100%;
+  
+  object-fit: cover; 
+  display: block;
+}
+
+/* ヘッダー周り */
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.detail-title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+/* お気に入りボタン */
+.fav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.7rem;
+  gap: 2px;
+  padding: 0;
+  min-width: 60px;
+}
+.fav-btn:hover {
+  color: #ffb300;
+}
+
+/* タグ */
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  border-radius: 99px;
+  background: #f5f5f5;
+  color: #666;
+}
+.tag-ok {
+  background: #e3f2fd;
+  color: #1565c0;
+  font-weight: bold;
+}
+
+/* 情報エリア */
+.detail-info {
+  margin-bottom: 30px;
+}
+.info-label {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0 0 6px;
+}
+.info-text {
+  margin: 0 0 20px;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ナビボタン */
+.nav-btn {
+  background: #4285f4; /* Google Map Color */
+  color: #fff;
+  border: none;
+  font-size: 1.1rem;
+}
+.nav-btn:hover {
+  background: #3367d6;
+}
+
+/* =========================
+   Detail Page: PC Layout Fix
+   (画面幅800px以上で適用)
+========================= */
+@media (min-width: 800px) {
+  
+  /* カード全体を左右2列にする */
+  .detail-card {
+    display: grid;
+    grid-template-columns: 45% 1fr; /* 画像45%、残り文字 */
+    gap: 32px; /* 画像と文字の隙間 */
+    padding: 32px; /* カードの内側の余白を増やす */
+    align-items: start; /* 上揃え */
+  }
+
+  /* 画像エリアの調整 */
+  .detail-image {
+    /* モバイル用のマイナスマージンをリセット */
+    margin: 0;
+    
+    /* 高さを固定せず、アスペクト比を維持 */
+    height: auto; 
+    aspect-ratio: 4 / 3; /* 標準的な写真の比率 */
+    
+    /* 角を丸くする */
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  /* 画像本体 */
+  .detail-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 枠いっぱいに表示（トリミングあり） */
+    /* もし全体を表示したい場合は contain に変えてください */
+  }
+
+  /* 文字情報のエリア */
+  .detail-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* タグエリアを少し広げる */
+  .detail-tags {
+    margin-bottom: 24px;
+  }
+  
+  /* ボタンエリアを横並びにする（任意） */
+  .detail-actions {
+    margin-top: auto; /* 下に寄せる */
+    display: grid !important; /* 強制的にグリッド */
+    grid-template-columns: 1fr 1fr; /* 2列 */
+    gap: 12px;
+  }
+  
+  /* ナビボタンだけは全幅にする */
+  .nav-btn {
+    grid-column: 1 / -1;
+  }
 }
 </file>
 
@@ -3663,372 +3694,6 @@ describe('Detail Page', () => {
 });
 </file>
 
-<file path="toilet-frontend/src/pages/Edit.jsx">
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { loadUserToilets, saveUserToilets } from '../utils'; 
-import { API_BASE_URL } from '../config/api';
-import './Register.css'; // デザインは登録画面と同じものを使用
-
-// アイコン
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditIcon from '@mui/icons-material/Edit';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import StarIcon from '@mui/icons-material/Star';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'; // ★追加
-
-function Edit() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const mapRef = useRef(null);
-  const markerRef = useRef(null);
-
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  // フォームの状態
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    description: '',
-    lat: '',
-    lng: '',
-    image: '', // ★追加
-    cleanliness: 3, 
-    facilityCategory: '', 
-    conditions: {
-      wheelchair: false,
-      diaper: false,
-      open24h: false,
-      ostomate: false,
-      nursing_room: false,
-      washlet: false,
-      gender_separated: false,
-      free: false,
-      parking: false
-    }
-  });
-
-  // --- 1. データ読み込み ---
-  useEffect(() => {
-    async function fetchData() {
-      // ローカルデータの場合
-      if (id.startsWith('u_')) {
-        const userToilets = loadUserToilets();
-        const found = userToilets.find(t => t.id === id);
-        if (found) applyDataToForm(found);
-        else {
-            alert("データが見つかりません");
-            setLoading(false);
-        }
-      } 
-      // APIデータの場合
-      else {
-        try {
-          const res = await fetch(`${API_BASE_URL}/${id}`);
-          if (res.ok) {
-            const data = await res.json();
-            applyDataToForm(data);
-          } else {
-            alert("データの取得に失敗しました");
-            navigate('/search');
-          }
-        } catch (err) {
-          console.error(err);
-          alert("通信エラーが発生しました");
-        }
-      }
-    }
-    fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  // データをStateに入れるだけ（地図初期化はここではしない）
-  const applyDataToForm = (data) => {
-    const eqList = data.equipment ? data.equipment.split(',') : [];
-    
-    setFormData({
-      name: data.name || '',
-      address: data.address || '',
-      description: data.description || '',
-      lat: data.lat,
-      lng: data.lng,
-      image: data.image || '', // ★追加: データの読み込み
-      cleanliness: data.cleanliness || 3,
-      facilityCategory: data.facilityCategory || '',
-      conditions: {
-        wheelchair: data.wheelchair || eqList.includes('wheelchair') || eqList.includes('WHEELCHAIR'),
-        diaper: data.diaper || eqList.includes('diaper') || eqList.includes('DIAPER'),
-        open24h: data.open24h || eqList.includes('open_24h') || eqList.includes('OPEN_24H'),
-        ostomate: eqList.includes('ostomate') || eqList.includes('OSTOMATE'),
-        nursing_room: eqList.includes('nursing_room') || eqList.includes('NURSING_ROOM'),
-        washlet: eqList.includes('washlet') || eqList.includes('WASHLET'),
-        gender_separated: eqList.includes('gender_separated') || eqList.includes('GENDER_SEPARATED'),
-        free: eqList.includes('free') || eqList.includes('FREE'),
-        parking: eqList.includes('parking') || eqList.includes('PARKING'),
-      }
-    });
-
-    // ここでローディングを終わらせる（描画が更新される）
-    setLoading(false);
-  };
-
-  // --- 2. 地図の初期化（loadingが終わってHTMLが表示された後に実行） ---
-  useEffect(() => {
-    if (!loading && formData.lat && formData.lng) {
-       initMap(formData.lat, formData.lng);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]); // loadingが変わったタイミングで実行
-
-  const initMap = (lat, lng) => {
-    if (!window.L) return;
-    
-    // 既に地図があれば削除（再描画防止）
-    if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-    }
-
-    // ここで document.getElementById('edit-map') が成功するはず
-    const map = window.L.map('edit-map').setView([lat, lng], 15);
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-    
-    const marker = window.L.marker([lat, lng], { draggable: true }).addTo(map);
-    markerRef.current = marker;
-    mapRef.current = map;
-
-    marker.on('dragend', (e) => {
-      const pos = e.target.getLatLng();
-      setFormData(prev => ({ ...prev, lat: pos.lat, lng: pos.lng }));
-    });
-    
-    map.on('click', (e) => {
-      marker.setLatLng(e.latlng);
-      setFormData(prev => ({ ...prev, lat: e.latlng.lat, lng: e.latlng.lng }));
-    });
-  };
-
-  // 入力変更ハンドラ
-  const handleChange = (e) => {
-    const { name, value, checked } = e.target;
-    if (name in formData.conditions) {
-      setFormData(prev => ({
-        ...prev,
-        conditions: { ...prev.conditions, [name]: checked }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleStarClick = (rating) => {
-    setFormData(prev => ({ ...prev, cleanliness: rating }));
-  };
-
-  // 更新処理
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!confirm("この内容で更新しますか？")) return;
-    setSubmitting(true);
-
-    const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
-    const equipmentStr = equipmentList.join(',');
-
-    const payload = {
-        name: formData.name,
-        address: formData.address,
-        description: formData.description,
-        lat: formData.lat,
-        lng: formData.lng,
-        cleanliness: formData.cleanliness,
-        image: formData.image, // ★追加: 画像の保存
-        facilityCategory: formData.facilityCategory,
-        equipment: equipmentStr,
-        wheelchair: formData.conditions.wheelchair,
-        diaper: formData.conditions.diaper,
-        open24h: formData.conditions.open24h
-    };
-
-    try {
-        if (id.startsWith('u_')) {
-            const userToilets = loadUserToilets();
-            const index = userToilets.findIndex(t => t.id === id);
-            if (index !== -1) {
-                userToilets[index] = { ...userToilets[index], ...payload, updatedAt: new Date().toISOString() };
-                saveUserToilets(userToilets);
-                alert("更新しました（ローカル）");
-                navigate(`/detail/${id}`);
-            }
-        } else {
-            const res = await fetch(`${API_BASE_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (res.ok) {
-                alert("更新しました！");
-                navigate(`/detail/${id}`);
-            } else {
-                alert("更新に失敗しました。");
-            }
-        }
-    } catch (err) {
-        console.error(err);
-        alert("エラーが発生しました。");
-    } finally {
-        setSubmitting(false);
-    }
-  };
-
-  if (loading) return <div className="container" style={{padding:'20px'}}>データを読み込んでいます...</div>;
-
-  return (
-    <main className="register-page">
-      <div className="container">
-        <div style={{ marginBottom: '20px' }}>
-          <Link to={`/detail/${id}`} style={{ display:'inline-flex', alignItems:'center', gap:'4px', color:'#666', textDecoration:'none' }}>
-            <ArrowBackIcon fontSize="small" /> 詳細に戻る
-          </Link>
-          <h1 style={{ marginTop:'10px', fontSize:'1.5rem' }}>トイレ情報を編集</h1>
-        </div>
-
-        <form className="register-grid" onSubmit={handleSubmit}>
-          {/* 左カラム：地図 */}
-          <section className="panel panel--map">
-            <div className="panel__head panel__head--tight">
-              <h2 className="panel__title panel__title--small">場所の修正</h2>
-              <p className="panel__sub">ピンをドラッグして位置を微調整できます</p>
-            </div>
-            <div id="edit-map" className="reg-map-area"></div>
-            <div className="map-hint">
-              <span className="dot"></span>
-              <span>選択中: {Number(formData.lat).toFixed(5)}, {Number(formData.lng).toFixed(5)}</span>
-            </div>
-          </section>
-
-          {/* 右カラム：入力フォーム */}
-          <section className="panel">
-            <div className="panel__head">
-              <h2 className="panel__title">情報の修正</h2>
-            </div>
-            <div className="panel__body">
-              {/* 名前 */}
-              <div className="form-row">
-                <label className="form-label">名前 <span className="req">必須</span></label>
-                <input type="text" name="name" className="input" value={formData.name} onChange={handleChange} required />
-              </div>
-
-              {/* ★追加：画像URL入力欄 */}
-              <div className="form-row">
-                <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
-                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真のURL
-                </label>
-                <input 
-                  type="url" 
-                  name="image" 
-                  className="input" 
-                  placeholder="https://example.com/photo.jpg" 
-                  value={formData.image} 
-                  onChange={handleChange} 
-                />
-                {formData.image && (
-                  <div style={{ marginTop: '10px' }}>
-                    <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
-                    <img 
-                      src={formData.image} 
-                      alt="プレビュー" 
-                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
-                      onError={(e) => e.target.style.display = 'none'} 
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* 清潔度 */}
-              <div className="form-row">
-                <label className="form-label">清潔度</label>
-                <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <div key={star} onClick={() => handleStarClick(star)}>
-                      {star <= formData.cleanliness ? (
-                        <StarIcon sx={{ color: '#ffb400', fontSize: 32 }} />
-                      ) : (
-                        <StarBorderIcon sx={{ color: '#ccc', fontSize: 32 }} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 施設タイプ */}
-              <div className="form-row">
-                <label className="form-label">施設タイプ <span className="req">必須</span></label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop:'8px' }}>
-                  {[
-                     { val: 'station', label: '駅・交通' },
-                     { val: 'commercial', label: '商業施設' },
-                     { val: 'convenience', label: 'コンビニ・店' },
-                     { val: 'park', label: '公園・屋外' },
-                     { val: 'public', label: '公共施設' },
-                     { val: 'medical', label: '医療・福祉' },
-                     { val: 'hotel_tourism', label: '観光・宿泊' },
-                     { val: 'other', label: 'その他' }
-                  ].map(opt => (
-                    <label key={opt.val} className="check-label" style={{ fontWeight: 'normal' }}>
-                      <input type="radio" name="facilityCategory" value={opt.val} checked={formData.facilityCategory === opt.val} onChange={handleChange} required />
-                      {opt.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* 設備 */}
-              <div className="form-row">
-                <label className="form-label">設備・特徴</label>
-                <div className="checks">
-                  <label className="check-label" style={{background:'#e8f5e9', border:'1px solid #c8e6c9'}}>
-                    <input type="checkbox" name="parking" checked={formData.conditions.parking} onChange={handleChange} />
-                    <DirectionsCarIcon fontSize="small" color="success" /> 駐車場あり
-                  </label>
-                  <label className="check-label"><input type="checkbox" name="wheelchair" checked={formData.conditions.wheelchair} onChange={handleChange} /> ♿ 車椅子</label>
-                  <label className="check-label"><input type="checkbox" name="diaper" checked={formData.conditions.diaper} onChange={handleChange} /> 👶 オムツ</label>
-                  <label className="check-label"><input type="checkbox" name="open24h" checked={formData.conditions.open24h} onChange={handleChange} /> 🕒 24時間</label>
-                  <label className="check-label"><input type="checkbox" name="ostomate" checked={formData.conditions.ostomate} onChange={handleChange} /> ➕ オストメイト</label>
-                  <label className="check-label"><input type="checkbox" name="nursing_room" checked={formData.conditions.nursing_room} onChange={handleChange} /> 🍼 授乳室</label>
-                  <label className="check-label"><input type="checkbox" name="washlet" checked={formData.conditions.washlet} onChange={handleChange} /> 🚽 ウォシュレット</label>
-                  <label className="check-label"><input type="checkbox" name="gender_separated" checked={formData.conditions.gender_separated} onChange={handleChange} /> 🚻 男女別</label>
-                  <label className="check-label"><input type="checkbox" name="free" checked={formData.conditions.free} onChange={handleChange} /> 💰 無料</label>
-                </div>
-              </div>
-
-              {/* 説明 */}
-              <div className="form-row">
-                <label className="form-label">説明・メモ</label>
-                <textarea name="description" className="textarea" rows="3" value={formData.description} onChange={handleChange}></textarea>
-              </div>
-
-              <div className="form-footer">
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  <EditIcon sx={{ mr: 1 }} />
-                  {submitting ? '更新中...' : '更新内容を保存'}
-                </button>
-              </div>
-            </div>
-          </section>
-        </form>
-      </div>
-    </main>
-  );
-}
-
-export default Edit;
-</file>
-
 <file path="toilet-frontend/src/pages/Favorites.jsx">
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -4318,6 +3983,82 @@ function MapPanel({ filteredToilets, currentLocation }) {
 }
 
 export default MapPanel;
+</file>
+
+<file path="toilet-frontend/src/utils.js">
+// 環境変数 (VITE_API_BASE_URL) を読み込んで定数としてエクスポート
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/toilets';
+
+export const STORAGE_KEY = "imatoilet_user_toilets_v1";
+
+// ユーザー登録データを読み込む
+export function loadUserToilets() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// ユーザー登録データを保存する
+export function saveUserToilets(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+// ID生成
+export function makeId() {
+  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
+}
+
+// 現在日付 (YYYY-MM-DD)
+export function nowISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// 2点間の距離計算 (Haversine formula)
+export function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ★追加: Cloudinaryへの画像アップロード関数
+export async function uploadToCloudinary(file) {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+
+  // Cloudinaryへ送信
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
+  }
+
+  const data = await res.json();
+  return data.secure_url; // httpsから始まるURLを返す
+}
 </file>
 
 <file path="toilet-frontend/vitest.config.js">
@@ -4782,6 +4523,409 @@ function FilterChip({ label, name, checked, onChange, highlight }) {
 export default Conditions;
 </file>
 
+<file path="toilet-frontend/src/pages/Edit.jsx">
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { loadUserToilets, saveUserToilets, uploadToCloudinary } from '../utils';
+import { API_BASE_URL } from '../config/api';
+import './Register.css'; 
+
+// アイコン
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EditIcon from '@mui/icons-material/Edit';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+
+function Edit() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // フォームの状態
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    description: '',
+    lat: '',
+    lng: '',
+    image: '', 
+    cleanliness: 3, 
+    facilityCategory: '', 
+    conditions: {
+      wheelchair: false,
+      diaper: false,
+      open24h: false,
+      ostomate: false,
+      nursing_room: false,
+      washlet: false,
+      gender_separated: false,
+      free: false,
+      parking: false
+    }
+  });
+
+  // --- 1. データ読み込み ---
+  useEffect(() => {
+    async function fetchData() {
+      if (id.startsWith('u_')) {
+        const userToilets = loadUserToilets();
+        const found = userToilets.find(t => t.id === id);
+        if (found) applyDataToForm(found);
+        else {
+            alert("データが見つかりません");
+            setLoading(false);
+        }
+      } 
+      else {
+        try {
+          const res = await fetch(`${API_BASE_URL}/${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            applyDataToForm(data);
+          } else {
+            alert("データの取得に失敗しました");
+            navigate('/search');
+          }
+        } catch (err) {
+          console.error(err);
+          alert("通信エラーが発生しました");
+        }
+      }
+    }
+    fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const applyDataToForm = (data) => {
+    const eqList = data.equipment ? data.equipment.split(',') : [];
+    
+    setFormData({
+      name: data.name || '',
+      address: data.address || '',
+      description: data.description || '',
+      lat: data.lat,
+      lng: data.lng,
+      image: data.image || '', 
+      cleanliness: data.cleanliness || 3,
+      facilityCategory: data.facilityCategory || '',
+      conditions: {
+        wheelchair: data.wheelchair || eqList.includes('wheelchair') || eqList.includes('WHEELCHAIR'),
+        diaper: data.diaper || eqList.includes('diaper') || eqList.includes('DIAPER'),
+        open24h: data.open24h || eqList.includes('open_24h') || eqList.includes('OPEN_24H'),
+        ostomate: eqList.includes('ostomate') || eqList.includes('OSTOMATE'),
+        nursing_room: eqList.includes('nursing_room') || eqList.includes('NURSING_ROOM'),
+        washlet: eqList.includes('washlet') || eqList.includes('WASHLET'),
+        gender_separated: eqList.includes('gender_separated') || eqList.includes('GENDER_SEPARATED'),
+        free: eqList.includes('free') || eqList.includes('FREE'),
+        parking: eqList.includes('parking') || eqList.includes('PARKING'),
+      }
+    });
+
+    setLoading(false);
+  };
+
+  // --- 2. 地図の初期化 ---
+  useEffect(() => {
+    if (!loading && formData.lat && formData.lng) {
+       initMap(formData.lat, formData.lng);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const initMap = (lat, lng) => {
+    if (!window.L) return;
+    
+    if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+    }
+
+    const map = window.L.map('edit-map').setView([lat, lng], 15);
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    
+    const marker = window.L.marker([lat, lng], { draggable: true }).addTo(map);
+    markerRef.current = marker;
+    mapRef.current = map;
+
+    marker.on('dragend', (e) => {
+      const pos = e.target.getLatLng();
+      setFormData(prev => ({ ...prev, lat: pos.lat, lng: pos.lng }));
+    });
+    
+    map.on('click', (e) => {
+      marker.setLatLng(e.latlng);
+      setFormData(prev => ({ ...prev, lat: e.latlng.lat, lng: e.latlng.lng }));
+    });
+  };
+
+  const handleChange = (e) => {
+    const { name, value, checked } = e.target;
+    if (name in formData.conditions) {
+      setFormData(prev => ({
+        ...prev,
+        conditions: { ...prev.conditions, [name]: checked }
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const uploadedUrl = await uploadToCloudinary(file);
+      setFormData(prev => ({ ...prev, image: uploadedUrl }));
+    } catch (err) {
+      console.error(err);
+      alert("画像のアップロードに失敗しました。\n" + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleStarClick = (rating) => {
+    setFormData(prev => ({ ...prev, cleanliness: rating }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!confirm("この内容で更新しますか？")) return;
+    setSubmitting(true);
+
+    const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
+    const equipmentStr = equipmentList.join(',');
+
+    const payload = {
+        name: formData.name,
+        address: formData.address,
+        description: formData.description,
+        lat: formData.lat,
+        lng: formData.lng,
+        cleanliness: formData.cleanliness,
+        image: formData.image,
+        facilityCategory: formData.facilityCategory,
+        equipment: equipmentStr,
+        wheelchair: formData.conditions.wheelchair,
+        diaper: formData.conditions.diaper,
+        open24h: formData.conditions.open24h
+    };
+
+    try {
+        if (id.startsWith('u_')) {
+            const userToilets = loadUserToilets();
+            const index = userToilets.findIndex(t => t.id === id);
+            if (index !== -1) {
+                userToilets[index] = { ...userToilets[index], ...payload, updatedAt: new Date().toISOString() };
+                saveUserToilets(userToilets);
+                alert("更新しました（ローカル）");
+                navigate(`/detail/${id}`);
+            }
+        } else {
+            const res = await fetch(`${API_BASE_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (res.ok) {
+                alert("更新しました！");
+                navigate(`/detail/${id}`);
+            } else {
+                alert("更新に失敗しました。");
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        alert("エラーが発生しました。");
+    } finally {
+        setSubmitting(false);
+    }
+  };
+
+  if (loading) return <div className="container" style={{padding:'20px'}}>データを読み込んでいます...</div>;
+
+  return (
+    <main className="register-page">
+      <div className="container">
+        <div style={{ marginBottom: '20px' }}>
+          <Link to={`/detail/${id}`} style={{ display:'inline-flex', alignItems:'center', gap:'4px', color:'#666', textDecoration:'none' }}>
+            <ArrowBackIcon fontSize="small" /> 詳細に戻る
+          </Link>
+          <h1 style={{ marginTop:'10px', fontSize:'1.5rem' }}>トイレ情報を編集</h1>
+        </div>
+
+        <form className="register-grid" onSubmit={handleSubmit}>
+          <section className="panel panel--map">
+            <div className="panel__head panel__head--tight">
+              <h2 className="panel__title panel__title--small">場所の修正</h2>
+              <p className="panel__sub">ピンをドラッグして位置を微調整できます</p>
+            </div>
+            <div id="edit-map" className="reg-map-area"></div>
+            <div className="map-hint">
+              <span className="dot"></span>
+              <span>選択中: {Number(formData.lat).toFixed(5)}, {Number(formData.lng).toFixed(5)}</span>
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel__head">
+              <h2 className="panel__title">情報の修正</h2>
+            </div>
+            <div className="panel__body">
+              <div className="form-row">
+                <label className="form-label">名前 <span className="req">必須</span></label>
+                <input type="text" name="name" className="input" value={formData.name} onChange={handleChange} required />
+              </div>
+
+              {/* ★復活：住所入力欄 */}
+              <div className="form-row">
+                <label className="form-label">住所</label>
+                <input type="text" name="address" className="input" value={formData.address} onChange={handleChange} />
+              </div>
+
+              <div className="form-row">
+                <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真
+                </label>
+                
+                <div style={{ marginBottom: '8px' }}>
+                  <label 
+                    className={`btn btn-sub ${uploading ? 'btn-disabled' : ''}`} 
+                    style={{ 
+                      display: 'inline-flex', 
+                      width: 'auto', 
+                      padding: '8px 16px', 
+                      fontSize: '0.9rem',
+                      cursor: uploading ? 'wait' : 'pointer',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {uploading ? 'アップロード中...' : (
+                      <>
+                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を上書きアップロード
+                      </>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleFileChange} 
+                      disabled={uploading}
+                      style={{ display: 'none' }} 
+                    />
+                  </label>
+                </div>
+
+                <input 
+                  type="url" 
+                  name="image" 
+                  className="input" 
+                  placeholder="https://example.com/photo.jpg" 
+                  value={formData.image} 
+                  onChange={handleChange} 
+                />
+                {formData.image && (
+                  <div style={{ marginTop: '10px' }}>
+                    <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
+                    <img 
+                      src={formData.image} 
+                      alt="プレビュー" 
+                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
+                      onError={(e) => e.target.style.display = 'none'} 
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">清潔度</label>
+                <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <div key={star} onClick={() => handleStarClick(star)}>
+                      {star <= formData.cleanliness ? (
+                        <StarIcon sx={{ color: '#ffb400', fontSize: 32 }} />
+                      ) : (
+                        <StarBorderIcon sx={{ color: '#ccc', fontSize: 32 }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">施設タイプ <span className="req">必須</span></label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop:'8px' }}>
+                  {[
+                     { val: 'station', label: '駅・交通' },
+                     { val: 'commercial', label: '商業施設' },
+                     { val: 'convenience', label: 'コンビニ・店' },
+                     { val: 'park', label: '公園・屋外' },
+                     { val: 'public', label: '公共施設' },
+                     { val: 'medical', label: '医療・福祉' },
+                     { val: 'hotel_tourism', label: '観光・宿泊' },
+                     { val: 'other', label: 'その他' }
+                  ].map(opt => (
+                    <label key={opt.val} className="check-label" style={{ fontWeight: 'normal' }}>
+                      <input type="radio" name="facilityCategory" value={opt.val} checked={formData.facilityCategory === opt.val} onChange={handleChange} required />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">設備・特徴</label>
+                <div className="checks">
+                  <label className="check-label" style={{background:'#e8f5e9', border:'1px solid #c8e6c9'}}>
+                    <input type="checkbox" name="parking" checked={formData.conditions.parking} onChange={handleChange} />
+                    <DirectionsCarIcon fontSize="small" color="success" /> 駐車場あり
+                  </label>
+                  <label className="check-label"><input type="checkbox" name="wheelchair" checked={formData.conditions.wheelchair} onChange={handleChange} /> ♿ 車椅子</label>
+                  <label className="check-label"><input type="checkbox" name="diaper" checked={formData.conditions.diaper} onChange={handleChange} /> 👶 オムツ</label>
+                  <label className="check-label"><input type="checkbox" name="open24h" checked={formData.conditions.open24h} onChange={handleChange} /> 🕒 24時間</label>
+                  <label className="check-label"><input type="checkbox" name="ostomate" checked={formData.conditions.ostomate} onChange={handleChange} /> ➕ オストメイト</label>
+                  <label className="check-label"><input type="checkbox" name="nursing_room" checked={formData.conditions.nursing_room} onChange={handleChange} /> 🍼 授乳室</label>
+                  <label className="check-label"><input type="checkbox" name="washlet" checked={formData.conditions.washlet} onChange={handleChange} /> 🚽 ウォシュレット</label>
+                  <label className="check-label"><input type="checkbox" name="gender_separated" checked={formData.conditions.gender_separated} onChange={handleChange} /> 🚻 男女別</label>
+                  <label className="check-label"><input type="checkbox" name="free" checked={formData.conditions.free} onChange={handleChange} /> 💰 無料</label>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">説明・メモ</label>
+                <textarea name="description" className="textarea" rows="3" value={formData.description} onChange={handleChange}></textarea>
+              </div>
+
+              <div className="form-footer">
+                <button type="submit" className="btn btn-primary" disabled={submitting || uploading}>
+                  <EditIcon sx={{ mr: 1 }} />
+                  {submitting ? '更新中...' : '更新内容を保存'}
+                </button>
+              </div>
+            </div>
+          </section>
+        </form>
+      </div>
+    </main>
+  );
+}
+
+export default Edit;
+</file>
+
 <file path="toilet-frontend/src/pages/Home.jsx">
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -5114,6 +5258,129 @@ spring.flyway.baseline-on-migrate=true
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.exception.ResourceNotFoundException;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/toilets")
+// ★削除済み: @CrossOrigin は WebConfig に集約
+public class ToiletApiController {
+
+    @Autowired
+    private ToiletRepository toiletRepository;
+
+    @GetMapping
+    public ResponseEntity<List<Toilet>> getToilets(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false, defaultValue = "5.0") Double radius,
+            @RequestParam(required = false) String facilityCategory,
+            @RequestParam(required = false) Integer minCleanliness,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) List<String> equipment
+    ) {
+        List<Toilet> results;
+
+        if (lat != null && lng != null) {
+            results = toiletRepository.findWithinRadius(lat, lng, radius);
+        }
+        else if (facilityCategory != null || minCleanliness != null || keyword != null || (equipment != null && !equipment.isEmpty())) {
+            
+            List<EquipmentType> types = null;
+            if (equipment != null && !equipment.isEmpty()) {
+                types = new ArrayList<>();
+                for (String eq : equipment) {
+                    try {
+                        types.add(EquipmentType.valueOf(eq));
+                    } catch (IllegalArgumentException e) {
+                        // 無効な値は無視
+                    }
+                }
+                if (types.isEmpty()) types = null;
+            }
+
+            results = toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
+        }
+        else {
+            results = toiletRepository.findAll();
+        }
+
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
+        if (id == null) {
+             throw new IllegalArgumentException("ID must not be null");
+        }
+        
+        Toilet toilet = toiletRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", id));
+        return ResponseEntity.ok(toilet);
+    }
+
+    @PostMapping
+    public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
+        if (toilet.getCleanliness() == null) {
+            toilet.setCleanliness(3);
+        }
+        Toilet saved = toiletRepository.save(toilet);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<Toilet> updateToilet(@PathVariable Long id, @RequestBody @Valid Toilet toiletDetails) {
+        if (id == null) {
+             throw new IllegalArgumentException("ID must not be null");
+        }
+
+        Toilet toilet = toiletRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", id));
+
+        toilet.setName(toiletDetails.getName());
+        toilet.setAddress(toiletDetails.getAddress());
+        toilet.setDescription(toiletDetails.getDescription());
+        toilet.setLat(toiletDetails.getLat());
+        toilet.setLng(toiletDetails.getLng());
+        toilet.setCleanliness(toiletDetails.getCleanliness());
+        toilet.setFacilityCategory(toiletDetails.getFacilityCategory());
+        toilet.setEquipment(toiletDetails.getEquipment());
+        
+        // ★追加: 画像URLの更新
+        toilet.setImage(toiletDetails.getImage());
+        
+        toilet.setWheelchair(toiletDetails.getWheelchair());
+        toilet.setDiaper(toiletDetails.getDiaper());
+        toilet.setOpen24h(toiletDetails.getOpen24h());
+
+        final Toilet updatedToilet = toiletRepository.save(toilet);
+        return ResponseEntity.ok(updatedToilet);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
+        if (id == null) {
+             throw new IllegalArgumentException("ID must not be null");
+        }
+
+        if (!toiletRepository.existsById(id)) {
+            throw new ResourceNotFoundException("トイレ", "id", id);
+        }
+        toiletRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
 <file path="toilet-frontend/src/pages/Detail.jsx">
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -5130,7 +5397,7 @@ import AccessibleIcon from '@mui/icons-material/Accessible';
 import BabyChangingStationIcon from '@mui/icons-material/BabyChangingStation';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import EditIcon from '@mui/icons-material/Edit'; // ★ここに追加されています
+import EditIcon from '@mui/icons-material/Edit';
 
 // --- 追加アイコン ---
 import ChildCareIcon from '@mui/icons-material/ChildCare';
@@ -5268,114 +5535,118 @@ function Detail() {
 
         <article className="detail-card">
           
+          {/* 画像エリア（左側になる予定） */}
           {toilet.image && (
             <div className="detail-image">
               <img src={toilet.image} alt={toilet.name} />
             </div>
           )}
 
-          <header className="detail-header">
-            <div>
-              <h1 className="detail-title">{toilet.name}</h1>
-              {cleanliness > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', color: '#ffb400', marginTop: '4px' }}>
-                  {[1, 2, 3, 4, 5].map(star => (
-                    star <= cleanliness ? <StarIcon key={star} fontSize="small" /> : <StarBorderIcon key={star} fontSize="small" />
-                  ))}
-                  <span style={{ fontSize: '0.85rem', color: '#666', marginLeft: '6px' }}>
-                    (清潔度: {cleanliness})
-                  </span>
-                </div>
-              )}
+          {/* ★追加: 文字情報をまとめるラッパー（右側になる予定） */}
+          <div className="detail-content">
+
+            <header className="detail-header">
+              <div>
+                <h1 className="detail-title">{toilet.name}</h1>
+                {cleanliness > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#ffb400', marginTop: '4px' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      star <= cleanliness ? <StarIcon key={star} fontSize="small" /> : <StarBorderIcon key={star} fontSize="small" />
+                    ))}
+                    <span style={{ fontSize: '0.85rem', color: '#666', marginLeft: '6px' }}>
+                      (清潔度: {cleanliness})
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <button className="fav-btn" onClick={toggleFavorite}>
+                {isFavorite ? <StarIcon sx={{color: '#ffc107'}} /> : <StarBorderIcon />}
+                <span>{isFavorite ? '登録済み' : 'お気に入り'}</span>
+              </button>
+            </header>
+
+            <div className="detail-tags">
+               {toilet.facilityCategory && categoryMap[toilet.facilityCategory] && (
+                 <span className="tag" style={{background:'#e3f2fd', color:'#0d47a1', border:'1px solid #bbdefb', fontWeight:'bold'}}>
+                   <CategoryIcon fontSize="small" /> {categoryMap[toilet.facilityCategory]}
+                 </span>
+               )}
+
+               {eqList.includes('parking') && (
+                 <span className="tag tag-ok" style={{background:'#e8f5e9', color:'#2e7d32', borderColor:'#c8e6c9'}}>
+                   <DirectionsCarIcon fontSize="small"/> 駐車場あり
+                 </span>
+               )}
+
+               {toilet.wheelchair && <span className="tag tag-ok"><AccessibleIcon fontSize="small"/> 車椅子OK</span>}
+               {toilet.diaper && <span className="tag tag-ok"><BabyChangingStationIcon fontSize="small"/> オムツ替え</span>}
+               {toilet.open24h && <span className="tag tag-ok"><AccessTimeIcon fontSize="small"/> 24時間</span>}
+
+               {eqList.includes('ostomate') && <span className="tag tag-ok"><MedicalServicesIcon fontSize="small"/> オストメイト</span>}
+               {eqList.includes('nursing_room') && <span className="tag tag-ok"><ChildCareIcon fontSize="small"/> 授乳室</span>}
+               {eqList.includes('washlet') && <span className="tag tag-ok"><WaterDropIcon fontSize="small"/> ウォシュレット</span>}
+               {eqList.includes('gender_separated') && <span className="tag tag-ok"><WcIcon fontSize="small"/> 男女別</span>}
+               {eqList.includes('free') && <span className="tag tag-ok"><MoneyOffIcon fontSize="small"/> 無料</span>}
+
+               {!hasAnyEquipment && !eqList.includes('parking') && <span className="tag">設備情報なし</span>}
             </div>
 
-            <button className="fav-btn" onClick={toggleFavorite}>
-              {isFavorite ? <StarIcon sx={{color: '#ffc107'}} /> : <StarBorderIcon />}
-              <span>{isFavorite ? '登録済み' : 'お気に入り'}</span>
-            </button>
-          </header>
+            <section className="detail-info">
+              <h3 className="info-label">住所</h3>
+              <p className="info-text">{toilet.address || "不明"}</p>
 
-          <div className="detail-tags">
-             {toilet.facilityCategory && categoryMap[toilet.facilityCategory] && (
-               <span className="tag" style={{background:'#e3f2fd', color:'#0d47a1', border:'1px solid #bbdefb', fontWeight:'bold'}}>
-                 <CategoryIcon fontSize="small" /> {categoryMap[toilet.facilityCategory]}
-               </span>
-             )}
+              <h3 className="info-label">詳細・備考</h3>
+              <p className="info-text">{displayDesc || "情報なし"}</p>
+            </section>
 
-             {eqList.includes('parking') && (
-               <span className="tag tag-ok" style={{background:'#e8f5e9', color:'#2e7d32', borderColor:'#c8e6c9'}}>
-                 <DirectionsCarIcon fontSize="small"/> 駐車場あり
-               </span>
-             )}
+            <footer className="detail-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <a href={googleMapUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary nav-btn">
+                <DirectionsIcon sx={{mr: 1}} />
+                Googleマップでナビ開始
+              </a>
 
-             {toilet.wheelchair && <span className="tag tag-ok"><AccessibleIcon fontSize="small"/> 車椅子OK</span>}
-             {toilet.diaper && <span className="tag tag-ok"><BabyChangingStationIcon fontSize="small"/> オムツ替え</span>}
-             {toilet.open24h && <span className="tag tag-ok"><AccessTimeIcon fontSize="small"/> 24時間</span>}
+              <button 
+                onClick={() => navigate(`/edit/${id}`)}
+                style={{ 
+                  background: '#fff', 
+                  border: '1px solid #1e88e5', 
+                  color: '#1e88e5', 
+                  padding: '12px', 
+                  borderRadius: '14px', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <EditIcon sx={{ mr: 1 }} />
+                情報を編集する
+              </button>
 
-             {eqList.includes('ostomate') && <span className="tag tag-ok"><MedicalServicesIcon fontSize="small"/> オストメイト</span>}
-             {eqList.includes('nursing_room') && <span className="tag tag-ok"><ChildCareIcon fontSize="small"/> 授乳室</span>}
-             {eqList.includes('washlet') && <span className="tag tag-ok"><WaterDropIcon fontSize="small"/> ウォシュレット</span>}
-             {eqList.includes('gender_separated') && <span className="tag tag-ok"><WcIcon fontSize="small"/> 男女別</span>}
-             {eqList.includes('free') && <span className="tag tag-ok"><MoneyOffIcon fontSize="small"/> 無料</span>}
+              <button 
+                onClick={handleDelete}
+                style={{ 
+                  background: 'transparent', 
+                  border: '1px solid #ef5350', 
+                  color: '#ef5350', 
+                  padding: '12px', 
+                  borderRadius: '14px', 
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: '0px'
+                }}
+              >
+                <DeleteForeverIcon sx={{ mr: 1 }} />
+                この情報を削除する
+              </button>
+            </footer>
 
-             {!hasAnyEquipment && !eqList.includes('parking') && <span className="tag">設備情報なし</span>}
-          </div>
-
-          <section className="detail-info">
-            <h3 className="info-label">住所</h3>
-            <p className="info-text">{toilet.address || "不明"}</p>
-
-            <h3 className="info-label">詳細・備考</h3>
-            <p className="info-text">{displayDesc || "情報なし"}</p>
-          </section>
-
-          <footer className="detail-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <a href={googleMapUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary nav-btn">
-              <DirectionsIcon sx={{mr: 1}} />
-              Googleマップでナビ開始
-            </a>
-
-            {/* ★ここに追加された編集ボタン */}
-            <button 
-              onClick={() => navigate(`/edit/${id}`)}
-              style={{ 
-                background: '#fff', 
-                border: '1px solid #1e88e5', 
-                color: '#1e88e5', 
-                padding: '12px', 
-                borderRadius: '14px', 
-                fontWeight: 'bold', 
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <EditIcon sx={{ mr: 1 }} />
-              情報を編集する
-            </button>
-
-            {/* 削除ボタン */}
-            <button 
-              onClick={handleDelete}
-              style={{ 
-                background: 'transparent', 
-                border: '1px solid #ef5350', 
-                color: '#ef5350', 
-                padding: '12px', 
-                borderRadius: '14px', 
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: '0px' // 少し調整
-              }}
-            >
-              <DeleteForeverIcon sx={{ mr: 1 }} />
-              この情報を削除する
-            </button>
-          </footer>
+          </div>{/* detail-content end */}
 
         </article>
       </div>
@@ -5391,19 +5662,21 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Register.css'; 
 import { API_BASE_URL } from '../config/api';
+import { uploadToCloudinary } from '../utils';
 
 // アイコン
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'; // 駐車場用
-import StarIcon from '@mui/icons-material/Star';       // 星（塗）
-import StarBorderIcon from '@mui/icons-material/StarBorder'; // 星（枠）
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'; // ★追加: 画像用アイコン
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 function Register() {
   const navigate = useNavigate();
-  const mapRef = useRef(null);      // 地図インスタンス
-  const markerRef = useRef(null);   // ピン
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
 
   // --- フォームの状態管理 ---
   const [formData, setFormData] = useState({
@@ -5412,15 +5685,9 @@ function Register() {
     description: '',
     lat: '',
     lng: '',
-    image: '', // ★追加: 画像URL
-    
-    // 新機能：清潔度（1〜5）
+    image: '', 
     cleanliness: 3, 
-
-    // 新設計：施設カテゴリ (単一選択)
     facilityCategory: '', 
-    
-    // 新設計：設備・条件 (チェックボックス管理用)
     conditions: {
       wheelchair: false,
       diaper: false,
@@ -5430,11 +5697,12 @@ function Register() {
       washlet: false,
       gender_separated: false,
       free: false,
-      parking: false // ★追加：駐車場
+      parking: false
     }
   });
 
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // 1. 地図の初期化
   useEffect(() => {
@@ -5469,34 +5737,41 @@ function Register() {
     });
   };
 
-  // 3. 入力変更ハンドラ (階層データに対応)
+  // 3. 入力変更ハンドラ
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    // 設備チェックボックスの場合
+    const { name, value, checked } = e.target;
     if (name in formData.conditions) {
       setFormData(prev => ({
         ...prev,
-        conditions: {
-          ...prev.conditions,
-          [name]: checked
-        }
+        conditions: { ...prev.conditions, [name]: checked }
       }));
     } else {
-      // 通常のフィールド
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  // 清潔度スターをクリックした時のハンドラ
+  // 画像アップロードハンドラ
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const uploadedUrl = await uploadToCloudinary(file);
+      setFormData(prev => ({ ...prev, image: uploadedUrl }));
+    } catch (err) {
+      console.error(err);
+      alert("画像のアップロードに失敗しました。\n" + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleStarClick = (rating) => {
     setFormData(prev => ({ ...prev, cleanliness: rating }));
   };
 
-  // 4. 送信処理 (修正版)
+  // 4. 送信処理
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -5518,14 +5793,10 @@ function Register() {
       description: formData.description,
       lat: formData.lat,
       lng: formData.lng,
-      
       cleanliness: formData.cleanliness,
-      image: formData.image, // ★追加: 画像URL
-      
+      image: formData.image,
       facilityCategory: formData.facilityCategory,
       equipment: equipmentStr,
-
-      // 旧フィールド互換性
       wheelchair: formData.conditions.wheelchair,
       diaper: formData.conditions.diaper,
       open24h: formData.conditions.open24h
@@ -5565,7 +5836,6 @@ function Register() {
 
         <form className="register-grid" onSubmit={handleSubmit}>
           
-          {/* 左カラム：地図 */}
           <section className="panel panel--map">
             <div className="panel__head panel__head--tight">
               <h2 className="panel__title panel__title--small">1. 場所を指定 <span className="req">必須</span></h2>
@@ -5582,7 +5852,6 @@ function Register() {
             </div>
           </section>
 
-          {/* 右カラム：入力フォーム */}
           <section className="panel">
             <div className="panel__head">
               <h2 className="panel__title">2. トイレの情報</h2>
@@ -5594,20 +5863,54 @@ function Register() {
                 <input type="text" name="name" className="input" placeholder="例：つくば駅前公衆トイレ" value={formData.name} onChange={handleChange} required />
               </div>
 
-              {/* ★追加：画像URL入力欄 */}
+              {/* ★復活：住所入力欄 */}
+              <div className="form-row">
+                <label className="form-label">住所</label>
+                <input type="text" name="address" className="input" placeholder="例：茨城県つくば市吾妻1-1" value={formData.address} onChange={handleChange} />
+              </div>
+
               <div className="form-row">
                 <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
-                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真のURL <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意）</span>
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真 <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意）</span>
                 </label>
+                
+                <div style={{ marginBottom: '8px' }}>
+                  <label 
+                    className={`btn btn-sub ${uploading ? 'btn-disabled' : ''}`} 
+                    style={{ 
+                      display: 'inline-flex', 
+                      width: 'auto', 
+                      padding: '8px 16px', 
+                      fontSize: '0.9rem',
+                      cursor: uploading ? 'wait' : 'pointer',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {uploading ? 'アップロード中...' : (
+                      <>
+                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を選択してアップロード
+                      </>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleFileChange} 
+                      disabled={uploading}
+                      style={{ display: 'none' }} 
+                    />
+                  </label>
+                </div>
+
                 <input 
                   type="url" 
                   name="image" 
                   className="input" 
-                  placeholder="https://example.com/photo.jpg" 
+                  placeholder="https://... (自動入力されます)" 
                   value={formData.image} 
                   onChange={handleChange} 
                 />
-                {/* プレビュー表示 */}
+
                 {formData.image && (
                   <div style={{ marginTop: '10px' }}>
                     <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
@@ -5615,13 +5918,12 @@ function Register() {
                       src={formData.image} 
                       alt="プレビュー" 
                       style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
-                      onError={(e) => e.target.style.display = 'none'} // リンク切れ対策
+                      onError={(e) => e.target.style.display = 'none'} 
                     />
                   </div>
                 )}
               </div>
 
-              {/* 清潔度入力 */}
               <div className="form-row">
                 <label className="form-label">清潔度（5段階）</label>
                 <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
@@ -5674,12 +5976,10 @@ function Register() {
               <div className="form-row">
                 <label className="form-label">設備・特徴</label>
                 <div className="checks">
-                  {/* 駐車場 */}
                   <label className="check-label" style={{background:'#e8f5e9', border:'1px solid #c8e6c9'}}>
                     <input type="checkbox" name="parking" checked={formData.conditions.parking} onChange={handleChange} />
                     <DirectionsCarIcon fontSize="small" color="success" /> 駐車場あり
                   </label>
-
                   <label className="check-label"><input type="checkbox" name="wheelchair" checked={formData.conditions.wheelchair} onChange={handleChange} /> ♿ 車椅子</label>
                   <label className="check-label"><input type="checkbox" name="diaper" checked={formData.conditions.diaper} onChange={handleChange} /> 👶 オムツ</label>
                   <label className="check-label"><input type="checkbox" name="open24h" checked={formData.conditions.open24h} onChange={handleChange} /> 🕒 24時間</label>
@@ -5697,7 +5997,7 @@ function Register() {
               </div>
 
               <div className="form-footer">
-                <button type="submit" className="btn btn-primary" disabled={loading}>
+                <button type="submit" className="btn btn-primary" disabled={loading || uploading}>
                   <AddLocationAltIcon sx={{ mr: 1 }} />
                   {loading ? '送信中...' : '登録する'}
                 </button>
@@ -5712,129 +6012,6 @@ function Register() {
 }
 
 export default Register;
-</file>
-
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
-package com.imatoilet.backend;
-
-import com.imatoilet.backend.exception.ResourceNotFoundException;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/toilets")
-// ★削除済み: @CrossOrigin は WebConfig に集約
-public class ToiletApiController {
-
-    @Autowired
-    private ToiletRepository toiletRepository;
-
-    @GetMapping
-    public ResponseEntity<List<Toilet>> getToilets(
-            @RequestParam(required = false) Double lat,
-            @RequestParam(required = false) Double lng,
-            @RequestParam(required = false, defaultValue = "5.0") Double radius,
-            @RequestParam(required = false) String facilityCategory,
-            @RequestParam(required = false) Integer minCleanliness,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) List<String> equipment
-    ) {
-        List<Toilet> results;
-
-        if (lat != null && lng != null) {
-            results = toiletRepository.findWithinRadius(lat, lng, radius);
-        }
-        else if (facilityCategory != null || minCleanliness != null || keyword != null || (equipment != null && !equipment.isEmpty())) {
-            
-            List<EquipmentType> types = null;
-            if (equipment != null && !equipment.isEmpty()) {
-                types = new ArrayList<>();
-                for (String eq : equipment) {
-                    try {
-                        types.add(EquipmentType.valueOf(eq));
-                    } catch (IllegalArgumentException e) {
-                        // 無効な値は無視
-                    }
-                }
-                if (types.isEmpty()) types = null;
-            }
-
-            results = toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
-        }
-        else {
-            results = toiletRepository.findAll();
-        }
-
-        return ResponseEntity.ok(results);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
-        if (id == null) {
-             throw new IllegalArgumentException("ID must not be null");
-        }
-        
-        Toilet toilet = toiletRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", id));
-        return ResponseEntity.ok(toilet);
-    }
-
-    @PostMapping
-    public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
-        if (toilet.getCleanliness() == null) {
-            toilet.setCleanliness(3);
-        }
-        Toilet saved = toiletRepository.save(toilet);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
-    
-    @PutMapping("/{id}")
-    public ResponseEntity<Toilet> updateToilet(@PathVariable Long id, @RequestBody @Valid Toilet toiletDetails) {
-        if (id == null) {
-             throw new IllegalArgumentException("ID must not be null");
-        }
-
-        Toilet toilet = toiletRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", id));
-
-        toilet.setName(toiletDetails.getName());
-        toilet.setAddress(toiletDetails.getAddress());
-        toilet.setDescription(toiletDetails.getDescription());
-        toilet.setLat(toiletDetails.getLat());
-        toilet.setLng(toiletDetails.getLng());
-        toilet.setCleanliness(toiletDetails.getCleanliness());
-        toilet.setFacilityCategory(toiletDetails.getFacilityCategory());
-        toilet.setEquipment(toiletDetails.getEquipment());
-        
-        // ★追加: 画像URLの更新
-        toilet.setImage(toiletDetails.getImage());
-        
-        toilet.setWheelchair(toiletDetails.getWheelchair());
-        toilet.setDiaper(toiletDetails.getDiaper());
-        toilet.setOpen24h(toiletDetails.getOpen24h());
-
-        final Toilet updatedToilet = toiletRepository.save(toilet);
-        return ResponseEntity.ok(updatedToilet);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
-        if (id == null) {
-             throw new IllegalArgumentException("ID must not be null");
-        }
-
-        if (!toiletRepository.existsById(id)) {
-            throw new ResourceNotFoundException("トイレ", "id", id);
-        }
-        toiletRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
-    }
-}
 </file>
 
 </files>
