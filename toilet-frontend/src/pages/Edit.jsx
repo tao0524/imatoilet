@@ -16,6 +16,7 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete'; // ★削除アイコン追加
 
 function Edit() {
   const { id } = useParams();
@@ -32,7 +33,7 @@ function Edit() {
     description: '',
     lat: '',
     lng: '',
-    image: '', 
+    images: [], // ★変更: 単一のimage文字列ではなく、画像URLの配列で管理
     cleanliness: 3, 
     facilityCategory: '', 
     conditions: {
@@ -83,13 +84,16 @@ function Edit() {
   const applyDataToForm = (data) => {
     const eqList = data.equipment ? data.equipment.split(',') : [];
     
+    // ★変更: カンマ区切りの文字列を配列に変換してセット
+    const imageList = data.image ? data.image.split(',').filter(url => url.trim() !== "") : [];
+
     setFormData({
       name: data.name || '',
       address: data.address || '',
       description: data.description || '',
       lat: data.lat,
       lng: data.lng,
-      image: data.image || '', 
+      images: imageList, // ★配列としてセット
       cleanliness: data.cleanliness || 3,
       facilityCategory: data.facilityCategory || '',
       conditions: {
@@ -138,20 +142,36 @@ function Edit() {
     }
   };
 
+  // ★変更: 画像アップロードハンドラ (複数対応・追記型)
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
     setUploading(true);
     try {
-      const uploadedUrl = await uploadToCloudinary(file);
-      setFormData(prev => ({ ...prev, image: uploadedUrl }));
+      // 並列アップロード
+      const uploadPromises = files.map(file => uploadToCloudinary(file));
+      const uploadedUrls = await Promise.all(uploadPromises);
+
+      // ★重要: 既存の images 配列の後ろに新しい URL を追加する (上書きしない)
+      setFormData(prev => ({ 
+        ...prev, 
+        images: [...prev.images, ...uploadedUrls] 
+      }));
     } catch (err) {
       console.error(err);
       alert("画像のアップロードに失敗しました。\n" + err.message);
     } finally {
       setUploading(false);
     }
+  };
+
+  // ★追加: 個別の画像を削除するハンドラ
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToRemove)
+    }));
   };
 
   const handleStarClick = (rating) => {
@@ -166,6 +186,9 @@ function Edit() {
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
 
+    // ★変更: 配列をカンマ区切り文字列に戻す
+    const imageStr = formData.images.join(',');
+
     const payload = {
         name: formData.name,
         address: formData.address,
@@ -173,7 +196,7 @@ function Edit() {
         lat: formData.lat,
         lng: formData.lng,
         cleanliness: formData.cleanliness,
-        image: formData.image,
+        image: imageStr, // ★更新用の文字列
         facilityCategory: formData.facilityCategory,
         equipment: equipmentStr,
         wheelchair: formData.conditions.wheelchair,
@@ -232,7 +255,6 @@ function Edit() {
               <p className="panel__sub">ピンをドラッグして位置を微調整できます</p>
             </div>
             
-            {/* ★Google Maps 表示エリア */}
             <div className="reg-map-area">
               <SafeGoogleMap
                 center={formData.lat ? { lat: formData.lat, lng: formData.lng } : { lat: 36.0825, lng: 140.1120 }}
@@ -273,10 +295,10 @@ function Edit() {
 
               <div className="form-row">
                 <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
-                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真 <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（複数可）</span>
                 </label>
                 
-                <div style={{ marginBottom: '8px' }}>
+                <div style={{ marginBottom: '12px' }}>
                   <label 
                     className={`btn btn-sub ${uploading ? 'btn-disabled' : ''}`} 
                     style={{ 
@@ -291,12 +313,13 @@ function Edit() {
                   >
                     {uploading ? 'アップロード中...' : (
                       <>
-                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を上書きアップロード
+                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を追加（複数OK）
                       </>
                     )}
                     <input 
                       type="file" 
                       accept="image/*" 
+                      multiple // ★複数選択OK
                       onChange={handleFileChange} 
                       disabled={uploading}
                       style={{ display: 'none' }} 
@@ -304,23 +327,59 @@ function Edit() {
                   </label>
                 </div>
 
-                <input 
-                  type="url" 
-                  name="image" 
-                  className="input" 
-                  placeholder="https://example.com/photo.jpg" 
-                  value={formData.image} 
-                  onChange={handleChange} 
-                />
-                {formData.image && (
-                  <div style={{ marginTop: '10px' }}>
-                    <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
-                    <img 
-                      src={formData.image} 
-                      alt="プレビュー" 
-                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
-                      onError={(e) => e.target.style.display = 'none'} 
-                    />
+                {/* ★追加: 編集画面用の画像プレビュー＆削除エリア */}
+                {formData.images.length > 0 && (
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    overflowX: 'auto', 
+                    padding: '8px',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    background: '#f9f9f9',
+                    minHeight: '120px',
+                    alignItems: 'center'
+                  }}>
+                    {formData.images.map((url, index) => (
+                      <div key={index} style={{ position: 'relative', flexShrink: 0 }}>
+                        <img 
+                          src={url} 
+                          alt={`プレビュー ${index + 1}`} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            objectFit: 'cover', 
+                            borderRadius: '6px', 
+                            border: '1px solid #ddd',
+                            background: '#fff' 
+                          }} 
+                        />
+                        {/* 削除ボタン */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#ff5252',
+                            color: 'white',
+                            border: '2px solid #fff',
+                            borderRadius: '50%',
+                            width: '26px',
+                            height: '26px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}
+                          title="この画像を削除"
+                        >
+                          <DeleteIcon style={{ fontSize: '16px' }} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

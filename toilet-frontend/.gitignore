@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Security (Environmental Variables)
+# .env で始まるファイルはすべて無視するが、exampleだけは許可する
+.env
+.env.*
+!.env.example
