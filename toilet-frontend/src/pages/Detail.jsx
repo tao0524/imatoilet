@@ -36,13 +36,11 @@ function Detail() {
 
   useEffect(() => {
     async function fetchToilet() {
-      // 1. ローカルデータから検索
       if (id.startsWith('u_')) {
         const userToilets = loadUserToilets();
         const found = userToilets.find(t => t.id === id);
         processToiletData(found);
       } else {
-        // 2. APIから検索
         try {
           const res = await fetch(API_BASE_URL);
           const data = await res.json();
@@ -58,7 +56,6 @@ function Detail() {
       setIsFavorite(favs.includes(id));
     }
 
-    // データ受信後の処理
     function processToiletData(data) {
       if (!data) {
         setToilet(null);
@@ -87,7 +84,6 @@ function Detail() {
     setIsFavorite(!isFavorite);
   };
 
-  // 削除ハンドラ
   const handleDelete = async () => {
     if (!window.confirm("本当にこのトイレ情報を削除しますか？\n（この操作は取り消せません）")) {
       return;
@@ -95,14 +91,12 @@ function Detail() {
 
     try {
       if (id.startsWith('u_')) {
-        // ローカルデータの削除
         const current = loadUserToilets();
         const next = current.filter(t => t.id !== id);
         saveUserToilets(next);
         alert("削除しました（ブラウザ保存データ）");
         navigate('/search');
       } else {
-        // APIデータの削除
         const res = await fetch(`${API_BASE_URL}/${id}`, {
           method: "DELETE",
         });
@@ -139,6 +133,11 @@ function Detail() {
   const eqList = toilet.equipment ? toilet.equipment.split(',').filter(Boolean) : [];
   const hasAnyEquipment = toilet.wheelchair || toilet.diaper || toilet.open24h || eqList.length > 0;
 
+  // ★変更: 画像文字列を配列に変換（カンマ区切り対応）
+  const images = toilet.image 
+    ? toilet.image.split(',').filter(url => url.trim() !== "") 
+    : [];
+
   return (
     <main className="detail-main">
       <div className="container">
@@ -151,14 +150,45 @@ function Detail() {
 
         <article className="detail-card">
           
-          {/* 画像エリア（左側になる予定） */}
-          {toilet.image && (
-            <div className="detail-image">
-              <img src={toilet.image} alt={toilet.name} />
+          {/* ★変更: 画像表示エリア */}
+          {images.length > 0 && (
+            <div className="detail-image" style={{ background: '#f5f5f5' }}>
+              {/* 画像が1枚のときは大きく、複数枚のときは横スクロールギャラリーにする */}
+              {images.length === 1 ? (
+                <img src={images[0]} alt={toilet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ 
+                  display: 'flex', 
+                  overflowX: 'auto', 
+                  gap: '10px', 
+                  padding: '10px',
+                  scrollSnapType: 'x mandatory',
+                  height: '100%',
+                  alignItems: 'center'
+                }}>
+                  {images.map((imgUrl, idx) => (
+                    <img 
+                      key={idx} 
+                      src={imgUrl} 
+                      alt={`${toilet.name} - ${idx + 1}`} 
+                      style={{ 
+                        flexShrink: 0, 
+                        width: '85%', 
+                        height: 'auto', 
+                        maxHeight: '100%', 
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        scrollSnapAlign: 'center',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        background: '#fff'
+                      }} 
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* ★追加: 文字情報をまとめるラッパー（右側になる予定） */}
           <div className="detail-content">
 
             <header className="detail-header">
@@ -262,8 +292,7 @@ function Detail() {
               </button>
             </footer>
 
-          </div>{/* detail-content end */}
-
+          </div>
         </article>
       </div>
     </main>

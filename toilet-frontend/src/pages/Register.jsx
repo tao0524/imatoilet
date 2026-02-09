@@ -16,6 +16,7 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete'; // ★削除アイコン追加
 
 function Register() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ function Register() {
     description: '',
     lat: '',
     lng: '',
-    image: '', 
+    images: [], // ★変更: 複数画像用に配列化
     cleanliness: 3, 
     facilityCategory: '', 
     conditions: {
@@ -77,21 +78,37 @@ function Register() {
     }
   };
 
-  // 画像アップロードハンドラ
+  // ★変更: 画像アップロードハンドラ (複数対応)
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files); // 選択されたファイルを配列化
+    if (files.length === 0) return;
 
     setUploading(true);
     try {
-      const uploadedUrl = await uploadToCloudinary(file);
-      setFormData(prev => ({ ...prev, image: uploadedUrl }));
+      // 並列でアップロードを実行
+      const uploadPromises = files.map(file => uploadToCloudinary(file));
+      const uploadedUrls = await Promise.all(uploadPromises);
+
+      // 既存の画像リストに追加
+      setFormData(prev => ({ 
+        ...prev, 
+        images: [...prev.images, ...uploadedUrls] 
+      }));
+
     } catch (err) {
       console.error(err);
       alert("画像のアップロードに失敗しました。\n" + err.message);
     } finally {
       setUploading(false);
     }
+  };
+
+  // ★追加: 画像削除ハンドラ
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToRemove)
+    }));
   };
 
   const handleStarClick = (rating) => {
@@ -114,6 +131,9 @@ function Register() {
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
 
+    // ★変更: 画像配列をカンマ区切りの文字列に変換
+    const imageStr = formData.images.join(',');
+
     const payload = {
       name: formData.name,
       address: formData.address,
@@ -121,7 +141,7 @@ function Register() {
       lat: formData.lat,
       lng: formData.lng,
       cleanliness: formData.cleanliness,
-      image: formData.image,
+      image: imageStr, // ★ここが変更点
       facilityCategory: formData.facilityCategory,
       equipment: equipmentStr,
       wheelchair: formData.conditions.wheelchair,
@@ -169,19 +189,18 @@ function Register() {
               <p className="panel__sub">地図をタップしてピンを立ててください</p>
             </div>
             
-            {/* ★Google Maps 表示エリア */}
             <div className="reg-map-area">
               <SafeGoogleMap
                 center={formData.lat ? { lat: formData.lat, lng: formData.lng } : { lat: 36.0825, lng: 140.1120 }}
                 zoom={14}
                 style={{ width: '100%', height: '100%' }}
-                onClick={handleMapClick} // 地図クリックでピン移動
+                onClick={handleMapClick}
               >
                 {formData.lat && formData.lng && (
                   <Marker
                     position={{ lat: formData.lat, lng: formData.lng }}
-                    draggable={true} // ドラッグ可能にする
-                    onDragEnd={handleMarkerDragEnd} // ドラッグ終了時に座標更新
+                    draggable={true}
+                    onDragEnd={handleMarkerDragEnd}
                   />
                 )}
               </SafeGoogleMap>
@@ -215,10 +234,10 @@ function Register() {
 
               <div className="form-row">
                 <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
-                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真 <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意）</span>
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真 <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意・複数可）</span>
                 </label>
                 
-                <div style={{ marginBottom: '8px' }}>
+                <div style={{ marginBottom: '12px' }}>
                   <label 
                     className={`btn btn-sub ${uploading ? 'btn-disabled' : ''}`} 
                     style={{ 
@@ -233,12 +252,13 @@ function Register() {
                   >
                     {uploading ? 'アップロード中...' : (
                       <>
-                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を選択してアップロード
+                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を選択（複数OK）
                       </>
                     )}
                     <input 
                       type="file" 
                       accept="image/*" 
+                      multiple // ★複数選択を許可
                       onChange={handleFileChange} 
                       disabled={uploading}
                       style={{ display: 'none' }} 
@@ -246,24 +266,54 @@ function Register() {
                   </label>
                 </div>
 
-                <input 
-                  type="url" 
-                  name="image" 
-                  className="input" 
-                  placeholder="https://... (自動入力されます)" 
-                  value={formData.image} 
-                  onChange={handleChange} 
-                />
-
-                {formData.image && (
-                  <div style={{ marginTop: '10px' }}>
-                    <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
-                    <img 
-                      src={formData.image} 
-                      alt="プレビュー" 
-                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
-                      onError={(e) => e.target.style.display = 'none'} 
-                    />
+                {/* ★追加: プレビューリスト（横スクロール or グリッド） */}
+                {formData.images.length > 0 && (
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    overflowX: 'auto', 
+                    padding: '4px',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    background: '#f9f9f9'
+                  }}>
+                    {formData.images.map((url, index) => (
+                      <div key={index} style={{ position: 'relative', flexShrink: 0 }}>
+                        <img 
+                          src={url} 
+                          alt={`プレビュー ${index + 1}`} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            objectFit: 'cover', 
+                            borderRadius: '6px', 
+                            border: '1px solid #ddd' 
+                          }} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          style={{
+                            position: 'absolute',
+                            top: '-6px',
+                            right: '-6px',
+                            background: '#ff5252',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}
+                        >
+                          <DeleteIcon style={{ fontSize: '16px' }} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -281,12 +331,6 @@ function Register() {
                     </div>
                   ))}
                 </div>
-                <p style={{fontSize:'0.8rem', color:'#666', marginTop:'4px'}}>
-                  {formData.cleanliness === 5 ? "最高に綺麗！" : 
-                   formData.cleanliness === 4 ? "綺麗" :
-                   formData.cleanliness === 3 ? "普通" :
-                   formData.cleanliness === 2 ? "少し汚い" : "汚い"}
-                </p>
               </div>
 
               <div className="form-row">
