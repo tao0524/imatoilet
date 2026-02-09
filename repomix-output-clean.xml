@@ -60,6 +60,7 @@ backend/backend/src/main/java/com/imatoilet/backend/HelloController.java
 backend/backend/src/main/java/com/imatoilet/backend/Toilet.java
 backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java
 backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java
+backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java
 backend/backend/src/main/resources/application.properties
 backend/backend/src/main/resources/db/migration/V2__add_equipment_table.sql
 backend/backend/src/main/resources/db/migration/V3__add_search_indexes.sql
@@ -69,8 +70,7 @@ backend/backend/src/main/resources/templates/toilet-form.html
 backend/backend/src/main/resources/templates/toilet-list.html
 backend/backend/src/test/java/com/imatoilet/backend/BackendApplicationTests.java
 backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java
-toilet-frontend/.env.development
-toilet-frontend/.env.production
+toilet-frontend/.env.example
 toilet-frontend/.gitignore
 toilet-frontend/eslint.config.js
 toilet-frontend/index.html
@@ -956,6 +956,127 @@ public class HelloController {
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.exception.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects; // ★追加: Nullチェック用
+import java.util.Optional;
+
+@Service
+@Transactional
+public class ToiletService {
+
+    @Autowired
+    private ToiletRepository toiletRepository;
+
+    // --- 検索ロジック ---
+    public List<Toilet> searchToilets(
+            Double lat, Double lng, Double radius,
+            String facilityCategory, Integer minCleanliness,
+            String keyword, List<String> equipment
+    ) {
+        // 1. 緯度経度による半径検索
+        if (lat != null && lng != null) {
+            double r = (radius != null) ? radius : 5.0;
+            return toiletRepository.findWithinRadius(lat, lng, r);
+        }
+
+        // 2. 条件検索
+        if (facilityCategory != null || minCleanliness != null || keyword != null || (equipment != null && !equipment.isEmpty())) {
+            
+            List<EquipmentType> types = null;
+            if (equipment != null && !equipment.isEmpty()) {
+                types = new ArrayList<>();
+                for (String eq : equipment) {
+                    try {
+                        types.add(EquipmentType.valueOf(eq));
+                    } catch (IllegalArgumentException e) {
+                        // 無効な値は無視
+                    }
+                }
+                if (types.isEmpty()) types = null;
+            }
+
+            return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
+        }
+
+        // 3. 全件取得
+        return toiletRepository.findAll();
+    }
+
+    // --- ID検索 ---
+    public Toilet getToilet(Long id) {
+        // ★修正: nullチェックを行い、警告を解消
+        Long safeId = Objects.requireNonNull(id, "ID must not be null");
+        
+        return toiletRepository.findById(safeId)
+                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
+    }
+
+    // --- 新規登録 ---
+    public Toilet createToilet(Toilet toilet) {
+        if (toilet.getCleanliness() == null) {
+            toilet.setCleanliness(3);
+        }
+        return toiletRepository.save(toilet);
+    }
+
+    // --- 更新ロジック ---
+    public Toilet updateToilet(Long id, Toilet details) {
+        // getToilet内でnullチェック済みなので、ここはそのまま呼び出すだけで安全
+        Toilet toilet = getToilet(id);
+
+        Optional.ofNullable(details.getName())
+                .filter(s -> !s.isBlank())
+                .ifPresent(toilet::setName);
+
+        Optional.ofNullable(details.getAddress())
+                .filter(s -> !s.isBlank())
+                .ifPresent(toilet::setAddress);
+
+        Optional.ofNullable(details.getDescription())
+                .ifPresent(toilet::setDescription);
+
+        Optional.ofNullable(details.getImage())
+                .ifPresent(toilet::setImage);
+        
+        Optional.ofNullable(details.getFacilityCategory())
+                .ifPresent(toilet::setFacilityCategory);
+
+        Optional.ofNullable(details.getEquipment())
+                .ifPresent(toilet::setEquipment);
+
+        Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
+        Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
+        Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
+
+        Optional.ofNullable(details.getWheelchair()).ifPresent(toilet::setWheelchair);
+        Optional.ofNullable(details.getDiaper()).ifPresent(toilet::setDiaper);
+        Optional.ofNullable(details.getOpen24h()).ifPresent(toilet::setOpen24h);
+
+        return toiletRepository.save(toilet);
+    }
+
+    // --- 削除 ---
+    public void deleteToilet(Long id) {
+        // ★修正: nullチェックを行い、警告を解消
+        Long safeId = Objects.requireNonNull(id, "ID must not be null");
+
+        if (!toiletRepository.existsById(safeId)) {
+            throw new ResourceNotFoundException("トイレ", "id", safeId);
+        }
+        toiletRepository.deleteById(safeId);
+    }
+}
+</file>
+
 <file path="backend/backend/src/main/resources/db/migration/V2__add_equipment_table.sql">
 -- V2__add_equipment_table.sql
 -- Phase 2-1: Equipmentテーブル追加＆既存データ移行（PostgreSQL）
@@ -1271,31 +1392,17 @@ class ToiletApiControllerTest {
 }
 </file>
 
-<file path="toilet-frontend/.gitignore">
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+<file path="toilet-frontend/.env.example">
+# Backend API URL
+VITE_API_BASE_URL=http://localhost:8080/api/toilets
 
-node_modules
-dist
-dist-ssr
-*.local
+# Cloudinary Config (画像アップロード機能用)
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
+VITE_CLOUDINARY_UPLOAD_PRESET=your_upload_preset
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Google Maps API Key
+# Caution: Never commit the actual API Key to GitHub!
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 </file>
 
 <file path="toilet-frontend/eslint.config.js">
@@ -2601,6 +2708,39 @@ public class Equipment {
         this.type = type;
     }
 }
+</file>
+
+<file path="toilet-frontend/.gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Security (Environmental Variables)
+# .env で始まるファイルはすべて無視するが、exampleだけは許可する
+.env
+.env.*
+!.env.example
 </file>
 
 <file path="toilet-frontend/index.html">
@@ -4021,20 +4161,6 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 }
 </file>
 
-<file path="toilet-frontend/.env.development">
-VITE_API_BASE_URL=http://localhost:8080/api/toilets
-VITE_CLOUDINARY_CLOUD_NAME=dgups3p7v
-VITE_CLOUDINARY_UPLOAD_PRESET=imatoilet_user_images
-VITE_GOOGLE_MAPS_API_KEY=REMOVED_API_KEY
-</file>
-
-<file path="toilet-frontend/.env.production">
-VITE_API_BASE_URL=/api/toilets
-VITE_CLOUDINARY_CLOUD_NAME=dgups3p7v
-VITE_CLOUDINARY_UPLOAD_PRESET=imatoilet_user_images
-VITE_GOOGLE_MAPS_API_KEY=あなたのGoogleMapsAPIキー
-</file>
-
 <file path="toilet-frontend/src/App.jsx">
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
@@ -4790,122 +4916,6 @@ function Home() {
 export default Home;
 </file>
 
-<file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
-// toilet-frontend/src/pages/Search/MapPanel.jsx
-import { useState } from 'react';
-import { Marker, InfoWindow } from '@react-google-maps/api';
-import { SafeGoogleMap } from '../../components/SafeGoogleMap';
-import { Link } from 'react-router-dom';
-
-// デフォルトの中心位置 (つくば駅周辺)
-const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
-const CONTAINER_STYLE = { width: '100%', height: '100%' };
-
-function MapPanel({ filteredToilets, currentLocation }) {
-  // 選択中の（吹き出しを表示する）トイレID
-  const [selectedToiletId, setSelectedToiletId] = useState(null);
-
-  // 表示する中心座標の決定
-  const center = currentLocation 
-    ? { lat: currentLocation.lat, lng: currentLocation.lng }
-    : DEFAULT_CENTER;
-
-  // 選択されたトイレデータ
-  const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
-
-  return (
-    <section className="panel panel--map">
-      <header className="panel-head">
-        <h2 className="panel-title">地図</h2>
-        <div className="panel-meta">ピンをクリックすると詳細を開けます</div>
-      </header>
-      
-      <div className="map-area">
-        <SafeGoogleMap
-          center={center}
-          zoom={14}
-          style={CONTAINER_STYLE}
-        >
-          {/* 1. 現在地のマーカー (青い丸などで表現したいが、まずは標準ピンで区別) */}
-          {currentLocation && (
-            <Marker
-              position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
-              title="現在地"
-              icon={{
-                // 現在地を青いドットで表現
-                path: window.google?.maps?.SymbolPath?.CIRCLE,
-                scale: 8,
-                fillColor: "#4285F4",
-                fillOpacity: 1,
-                strokeColor: "white",
-                strokeWeight: 2,
-              }}
-            />
-          )}
-
-          {/* 2. トイレのマーカー一覧 */}
-          {filteredToilets.map((t) => (
-            <Marker
-              key={t.id}
-              position={{ lat: t.lat, lng: t.lng }}
-              title={t.name}
-              onClick={() => setSelectedToiletId(t.id)}
-            />
-          ))}
-
-          {/* 3. 情報ウィンドウ (吹き出し) */}
-          {selectedToilet && (
-            <InfoWindow
-              position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
-              onCloseClick={() => setSelectedToiletId(null)}
-              options={{ pixelOffset: new window.google.maps.Size(0, -30) }}
-            >
-              <div style={{ padding: '4px', maxWidth: '200px' }}>
-                <b style={{ fontSize: '1rem' }}>{selectedToilet.name}</b>
-                {selectedToilet.distance && (
-                  <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                    約 {Math.round(selectedToilet.distance * 1000)} m
-                  </div>
-                )}
-                
-                <div style={{ margin: '6px 0', fontSize: '0.85rem', color: '#444' }}>
-                  {selectedToilet.facilityCategory && `[${selectedToilet.facilityCategory}] `}
-                  {'⭐'.repeat(selectedToilet.cleanliness || 3)}
-                </div>
-
-                <div style={{ marginBottom: '8px' }}>
-                  {selectedToilet.wheelchair && <span title="車椅子" style={{ marginRight:4 }}>♿</span>}
-                  {selectedToilet.diaper && <span title="オムツ" style={{ marginRight:4 }}>👶</span>}
-                  {selectedToilet.open24h && <span title="24時間">🕒</span>}
-                </div>
-
-                <Link 
-                  to={`/detail/${selectedToilet.id}`}
-                  style={{ 
-                    display: 'block', 
-                    textAlign: 'center', 
-                    background: '#1e88e5', 
-                    color: 'white', 
-                    padding: '6px', 
-                    borderRadius: '4px', 
-                    textDecoration: 'none',
-                    fontSize: '0.85rem'
-                  }}
-                >
-                  詳細を見る
-                </Link>
-              </div>
-            </InfoWindow>
-          )}
-        </SafeGoogleMap>
-      </div>
-    </section>
-  );
-}
-
-export default MapPanel;
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
 package com.imatoilet.backend;
 
@@ -5022,6 +5032,227 @@ public class Toilet {
 }
 </file>
 
+<file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
+// toilet-frontend/src/pages/Search/MapPanel.jsx
+import { useState } from 'react';
+import { Marker, InfoWindow } from '@react-google-maps/api';
+import { SafeGoogleMap } from '../../components/SafeGoogleMap';
+import { Link } from 'react-router-dom';
+
+const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
+const CONTAINER_STYLE = { width: '100%', height: '100%' };
+
+/**
+ * トイレのピンアイコン生成関数（改善版）
+ * 施設タイプをベースにしつつ、車椅子対応なら「バッジ」を付与する
+ */
+const getPinIcon = (toilet) => {
+  // 1. デフォルト設定 (その他)
+  let color = '#757575'; // グレー
+  let text = '🚽';
+
+  // 2. 施設カテゴリに基づいて色とアイコンを決める
+  switch (toilet.facilityCategory) {
+    case 'station':
+      color = '#ef5350'; // 赤
+      text = '🚉';
+      break;
+    case 'park':
+      color = '#43a047'; // 緑
+      text = '🌳';
+      break;
+    case 'commercial':
+    case 'convenience':
+      color = '#fb8c00'; // オレンジ
+      text = '🛍️';
+      break;
+    case 'public':
+      color = '#3949ab'; // インディゴ
+      text = '🏢';
+      break;
+    case 'medical':
+      color = '#e91e63'; // ピンク
+      text = '🏥';
+      break;
+    case 'hotel_tourism':
+      color = '#8e24aa'; // 紫
+      text = '🏨';
+      break;
+    default:
+      // デフォルトのまま
+      break;
+  }
+
+  // 3. 車椅子対応バッジの生成 (SVG)
+  // 右上(cx=32, cy=8)に青い円と車椅子マークを描画
+  const wheelchairBadge = toilet.wheelchair ? `
+    <circle cx="32" cy="10" r="9" fill="#1976d2" stroke="white" stroke-width="1.5" />
+    <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
+  ` : '';
+
+  // 4. SVG全体の組み立て
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="44" height="52" viewBox="0 0 44 52">
+      <path fill="${color}" d="M20 2C8.95 2 0 10.95 0 22c0 10.5 17 26 19 27.8a1.5 1.5 0 0 0 2 0C23 48 40 32.5 40 22 40 10.95 31.05 2 20 2z" />
+      
+      <circle cx="20" cy="22" r="14" fill="white" opacity="0.3" />
+      
+      <text x="20" y="29" font-size="20" text-anchor="middle" fill="white" font-family="Segoe UI, sans-serif">${text}</text>
+
+      ${wheelchairBadge}
+    </svg>
+  `.trim();
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
+function MapPanel({ filteredToilets, currentLocation }) {
+  const [selectedToiletId, setSelectedToiletId] = useState(null);
+
+  const center = currentLocation 
+    ? { lat: currentLocation.lat, lng: currentLocation.lng }
+    : DEFAULT_CENTER;
+
+  const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
+
+  return (
+    <section className="panel panel--map">
+      <header className="panel-head">
+        <h2 className="panel-title">地図</h2>
+        <div className="panel-meta">ピンをクリックすると詳細を開けます</div>
+      </header>
+      
+      <div className="map-area">
+        <SafeGoogleMap
+          center={center}
+          zoom={14}
+          style={CONTAINER_STYLE}
+        >
+          {/* 現在地 */}
+          {currentLocation && (
+            <Marker
+              position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+              title="現在地"
+              icon={{
+                path: window.google?.maps?.SymbolPath?.CIRCLE,
+                scale: 8,
+                fillColor: "#4285F4",
+                fillOpacity: 1,
+                strokeColor: "white",
+                strokeWeight: 2,
+              }}
+              zIndex={999}
+            />
+          )}
+
+          {/* トイレマーカー */}
+          {filteredToilets.map((t) => (
+            <Marker
+              key={t.id}
+              position={{ lat: t.lat, lng: t.lng }}
+              title={t.name}
+              icon={{
+                url: getPinIcon(t),
+                scaledSize: { width: 44, height: 52 }, // バッジ分少し大きく
+                anchor: { x: 20, y: 52 } // ピンの先端を座標に合わせる
+              }}
+              onClick={() => setSelectedToiletId(t.id)}
+            />
+          ))}
+
+          {/* 吹き出し */}
+          {selectedToilet && (
+            <InfoWindow
+              position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
+              onCloseClick={() => setSelectedToiletId(null)}
+              options={{ pixelOffset: { width: 0, height: -52 } }}
+            >
+              <div style={{ padding: '4px', maxWidth: '200px' }}>
+                <b style={{ fontSize: '1rem' }}>{selectedToilet.name}</b>
+                {selectedToilet.distance && (
+                  <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                    約 {Math.round(selectedToilet.distance * 1000)} m
+                  </div>
+                )}
+                
+                <div style={{ margin: '6px 0', fontSize: '0.85rem', color: '#444' }}>
+                  {selectedToilet.facilityCategory && `[${selectedToilet.facilityCategory}] `}
+                  {'⭐'.repeat(selectedToilet.cleanliness || 3)}
+                </div>
+
+                <div style={{ marginBottom: '8px' }}>
+                  {selectedToilet.wheelchair && <span title="車椅子" style={{ marginRight:4 }}>♿</span>}
+                  {selectedToilet.diaper && <span title="オムツ" style={{ marginRight:4 }}>👶</span>}
+                  {selectedToilet.open24h && <span title="24時間">🕒</span>}
+                </div>
+
+                <Link 
+                  to={`/detail/${selectedToilet.id}`}
+                  style={{ 
+                    display: 'block', textAlign: 'center', background: '#1e88e5', 
+                    color: 'white', padding: '6px', borderRadius: '4px', 
+                    textDecoration: 'none', fontSize: '0.85rem'
+                  }}
+                >
+                  詳細を見る
+                </Link>
+              </div>
+            </InfoWindow>
+          )}
+        </SafeGoogleMap>
+      </div>
+    </section>
+  );
+}
+
+export default MapPanel;
+</file>
+
+<file path="toilet-frontend/package.json">
+{
+  "name": "toilet-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.7",
+    "@mui/material": "^7.3.7",
+    "@react-google-maps/api": "^2.20.8",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.12.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "jsdom": "^27.4.0",
+    "msw": "^2.12.7",
+    "vite": "npm:rolldown-vite@7.2.5",
+    "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@7.2.5"
+  }
+}
+</file>
+
 <file path="toilet-frontend/src/pages/Edit.jsx">
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
@@ -5041,6 +5272,7 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete'; // ★削除アイコン追加
 
 function Edit() {
   const { id } = useParams();
@@ -5057,7 +5289,7 @@ function Edit() {
     description: '',
     lat: '',
     lng: '',
-    image: '', 
+    images: [], // ★変更: 単一のimage文字列ではなく、画像URLの配列で管理
     cleanliness: 3, 
     facilityCategory: '', 
     conditions: {
@@ -5108,13 +5340,16 @@ function Edit() {
   const applyDataToForm = (data) => {
     const eqList = data.equipment ? data.equipment.split(',') : [];
     
+    // ★変更: カンマ区切りの文字列を配列に変換してセット
+    const imageList = data.image ? data.image.split(',').filter(url => url.trim() !== "") : [];
+
     setFormData({
       name: data.name || '',
       address: data.address || '',
       description: data.description || '',
       lat: data.lat,
       lng: data.lng,
-      image: data.image || '', 
+      images: imageList, // ★配列としてセット
       cleanliness: data.cleanliness || 3,
       facilityCategory: data.facilityCategory || '',
       conditions: {
@@ -5163,20 +5398,36 @@ function Edit() {
     }
   };
 
+  // ★変更: 画像アップロードハンドラ (複数対応・追記型)
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
     setUploading(true);
     try {
-      const uploadedUrl = await uploadToCloudinary(file);
-      setFormData(prev => ({ ...prev, image: uploadedUrl }));
+      // 並列アップロード
+      const uploadPromises = files.map(file => uploadToCloudinary(file));
+      const uploadedUrls = await Promise.all(uploadPromises);
+
+      // ★重要: 既存の images 配列の後ろに新しい URL を追加する (上書きしない)
+      setFormData(prev => ({ 
+        ...prev, 
+        images: [...prev.images, ...uploadedUrls] 
+      }));
     } catch (err) {
       console.error(err);
       alert("画像のアップロードに失敗しました。\n" + err.message);
     } finally {
       setUploading(false);
     }
+  };
+
+  // ★追加: 個別の画像を削除するハンドラ
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToRemove)
+    }));
   };
 
   const handleStarClick = (rating) => {
@@ -5191,6 +5442,9 @@ function Edit() {
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
 
+    // ★変更: 配列をカンマ区切り文字列に戻す
+    const imageStr = formData.images.join(',');
+
     const payload = {
         name: formData.name,
         address: formData.address,
@@ -5198,7 +5452,7 @@ function Edit() {
         lat: formData.lat,
         lng: formData.lng,
         cleanliness: formData.cleanliness,
-        image: formData.image,
+        image: imageStr, // ★更新用の文字列
         facilityCategory: formData.facilityCategory,
         equipment: equipmentStr,
         wheelchair: formData.conditions.wheelchair,
@@ -5257,7 +5511,6 @@ function Edit() {
               <p className="panel__sub">ピンをドラッグして位置を微調整できます</p>
             </div>
             
-            {/* ★Google Maps 表示エリア */}
             <div className="reg-map-area">
               <SafeGoogleMap
                 center={formData.lat ? { lat: formData.lat, lng: formData.lng } : { lat: 36.0825, lng: 140.1120 }}
@@ -5298,10 +5551,10 @@ function Edit() {
 
               <div className="form-row">
                 <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
-                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真 <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（複数可）</span>
                 </label>
                 
-                <div style={{ marginBottom: '8px' }}>
+                <div style={{ marginBottom: '12px' }}>
                   <label 
                     className={`btn btn-sub ${uploading ? 'btn-disabled' : ''}`} 
                     style={{ 
@@ -5316,12 +5569,13 @@ function Edit() {
                   >
                     {uploading ? 'アップロード中...' : (
                       <>
-                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を上書きアップロード
+                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を追加（複数OK）
                       </>
                     )}
                     <input 
                       type="file" 
                       accept="image/*" 
+                      multiple // ★複数選択OK
                       onChange={handleFileChange} 
                       disabled={uploading}
                       style={{ display: 'none' }} 
@@ -5329,23 +5583,59 @@ function Edit() {
                   </label>
                 </div>
 
-                <input 
-                  type="url" 
-                  name="image" 
-                  className="input" 
-                  placeholder="https://example.com/photo.jpg" 
-                  value={formData.image} 
-                  onChange={handleChange} 
-                />
-                {formData.image && (
-                  <div style={{ marginTop: '10px' }}>
-                    <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
-                    <img 
-                      src={formData.image} 
-                      alt="プレビュー" 
-                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
-                      onError={(e) => e.target.style.display = 'none'} 
-                    />
+                {/* ★追加: 編集画面用の画像プレビュー＆削除エリア */}
+                {formData.images.length > 0 && (
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    overflowX: 'auto', 
+                    padding: '8px',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    background: '#f9f9f9',
+                    minHeight: '120px',
+                    alignItems: 'center'
+                  }}>
+                    {formData.images.map((url, index) => (
+                      <div key={index} style={{ position: 'relative', flexShrink: 0 }}>
+                        <img 
+                          src={url} 
+                          alt={`プレビュー ${index + 1}`} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            objectFit: 'cover', 
+                            borderRadius: '6px', 
+                            border: '1px solid #ddd',
+                            background: '#fff' 
+                          }} 
+                        />
+                        {/* 削除ボタン */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#ff5252',
+                            color: 'white',
+                            border: '2px solid #fff',
+                            borderRadius: '50%',
+                            width: '26px',
+                            height: '26px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}
+                          title="この画像を削除"
+                        >
+                          <DeleteIcon style={{ fontSize: '16px' }} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -5426,96 +5716,49 @@ function Edit() {
 export default Edit;
 </file>
 
-<file path="toilet-frontend/package.json">
-{
-  "name": "toilet-frontend",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.7",
-    "@mui/material": "^7.3.7",
-    "@react-google-maps/api": "^2.20.8",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.12.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "jsdom": "^27.4.0",
-    "msw": "^2.12.7",
-    "vite": "npm:rolldown-vite@7.2.5",
-    "vitest": "^4.0.18"
-  },
-  "overrides": {
-    "vite": "npm:rolldown-vite@7.2.5"
-  }
-}
-</file>
-
 <file path="backend/backend/src/main/resources/application.properties">
 # PostgreSQL への接続設定
-spring.datasource.url=jdbc:postgresql://localhost:5432/imatoilet
-spring.datasource.username=postgres
-spring.datasource.password=MyNewPass3969
+# 環境変数 DB_URL, DB_USER, DB_PASSWORD があればそれを使い、なければデフォルト値を使います
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/imatoilet}
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASSWORD:MyNewPass3969}
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # JPA/Hibernate の設定
-# ★変更: Flywayと競合しないよう 'update' から 'validate' に変更
 spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 # --- CORS / Server Config ---
-app.cors.allowed-origins=${CORS_ORIGINS:http://localhost:5173}
+# WebConfig.java の @Value("${app.cors.allowed-origins}") と一致させています
+app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 app.cors.allow-credentials=${CORS_ALLOW_CREDENTIALS:false}
 
 # ポート設定
 server.port=${PORT:8080}
 
-# --- Flyway Config (★新規追加) ---
-# 既存のテーブルがあってもエラーにせず、そこを基準に進める設定
+# --- Flyway Config ---
 spring.flyway.baseline-on-migrate=true
 </file>
 
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
 package com.imatoilet.backend;
 
-import com.imatoilet.backend.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/toilets")
-// ★削除済み: @CrossOrigin は WebConfig に集約
 public class ToiletApiController {
 
     @Autowired
-    private ToiletRepository toiletRepository;
+    private ToiletService toiletService;
 
+    // 検索・一覧取得
     @GetMapping
     public ResponseEntity<List<Toilet>> getToilets(
             @RequestParam(required = false) Double lat,
@@ -5526,101 +5769,52 @@ public class ToiletApiController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) List<String> equipment
     ) {
-        List<Toilet> results;
-
-        if (lat != null && lng != null) {
-            results = toiletRepository.findWithinRadius(lat, lng, radius);
-        }
-        else if (facilityCategory != null || minCleanliness != null || keyword != null || (equipment != null && !equipment.isEmpty())) {
-            
-            List<EquipmentType> types = null;
-            if (equipment != null && !equipment.isEmpty()) {
-                types = new ArrayList<>();
-                for (String eq : equipment) {
-                    try {
-                        types.add(EquipmentType.valueOf(eq));
-                    } catch (IllegalArgumentException e) {
-                        // 無効な値は無視
-                    }
-                }
-                if (types.isEmpty()) types = null;
-            }
-
-            results = toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
-        }
-        else {
-            results = toiletRepository.findAll();
-        }
-
+        List<Toilet> results = toiletService.searchToilets(
+                lat, lng, radius, facilityCategory, minCleanliness, keyword, equipment
+        );
         return ResponseEntity.ok(results);
     }
 
+    // ID検索
     @GetMapping("/{id}")
     public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
         if (id == null) {
              throw new IllegalArgumentException("ID must not be null");
         }
-        
-        Toilet toilet = toiletRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", id));
-        return ResponseEntity.ok(toilet);
+        return ResponseEntity.ok(toiletService.getToilet(id));
     }
 
+    // 新規登録
     @PostMapping
     public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
-        if (toilet.getCleanliness() == null) {
-            toilet.setCleanliness(3);
-        }
-        Toilet saved = toiletRepository.save(toilet);
+        Toilet saved = toiletService.createToilet(toilet);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
     
+    // 更新
     @PutMapping("/{id}")
     public ResponseEntity<Toilet> updateToilet(@PathVariable Long id, @RequestBody @Valid Toilet toiletDetails) {
         if (id == null) {
              throw new IllegalArgumentException("ID must not be null");
         }
-
-        Toilet toilet = toiletRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", id));
-
-        toilet.setName(toiletDetails.getName());
-        toilet.setAddress(toiletDetails.getAddress());
-        toilet.setDescription(toiletDetails.getDescription());
-        toilet.setLat(toiletDetails.getLat());
-        toilet.setLng(toiletDetails.getLng());
-        toilet.setCleanliness(toiletDetails.getCleanliness());
-        toilet.setFacilityCategory(toiletDetails.getFacilityCategory());
-        toilet.setEquipment(toiletDetails.getEquipment());
-        
-        // ★追加: 画像URLの更新
-        toilet.setImage(toiletDetails.getImage());
-        
-        toilet.setWheelchair(toiletDetails.getWheelchair());
-        toilet.setDiaper(toiletDetails.getDiaper());
-        toilet.setOpen24h(toiletDetails.getOpen24h());
-
-        final Toilet updatedToilet = toiletRepository.save(toilet);
-        return ResponseEntity.ok(updatedToilet);
+        Toilet updated = toiletService.updateToilet(id, toiletDetails);
+        return ResponseEntity.ok(updated);
     }
 
+    // 削除
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
         if (id == null) {
              throw new IllegalArgumentException("ID must not be null");
         }
-
-        if (!toiletRepository.existsById(id)) {
-            throw new ResourceNotFoundException("トイレ", "id", id);
-        }
-        toiletRepository.deleteById(id);
+        toiletService.deleteToilet(id);
         return ResponseEntity.noContent().build();
     }
 }
 </file>
 
 <file path="toilet-frontend/src/pages/Detail.jsx">
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { loadUserToilets, saveUserToilets } from '../utils';
 import { API_BASE_URL } from '../config/api';
@@ -5637,13 +5831,18 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
 
-// --- 追加アイコン ---
+// 追加アイコン
 import ChildCareIcon from '@mui/icons-material/ChildCare';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 import CategoryIcon from '@mui/icons-material/Category';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+
+// ★ライトボックス用アイコン
+import CloseIcon from '@mui/icons-material/Close';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 
 function Detail() {
   const { id } = useParams();
@@ -5654,17 +5853,18 @@ function Detail() {
   const [cleanliness, setCleanliness] = useState(null);
   const [displayDesc, setDisplayDesc] = useState("");
 
+  // ★ライトボックス用の状態管理 (開いている画像のインデックス。nullなら閉じている)
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+
   const FAV_KEY = "imatoilet_favorites";
 
   useEffect(() => {
     async function fetchToilet() {
-      // 1. ローカルデータから検索
       if (id.startsWith('u_')) {
         const userToilets = loadUserToilets();
         const found = userToilets.find(t => t.id === id);
         processToiletData(found);
       } else {
-        // 2. APIから検索
         try {
           const res = await fetch(API_BASE_URL);
           const data = await res.json();
@@ -5680,23 +5880,33 @@ function Detail() {
       setIsFavorite(favs.includes(id));
     }
 
-    // データ受信後の処理
     function processToiletData(data) {
       if (!data) {
         setToilet(null);
         setLoading(false);
         return;
       }
-
       setCleanliness(data.cleanliness || 0); 
       setDisplayDesc(data.description || ""); 
-
       setToilet(data);
       setLoading(false);
     }
 
     fetchToilet();
   }, [id]);
+
+  // ★キーボード操作でライトボックスを閉じる/移動する
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxIndex === null) return;
+      
+      if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowRight') nextImage(e);
+      if (e.key === 'ArrowLeft') prevImage(e);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex]); // lightboxIndexが変わるたびにイベントリスナーを更新
 
   const toggleFavorite = () => {
     let favs = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
@@ -5709,26 +5919,19 @@ function Detail() {
     setIsFavorite(!isFavorite);
   };
 
-  // 削除ハンドラ
   const handleDelete = async () => {
     if (!window.confirm("本当にこのトイレ情報を削除しますか？\n（この操作は取り消せません）")) {
       return;
     }
-
     try {
       if (id.startsWith('u_')) {
-        // ローカルデータの削除
         const current = loadUserToilets();
         const next = current.filter(t => t.id !== id);
         saveUserToilets(next);
         alert("削除しました（ブラウザ保存データ）");
         navigate('/search');
       } else {
-        // APIデータの削除
-        const res = await fetch(`${API_BASE_URL}/${id}`, {
-          method: "DELETE",
-        });
-        
+        const res = await fetch(`${API_BASE_URL}/${id}`, { method: "DELETE" });
         if (res.ok) {
           alert("削除しました");
           navigate('/search');
@@ -5760,6 +5963,20 @@ function Detail() {
 
   const eqList = toilet.equipment ? toilet.equipment.split(',').filter(Boolean) : [];
   const hasAnyEquipment = toilet.wheelchair || toilet.diaper || toilet.open24h || eqList.length > 0;
+  const images = toilet.image ? toilet.image.split(',').filter(url => url.trim() !== "") : [];
+
+  // --- ライトボックス操作関数 ---
+  const openLightbox = (index) => setLightboxIndex(index);
+  
+  const nextImage = (e) => {
+    e && e.stopPropagation();
+    setLightboxIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e) => {
+    e && e.stopPropagation();
+    setLightboxIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   return (
     <main className="detail-main">
@@ -5773,16 +5990,54 @@ function Detail() {
 
         <article className="detail-card">
           
-          {/* 画像エリア（左側になる予定） */}
-          {toilet.image && (
-            <div className="detail-image">
-              <img src={toilet.image} alt={toilet.name} />
+          {/* 画像表示エリア */}
+          {images.length > 0 && (
+            <div className="detail-image" style={{ background: '#f5f5f5' }}>
+              {images.length === 1 ? (
+                // 1枚だけの場合
+                <img 
+                  src={images[0]} 
+                  alt={toilet.name} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                  onClick={() => openLightbox(0)} // クリックで拡大
+                />
+              ) : (
+                // 複数枚の場合（横スクロール）
+                <div style={{ 
+                  display: 'flex', 
+                  overflowX: 'auto', 
+                  gap: '10px', 
+                  padding: '10px',
+                  scrollSnapType: 'x mandatory',
+                  height: '100%',
+                  alignItems: 'center'
+                }}>
+                  {images.map((imgUrl, idx) => (
+                    <img 
+                      key={idx} 
+                      src={imgUrl} 
+                      alt={`${toilet.name} - ${idx + 1}`} 
+                      style={{ 
+                        flexShrink: 0, 
+                        width: '85%', 
+                        height: 'auto', 
+                        maxHeight: '100%', 
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        scrollSnapAlign: 'center',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        background: '#fff',
+                        cursor: 'pointer' // クリックできることを示す
+                      }} 
+                      onClick={() => openLightbox(idx)} // クリックで拡大
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* ★追加: 文字情報をまとめるラッパー（右側になる予定） */}
           <div className="detail-content">
-
             <header className="detail-header">
               <div>
                 <h1 className="detail-title">{toilet.name}</h1>
@@ -5797,7 +6052,6 @@ function Detail() {
                   </div>
                 )}
               </div>
-
               <button className="fav-btn" onClick={toggleFavorite}>
                 {isFavorite ? <StarIcon sx={{color: '#ffc107'}} /> : <StarBorderIcon />}
                 <span>{isFavorite ? '登録済み' : 'お気に入り'}</span>
@@ -5810,30 +6064,25 @@ function Detail() {
                    <CategoryIcon fontSize="small" /> {categoryMap[toilet.facilityCategory]}
                  </span>
                )}
-
                {eqList.includes('parking') && (
                  <span className="tag tag-ok" style={{background:'#e8f5e9', color:'#2e7d32', borderColor:'#c8e6c9'}}>
                    <DirectionsCarIcon fontSize="small"/> 駐車場あり
                  </span>
                )}
-
                {toilet.wheelchair && <span className="tag tag-ok"><AccessibleIcon fontSize="small"/> 車椅子OK</span>}
                {toilet.diaper && <span className="tag tag-ok"><BabyChangingStationIcon fontSize="small"/> オムツ替え</span>}
                {toilet.open24h && <span className="tag tag-ok"><AccessTimeIcon fontSize="small"/> 24時間</span>}
-
                {eqList.includes('ostomate') && <span className="tag tag-ok"><MedicalServicesIcon fontSize="small"/> オストメイト</span>}
                {eqList.includes('nursing_room') && <span className="tag tag-ok"><ChildCareIcon fontSize="small"/> 授乳室</span>}
                {eqList.includes('washlet') && <span className="tag tag-ok"><WaterDropIcon fontSize="small"/> ウォシュレット</span>}
                {eqList.includes('gender_separated') && <span className="tag tag-ok"><WcIcon fontSize="small"/> 男女別</span>}
                {eqList.includes('free') && <span className="tag tag-ok"><MoneyOffIcon fontSize="small"/> 無料</span>}
-
                {!hasAnyEquipment && !eqList.includes('parking') && <span className="tag">設備情報なし</span>}
             </div>
 
             <section className="detail-info">
               <h3 className="info-label">住所</h3>
               <p className="info-text">{toilet.address || "不明"}</p>
-
               <h3 className="info-label">詳細・備考</h3>
               <p className="info-text">{displayDesc || "情報なし"}</p>
             </section>
@@ -5843,50 +6092,111 @@ function Detail() {
                 <DirectionsIcon sx={{mr: 1}} />
                 Googleマップでナビ開始
               </a>
-
               <button 
                 onClick={() => navigate(`/edit/${id}`)}
                 style={{ 
-                  background: '#fff', 
-                  border: '1px solid #1e88e5', 
-                  color: '#1e88e5', 
-                  padding: '12px', 
-                  borderRadius: '14px', 
-                  fontWeight: 'bold', 
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  background: '#fff', border: '1px solid #1e88e5', color: '#1e88e5', 
+                  padding: '12px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}
               >
-                <EditIcon sx={{ mr: 1 }} />
-                情報を編集する
+                <EditIcon sx={{ mr: 1 }} /> 情報を編集する
               </button>
-
               <button 
                 onClick={handleDelete}
                 style={{ 
-                  background: 'transparent', 
-                  border: '1px solid #ef5350', 
-                  color: '#ef5350', 
-                  padding: '12px', 
-                  borderRadius: '14px', 
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginTop: '0px'
+                  background: 'transparent', border: '1px solid #ef5350', color: '#ef5350', 
+                  padding: '12px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '0px'
                 }}
               >
-                <DeleteForeverIcon sx={{ mr: 1 }} />
-                この情報を削除する
+                <DeleteForeverIcon sx={{ mr: 1 }} /> この情報を削除する
               </button>
             </footer>
-
-          </div>{/* detail-content end */}
-
+          </div>
         </article>
+
+        {/* ★ここから: ライトボックス(拡大表示)モーダル */}
+        {lightboxIndex !== null && (
+          <div 
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.9)', zIndex: 9999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '20px'
+            }}
+            onClick={() => setLightboxIndex(null)} // 背景クリックで閉じる
+          >
+            {/* 閉じるボタン */}
+            <button
+              onClick={() => setLightboxIndex(null)}
+              style={{
+                position: 'absolute', top: '20px', right: '20px',
+                background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
+                color: '#fff', width: '44px', height: '44px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 10001
+              }}
+            >
+              <CloseIcon fontSize="large" />
+            </button>
+
+            {/* 前へボタン (画像が2枚以上あるときだけ表示) */}
+            {images.length > 1 && (
+              <button
+                onClick={prevImage}
+                style={{
+                  position: 'absolute', left: '10px',
+                  background: 'transparent', border: 'none',
+                  color: '#fff', cursor: 'pointer', zIndex: 10001,
+                  padding: '20px'
+                }}
+              >
+                <ArrowBackIosNewIcon fontSize="large" />
+              </button>
+            )}
+
+            {/* 画像本体 */}
+            <img 
+              src={images[lightboxIndex]} 
+              alt="拡大表示"
+              style={{
+                maxWidth: '100%', maxHeight: '100%', objectFit: 'contain',
+                boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+                userSelect: 'none'
+              }}
+              onClick={(e) => e.stopPropagation()} // 画像クリックでは閉じない
+            />
+
+            {/* 次へボタン (画像が2枚以上あるときだけ表示) */}
+            {images.length > 1 && (
+              <button
+                onClick={nextImage}
+                style={{
+                  position: 'absolute', right: '10px',
+                  background: 'transparent', border: 'none',
+                  color: '#fff', cursor: 'pointer', zIndex: 10001,
+                  padding: '20px'
+                }}
+              >
+                <ArrowForwardIosIcon fontSize="large" />
+              </button>
+            )}
+
+            {/* 枚数カウント表示 */}
+            {images.length > 1 && (
+              <div style={{
+                position: 'absolute', bottom: '20px',
+                color: '#fff', fontSize: '1rem', background: 'rgba(0,0,0,0.5)',
+                padding: '4px 12px', borderRadius: '20px'
+              }}>
+                {lightboxIndex + 1} / {images.length}
+              </div>
+            )}
+          </div>
+        )}
+        {/* ★ここまで */}
+
       </div>
     </main>
   );
@@ -5914,6 +6224,7 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete'; // ★削除アイコン追加
 
 function Register() {
   const navigate = useNavigate();
@@ -5925,7 +6236,7 @@ function Register() {
     description: '',
     lat: '',
     lng: '',
-    image: '', 
+    images: [], // ★変更: 複数画像用に配列化
     cleanliness: 3, 
     facilityCategory: '', 
     conditions: {
@@ -5975,21 +6286,37 @@ function Register() {
     }
   };
 
-  // 画像アップロードハンドラ
+  // ★変更: 画像アップロードハンドラ (複数対応)
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files); // 選択されたファイルを配列化
+    if (files.length === 0) return;
 
     setUploading(true);
     try {
-      const uploadedUrl = await uploadToCloudinary(file);
-      setFormData(prev => ({ ...prev, image: uploadedUrl }));
+      // 並列でアップロードを実行
+      const uploadPromises = files.map(file => uploadToCloudinary(file));
+      const uploadedUrls = await Promise.all(uploadPromises);
+
+      // 既存の画像リストに追加
+      setFormData(prev => ({ 
+        ...prev, 
+        images: [...prev.images, ...uploadedUrls] 
+      }));
+
     } catch (err) {
       console.error(err);
       alert("画像のアップロードに失敗しました。\n" + err.message);
     } finally {
       setUploading(false);
     }
+  };
+
+  // ★追加: 画像削除ハンドラ
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToRemove)
+    }));
   };
 
   const handleStarClick = (rating) => {
@@ -6012,6 +6339,9 @@ function Register() {
     const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const equipmentStr = equipmentList.join(',');
 
+    // ★変更: 画像配列をカンマ区切りの文字列に変換
+    const imageStr = formData.images.join(',');
+
     const payload = {
       name: formData.name,
       address: formData.address,
@@ -6019,7 +6349,7 @@ function Register() {
       lat: formData.lat,
       lng: formData.lng,
       cleanliness: formData.cleanliness,
-      image: formData.image,
+      image: imageStr, // ★ここが変更点
       facilityCategory: formData.facilityCategory,
       equipment: equipmentStr,
       wheelchair: formData.conditions.wheelchair,
@@ -6067,19 +6397,18 @@ function Register() {
               <p className="panel__sub">地図をタップしてピンを立ててください</p>
             </div>
             
-            {/* ★Google Maps 表示エリア */}
             <div className="reg-map-area">
               <SafeGoogleMap
                 center={formData.lat ? { lat: formData.lat, lng: formData.lng } : { lat: 36.0825, lng: 140.1120 }}
                 zoom={14}
                 style={{ width: '100%', height: '100%' }}
-                onClick={handleMapClick} // 地図クリックでピン移動
+                onClick={handleMapClick}
               >
                 {formData.lat && formData.lng && (
                   <Marker
                     position={{ lat: formData.lat, lng: formData.lng }}
-                    draggable={true} // ドラッグ可能にする
-                    onDragEnd={handleMarkerDragEnd} // ドラッグ終了時に座標更新
+                    draggable={true}
+                    onDragEnd={handleMarkerDragEnd}
                   />
                 )}
               </SafeGoogleMap>
@@ -6113,10 +6442,10 @@ function Register() {
 
               <div className="form-row">
                 <label className="form-label" style={{display:'flex', alignItems:'center', gap:'4px'}}>
-                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真 <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意）</span>
+                   <AddPhotoAlternateIcon fontSize="small" sx={{color:'#666'}}/> 写真 <span style={{fontSize:'0.7rem', fontWeight:'normal', color:'#888'}}>（任意・複数可）</span>
                 </label>
                 
-                <div style={{ marginBottom: '8px' }}>
+                <div style={{ marginBottom: '12px' }}>
                   <label 
                     className={`btn btn-sub ${uploading ? 'btn-disabled' : ''}`} 
                     style={{ 
@@ -6131,12 +6460,13 @@ function Register() {
                   >
                     {uploading ? 'アップロード中...' : (
                       <>
-                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を選択してアップロード
+                        <CloudUploadIcon fontSize="small" sx={{ mr: 1 }} /> 画像を選択（複数OK）
                       </>
                     )}
                     <input 
                       type="file" 
                       accept="image/*" 
+                      multiple // ★複数選択を許可
                       onChange={handleFileChange} 
                       disabled={uploading}
                       style={{ display: 'none' }} 
@@ -6144,24 +6474,54 @@ function Register() {
                   </label>
                 </div>
 
-                <input 
-                  type="url" 
-                  name="image" 
-                  className="input" 
-                  placeholder="https://... (自動入力されます)" 
-                  value={formData.image} 
-                  onChange={handleChange} 
-                />
-
-                {formData.image && (
-                  <div style={{ marginTop: '10px' }}>
-                    <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '4px' }}>プレビュー:</p>
-                    <img 
-                      src={formData.image} 
-                      alt="プレビュー" 
-                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
-                      onError={(e) => e.target.style.display = 'none'} 
-                    />
+                {/* ★追加: プレビューリスト（横スクロール or グリッド） */}
+                {formData.images.length > 0 && (
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    overflowX: 'auto', 
+                    padding: '4px',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    background: '#f9f9f9'
+                  }}>
+                    {formData.images.map((url, index) => (
+                      <div key={index} style={{ position: 'relative', flexShrink: 0 }}>
+                        <img 
+                          src={url} 
+                          alt={`プレビュー ${index + 1}`} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            objectFit: 'cover', 
+                            borderRadius: '6px', 
+                            border: '1px solid #ddd' 
+                          }} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          style={{
+                            position: 'absolute',
+                            top: '-6px',
+                            right: '-6px',
+                            background: '#ff5252',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}
+                        >
+                          <DeleteIcon style={{ fontSize: '16px' }} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -6179,12 +6539,6 @@ function Register() {
                     </div>
                   ))}
                 </div>
-                <p style={{fontSize:'0.8rem', color:'#666', marginTop:'4px'}}>
-                  {formData.cleanliness === 5 ? "最高に綺麗！" : 
-                   formData.cleanliness === 4 ? "綺麗" :
-                   formData.cleanliness === 3 ? "普通" :
-                   formData.cleanliness === 2 ? "少し汚い" : "汚い"}
-                </p>
               </div>
 
               <div className="form-row">
