@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useJsApiLoader, GoogleMap } from '@react-google-maps/api';
 
-const LIBRARIES = ['marker']; // 必要に応じて 'places' や 'geometry' を追加
+// ★ 'places' を追加して、検索機能を使えるようにします
+const LIBRARIES = ['marker', 'places'];
 
 /**
  * Google Mapsの読み込みとエラーハンドリングを一元管理するラッパー
