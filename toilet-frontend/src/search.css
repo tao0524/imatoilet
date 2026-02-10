@@ -1,11 +1,11 @@
 /* =========================================================
-   search.css (3カラム・フルハイト版)
+   search.css (3カラム・フルハイト版 + モバイル対応)
 ========================================================= */
 
 /* ページ全体のラッパー：ヘッダー以外の高さを確保 */
 .search-page-wrapper {
   height: calc(100vh - 64px); /* ヘッダーの高さを引く */
-  overflow: hidden; /* 全体スクロールはさせない */
+  overflow: hidden; /* 全体スクロールはさせない（PC時） */
   background: #f0f2f5;
   width: 100%;
 }
@@ -19,7 +19,7 @@
   width: 100%;
 }
 
-/* --- 3カラムレイアウト定義 --- */
+/* --- 3カラムレイアウト定義 (PC用デフォルト) --- */
 .three-col-layout {
   display: grid;
   /* 左:260px, 中:残り全部, 右:320px */
@@ -200,6 +200,10 @@
   font-weight: bold;
   color: #1e88e5;
   border: 1px solid #bbdefb;
+  white-space: nowrap; /* スマホで改行されないように */
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* =========================
@@ -317,15 +321,62 @@
   margin-left: auto; /* 右端に寄せる */
 }
 
-/* レスポンシブ対応はそのまま維持 */
+/* =========================================
+   ★モバイルレスポンシブ対応 (900px未満)
+   ここを強力に修正しました
+========================================= */
 @media (max-width: 900px) {
-  /* ...（既存のコードと同じ）... */
-  .col-list {
-    border-left: none;
-    border-top: 1px solid #ddd;
-    height: auto;
+  
+  /* ラッパー：PCでは隠していたスクロールを有効化 */
+  .search-page-wrapper {
+    height: auto; 
+    overflow-y: auto; 
+    overflow-x: hidden;
   }
+
+  /* 3カラムレイアウト解除 → 縦積みフレックスに変更 */
+  .three-col-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto; /* 高さは中身なり */
+    grid-template-columns: none;
+    grid-template-rows: none;
+  }
+
+  /* 1. フィルター（上部） */
+  .col-filter {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    /* フィルターの中身が多すぎると地図に辿り着けないため、
+       簡易的に高さを制限してスクロールさせるか、
+       あるいはアコーディオンUIにするのが理想ですが、
+       まずは全体スクロールで対応します */
+    max-height: 300px; /* フィルタエリアが大きすぎないように制限 */
+    flex-shrink: 0;
+  }
+  
+  /* 2. 地図（中央） */
+  .col-map {
+    width: 100%;
+    height: 400px; /* スマホでも地図が見やすい高さを確保 */
+    flex-shrink: 0;
+    border-bottom: 1px solid #ddd;
+  }
+
+  /* 3. リスト（下部） */
+  .col-list {
+    width: 100%;
+    border-left: none;
+    border-top: none;
+    height: auto; /* 下に伸びるように */
+    flex: 1;
+    box-shadow: none;
+    background: #f0f2f5;
+  }
+  
+  /* リスト内のスクロール制限を解除（ページ全体でスクロールするため） */
   .panel--list .list-area {
-    max-height: 500px !important;
+    overflow-y: visible; 
   }
 }
