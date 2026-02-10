@@ -10,7 +10,13 @@ export const useToiletSearch = () => {
 
   // --- State ---
   const [filteredToilets, setFilteredToilets] = useState([]);
+  
+  // currentLocation は「検索の中心（地図の中心）」として扱います
   const [currentLocation, setCurrentLocation] = useState(null);
+  
+  // ★重要: realLocation は「本当のユーザーの現在地(GPS)」として保持し続けます
+  const [realLocation, setRealLocation] = useState(null);
+
   const [placeQuery, setPlaceQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
   const [searchHistory, setSearchHistory] = useState([]);
@@ -26,17 +32,12 @@ export const useToiletSearch = () => {
     }
   }, []);
 
-  // ★修正1: 履歴追加を安全な形に変更（Stale State防止 & 同期保存）
+  // 履歴追加
   const addToHistory = (query) => {
     if (!query) return;
-
     setSearchHistory(prev => {
-      // 最新のstate(prev)を元に新しい配列を作成
       const newHistory = [query, ...prev.filter(h => h !== query)].slice(0, 5);
-      
-      // 同時にLocalStorageへ保存
       localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
-      
       return newHistory;
     });
   };
@@ -45,8 +46,6 @@ export const useToiletSearch = () => {
   const handlePlaceSearch = async () => {
     if (!placeQuery) return;
     
-    // ★修正2: SDK未ロード時のガードを最優先で実行
-    // 地図SDKがまだ準備できていない場合は、検索を開始せずにユーザーに通知して終了する
     if (!window.google || !window.google.maps) {
       setSearchStatus("地図を読み込み中...少し待って再試行してください");
       return;
@@ -59,7 +58,6 @@ export const useToiletSearch = () => {
     const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
 
     try {
-      // 戦略: まずは Places API (TextSearch) で曖昧検索を試す
       const placesRequest = {
         query: placeQuery,
         fields: ['name', 'geometry', 'formatted_address', 'rating', 'user_ratings_total'],
@@ -72,18 +70,14 @@ export const useToiletSearch = () => {
           const lng = hit.geometry.location.lng();
           
           let statusMsg = `「${hit.name}」周辺`;
-          if (hit.rating) {
-            statusMsg += ` (★${hit.rating})`;
-          }
+          if (hit.rating) statusMsg += ` (★${hit.rating})`;
           statusMsg += " を表示中";
 
+          // ★変更: 検索時は currentLocation (中心点) だけ更新し、realLocation (GPS) は維持する
           setCurrentLocation({ lat, lng, address: hit.formatted_address });
           setSearchStatus(statusMsg);
-          console.log("Places Hit:", hit);
 
         } else {
-          // Placesで見つからない場合、Geocoder（厳密な住所検索）にフォールバック
-          console.log("Places failed, trying Geocoder...");
           geocoder.geocode({ address: placeQuery }, (geoResults, geoStatus) => {
             if (geoStatus === 'OK' && geoResults[0]) {
               const hit = geoResults[0];
@@ -93,7 +87,6 @@ export const useToiletSearch = () => {
               setCurrentLocation({ lat, lng, address: hit.formatted_address });
               setSearchStatus(`住所「${hit.formatted_address}」周辺を表示`);
             } else {
-              // それでもダメならDB内検索へ
               setSearchStatus("地図上に見つかりません。登録データから検索します...");
               setCurrentLocation(null);
               setSearchTrigger(prev => prev + 1);
@@ -109,7 +102,7 @@ export const useToiletSearch = () => {
     }
   };
 
-  // --- 現在地取得 & 逆ジオコーディング (座標→住所) ---
+  // --- 現在地取得 & 逆ジオコーディング ---
   const handleCurrentLocation = () => {
     setSearchStatus("現在地を取得中...");
     if (navigator.geolocation) {
@@ -131,11 +124,14 @@ export const useToiletSearch = () => {
               } else {
                 setSearchStatus("現在地周辺を表示中");
               }
-              setCurrentLocation({ lat, lng, address: addr });
+              const loc = { lat, lng, address: addr };
+              setCurrentLocation(loc);
+              setRealLocation(loc); // ★追加: GPS取得時は realLocation も更新
             });
           } else {
-            // Google Maps未ロード時でも、座標さえあれば検索は続行する
-            setCurrentLocation({ lat, lng, address: "現在地" });
+            const loc = { lat, lng, address: "現在地" };
+            setCurrentLocation(loc);
+            setRealLocation(loc); // ★追加
             setSearchStatus("現在地周辺を表示中");
           }
         },
@@ -149,7 +145,6 @@ export const useToiletSearch = () => {
     }
   };
 
-  // --- キーワード検索（DB直接） ---
   const handleKeywordSearch = () => {
     if (!placeQuery) return;
     addToHistory(placeQuery);
@@ -160,16 +155,13 @@ export const useToiletSearch = () => {
 
   const handleHistorySearch = (query) => {
     setPlaceQuery(query);
-    // State更新を待つためのハック（即時検索したい場合）
     setTimeout(() => {
-        // Places検索を実行するか、キーワード検索を実行するか。
-        // ここでは「場所検索」ボタンを押したことにする
         const btn = document.querySelector('.btn-icon-side[title="地図移動"]'); 
         if(btn) btn.click();
     }, 100);
   };
 
-  // --- データ取得・フィルタリング (変更なし) ---
+  // --- データ取得・フィルタリング ---
   useEffect(() => {
     async function fetchData() {
       if (!currentLocation && !placeQuery && searchTrigger === 0) return;
@@ -185,10 +177,9 @@ export const useToiletSearch = () => {
           params.append('lng', currentLocation.lng);
           params.append('radius', '5.0');
         } else {
-          // キーワード検索
           if (placeQuery) params.append('keyword', placeQuery);
-          
-          const filters = {
+          // (フィルタパラメータの構築)
+           const filters = {
              facilityCategory: searchParams.get('facilityCategory'),
              wheelchair: searchParams.get('wheelchair') === 'true',
              diaper: searchParams.get('diaper') === 'true',
@@ -232,7 +223,6 @@ export const useToiletSearch = () => {
       const localData = loadUserToilets();
       const merged = [...apiData, ...localData];
       
-      // クライアントサイドフィルタリング
       const filters = {
         wheelchair: searchParams.get('wheelchair') === 'true',
         diaper: searchParams.get('diaper') === 'true',
@@ -299,16 +289,16 @@ export const useToiletSearch = () => {
     }
 
     fetchData();
-  }, [searchParams, currentLocation, searchTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, currentLocation, searchTrigger]); 
 
-  // 初期ロード
   useEffect(() => {
     handleCurrentLocation();
   }, []);
 
   return {
     filteredToilets,
-    currentLocation,
+    currentLocation, // 地図の中心
+    realLocation,    // ★追加: 本当のGPS現在地
     placeQuery,
     setPlaceQuery,
     searchStatus,

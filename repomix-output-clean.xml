@@ -3738,340 +3738,6 @@ function PlaceSearch({
 export default PlaceSearch;
 </file>
 
-<file path="toilet-frontend/src/search.css">
-/* =========================================================
-   search.css (3カラム・フルハイト版)
-========================================================= */
-
-/* ページ全体のラッパー：ヘッダー以外の高さを確保 */
-.search-page-wrapper {
-  height: calc(100vh - 64px); /* ヘッダーの高さを引く */
-  overflow: hidden; /* 全体スクロールはさせない */
-  background: #f0f2f5;
-  width: 100%;
-}
-
-/* 既存コンテナの無効化（検索ページ内のみ） */
-.search-page-wrapper .container {
-  max-width: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  height: 100%;
-  width: 100%;
-}
-
-/* --- 3カラムレイアウト定義 --- */
-.three-col-layout {
-  display: grid;
-  /* 左:260px, 中:残り全部, 右:320px */
-  grid-template-columns: 260px 1fr 320px;
-  grid-template-rows: 100%;
-  height: 100%;
-  width: 100%;
-}
-
-/* =========================
-   左カラム: フィルタ
-========================= */
-.col-filter {
-  background: #fff;
-  border-right: 1px solid #ddd;
-  overflow-y: auto; /* 縦スクロール可 */
-  z-index: 2;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-}
-
-.filter-panel {
-  padding: 16px;
-}
-
-.filter-section {
-  margin-bottom: 24px;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 16px;
-}
-.filter-section:last-child { border-bottom: none; }
-
-.filter-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #444;
-  margin: 0 0 12px;
-}
-
-/* 検索ボックス周り */
-.search-box-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.input-search-side {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 0.9rem;
-}
-.search-actions {
-  display: flex;
-  gap: 8px;
-}
-.btn-icon-side {
-  flex: 1;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 6px;
-  cursor: pointer;
-  color: #555;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 36px;
-}
-.btn-icon-side:hover {
-  background: #e3f2fd;
-  color: #1976d2;
-  border-color: #1976d2;
-}
-
-/* ラジオボタンリスト */
-.radio-group-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.radio-row {
-  display: flex;
-  align-items: center;
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: #555;
-  transition: background 0.1s;
-}
-.radio-row:hover { background: #f5f5f5; }
-.radio-row.active {
-  background: #e3f2fd;
-  color: #1565c0;
-  font-weight: bold;
-}
-.radio-row input { display: none; }
-.radio-icon { margin-right: 8px; font-size: 1.1rem; }
-
-/* チェックボックスリスト */
-.check-group-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.check-row {
-  display: flex;
-  align-items: center;
-  padding: 6px 0;
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: #333;
-}
-.check-row input { display: none; }
-
-.check-box-ui {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-  margin-right: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: #fff;
-  transition: all 0.2s;
-}
-.check-row.checked .check-box-ui {
-  background: #1e88e5;
-  border-color: #1e88e5;
-}
-.check-icon {
-  margin-right: 6px;
-  display: flex;
-  align-items: center;
-}
-
-/* =========================
-   中央カラム: 地図
-========================= */
-.col-map {
-  position: relative;
-  height: 100%;
-  background: #e0e0e0;
-}
-
-/* MapPanelの上書き */
-.panel--map {
-  height: 100% !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  display: flex;
-  flex-direction: column;
-}
-/* 地図上のヘッダーは不要なので消す */
-.panel--map .panel-head {
-  display: none; 
-}
-.panel--map .map-area {
-  flex: 1;
-  height: auto !important;
-}
-
-/* 地図の上に浮く検索ステータスバー */
-.map-status-bar {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  background: rgba(255,255,255,0.95);
-  padding: 8px 20px;
-  border-radius: 30px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #1e88e5;
-  border: 1px solid #bbdefb;
-}
-
-/* =========================
-   右カラム: リスト (デザイン刷新)
-========================= */
-.col-list {
-  background: #f7f9fb; /* 背景を薄いグレーにして、カードを白く浮かせる */
-  border-left: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  z-index: 2;
-  box-shadow: -4px 0 12px rgba(0,0,0,0.03);
-}
-
-/* ListPanelの上書き設定 */
-.panel--list {
-  height: 100%;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  display: flex;
-  flex-direction: column;
-  background: transparent !important; /* コンテナ自体は透明に */
-}
-
-/* リストヘッダー（固定表示） */
-.panel--list .panel-head {
-  padding: 16px;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  flex-shrink: 0; /* スクロール時に縮まないように固定 */
-}
-
-.panel--list .panel-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 6px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.panel--list .panel-meta {
-  font-size: 0.85rem;
-  color: #888;
-}
-
-/* リストエリア（スクロール部分） */
-.panel--list .list-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px; /* カード周りの余白 */
-  max-height: none !important;
-  display: flex;
-  flex-direction: column;
-  gap: 12px; /* カード間の隙間 */
-}
-
-/* --- トイレカードのデザイン整形 --- */
-.toilet-card {
-  background: #fff;
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid #eee; /* 薄い枠線 */
-  box-shadow: 0 2px 6px rgba(0,0,0,0.02); /* 優しい影 */
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-/* マウスを乗せた時の動き */
-.toilet-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
-  border-color: #bbdefb; /* 青っぽく光らせる */
-}
-
-.toilet-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 10px;
-  line-height: 1.4;
-}
-
-.toilet-meta {
-  font-size: 0.8rem;
-  color: #666;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px; /* アイコン間の隙間 */
-  line-height: 1.5;
-}
-
-/* アイコンや距離のバッジ装飾 */
-.toilet-meta span {
-  display: inline-flex;
-  align-items: center;
-  background: #f5f5f5;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  color: #555;
-}
-
-/* 距離表示だけ少し目立たせる */
-.toilet-meta span:last-child {
-  background: #fff3e0;
-  color: #ef6c00;
-  font-weight: bold;
-  margin-left: auto; /* 右端に寄せる */
-}
-
-/* レスポンシブ対応はそのまま維持 */
-@media (max-width: 900px) {
-  /* ...（既存のコードと同じ）... */
-  .col-list {
-    border-left: none;
-    border-top: 1px solid #ddd;
-    height: auto;
-  }
-  .panel--list .list-area {
-    max-height: 500px !important;
-  }
-}
-</file>
-
 <file path="toilet-frontend/src/utils.js">
 // 環境変数 (VITE_API_BASE_URL) を読み込んで定数としてエクスポート
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/toilets';
@@ -4825,6 +4491,391 @@ function Search() {
 export default Search;
 </file>
 
+<file path="toilet-frontend/src/search.css">
+/* =========================================================
+   search.css (3カラム・フルハイト版 + モバイル対応)
+========================================================= */
+
+/* ページ全体のラッパー：ヘッダー以外の高さを確保 */
+.search-page-wrapper {
+  height: calc(100vh - 64px); /* ヘッダーの高さを引く */
+  overflow: hidden; /* 全体スクロールはさせない（PC時） */
+  background: #f0f2f5;
+  width: 100%;
+}
+
+/* 既存コンテナの無効化（検索ページ内のみ） */
+.search-page-wrapper .container {
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 100%;
+  width: 100%;
+}
+
+/* --- 3カラムレイアウト定義 (PC用デフォルト) --- */
+.three-col-layout {
+  display: grid;
+  /* 左:260px, 中:残り全部, 右:320px */
+  grid-template-columns: 260px 1fr 320px;
+  grid-template-rows: 100%;
+  height: 100%;
+  width: 100%;
+}
+
+/* =========================
+   左カラム: フィルタ
+========================= */
+.col-filter {
+  background: #fff;
+  border-right: 1px solid #ddd;
+  overflow-y: auto; /* 縦スクロール可 */
+  z-index: 2;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+.filter-panel {
+  padding: 16px;
+}
+
+.filter-section {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 16px;
+}
+.filter-section:last-child { border-bottom: none; }
+
+.filter-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #444;
+  margin: 0 0 12px;
+}
+
+/* 検索ボックス周り */
+.search-box-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.input-search-side {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.search-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-icon-side {
+  flex: 1;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  color: #555;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 36px;
+}
+.btn-icon-side:hover {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-color: #1976d2;
+}
+
+/* ラジオボタンリスト */
+.radio-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.radio-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #555;
+  transition: background 0.1s;
+}
+.radio-row:hover { background: #f5f5f5; }
+.radio-row.active {
+  background: #e3f2fd;
+  color: #1565c0;
+  font-weight: bold;
+}
+.radio-row input { display: none; }
+.radio-icon { margin-right: 8px; font-size: 1.1rem; }
+
+/* チェックボックスリスト */
+.check-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+}
+.check-row input { display: none; }
+
+.check-box-ui {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #fff;
+  transition: all 0.2s;
+}
+.check-row.checked .check-box-ui {
+  background: #1e88e5;
+  border-color: #1e88e5;
+}
+.check-icon {
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+}
+
+/* =========================
+   中央カラム: 地図
+========================= */
+.col-map {
+  position: relative;
+  height: 100%;
+  background: #e0e0e0;
+}
+
+/* MapPanelの上書き */
+.panel--map {
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex;
+  flex-direction: column;
+}
+/* 地図上のヘッダーは不要なので消す */
+.panel--map .panel-head {
+  display: none; 
+}
+.panel--map .map-area {
+  flex: 1;
+  height: auto !important;
+}
+
+/* 地図の上に浮く検索ステータスバー */
+.map-status-bar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  background: rgba(255,255,255,0.95);
+  padding: 8px 20px;
+  border-radius: 30px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #1e88e5;
+  border: 1px solid #bbdefb;
+  white-space: nowrap; /* スマホで改行されないように */
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================
+   右カラム: リスト (デザイン刷新)
+========================= */
+.col-list {
+  background: #f7f9fb; /* 背景を薄いグレーにして、カードを白く浮かせる */
+  border-left: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  z-index: 2;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.03);
+}
+
+/* ListPanelの上書き設定 */
+.panel--list {
+  height: 100%;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex;
+  flex-direction: column;
+  background: transparent !important; /* コンテナ自体は透明に */
+}
+
+/* リストヘッダー（固定表示） */
+.panel--list .panel-head {
+  padding: 16px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0; /* スクロール時に縮まないように固定 */
+}
+
+.panel--list .panel-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel--list .panel-meta {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+/* リストエリア（スクロール部分） */
+.panel--list .list-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px; /* カード周りの余白 */
+  max-height: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* カード間の隙間 */
+}
+
+/* --- トイレカードのデザイン整形 --- */
+.toilet-card {
+  background: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #eee; /* 薄い枠線 */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02); /* 優しい影 */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+/* マウスを乗せた時の動き */
+.toilet-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+  border-color: #bbdefb; /* 青っぽく光らせる */
+}
+
+.toilet-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.toilet-meta {
+  font-size: 0.8rem;
+  color: #666;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px; /* アイコン間の隙間 */
+  line-height: 1.5;
+}
+
+/* アイコンや距離のバッジ装飾 */
+.toilet-meta span {
+  display: inline-flex;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* 距離表示だけ少し目立たせる */
+.toilet-meta span:last-child {
+  background: #fff3e0;
+  color: #ef6c00;
+  font-weight: bold;
+  margin-left: auto; /* 右端に寄せる */
+}
+
+/* =========================================
+   ★モバイルレスポンシブ対応 (900px未満)
+   ここを強力に修正しました
+========================================= */
+@media (max-width: 900px) {
+  
+  /* ラッパー：PCでは隠していたスクロールを有効化 */
+  .search-page-wrapper {
+    height: auto; 
+    overflow-y: auto; 
+    overflow-x: hidden;
+  }
+
+  /* 3カラムレイアウト解除 → 縦積みフレックスに変更 */
+  .three-col-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto; /* 高さは中身なり */
+    grid-template-columns: none;
+    grid-template-rows: none;
+  }
+
+  /* 1. フィルター（上部） */
+  .col-filter {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    /* フィルターの中身が多すぎると地図に辿り着けないため、
+       簡易的に高さを制限してスクロールさせるか、
+       あるいはアコーディオンUIにするのが理想ですが、
+       まずは全体スクロールで対応します */
+    max-height: 300px; /* フィルタエリアが大きすぎないように制限 */
+    flex-shrink: 0;
+  }
+  
+  /* 2. 地図（中央） */
+  .col-map {
+    width: 100%;
+    height: 400px; /* スマホでも地図が見やすい高さを確保 */
+    flex-shrink: 0;
+    border-bottom: 1px solid #ddd;
+  }
+
+  /* 3. リスト（下部） */
+  .col-list {
+    width: 100%;
+    border-left: none;
+    border-top: none;
+    height: auto; /* 下に伸びるように */
+    flex: 1;
+    box-shadow: none;
+    background: #f0f2f5;
+  }
+  
+  /* リスト内のスクロール制限を解除（ページ全体でスクロールするため） */
+  .panel--list .list-area {
+    overflow-y: visible; 
+  }
+}
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
 package com.imatoilet.backend;
 
@@ -4941,6 +4992,51 @@ public class Toilet {
 }
 </file>
 
+<file path="toilet-frontend/package.json">
+{
+  "name": "toilet-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.7",
+    "@mui/material": "^7.3.7",
+    "@react-google-maps/api": "^2.20.8",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.12.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "jsdom": "^27.4.0",
+    "msw": "^2.12.7",
+    "vite": "npm:rolldown-vite@7.2.5",
+    "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@7.2.5"
+  }
+}
+</file>
+
 <file path="toilet-frontend/src/hooks/useToiletSearch.js">
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -4970,50 +5066,58 @@ export const useToiletSearch = () => {
     }
   }, []);
 
+  // ★修正1: 履歴追加を安全な形に変更（Stale State防止 & 同期保存）
   const addToHistory = (query) => {
     if (!query) return;
-    const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 5);
-    setSearchHistory(newHistory);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+
+    setSearchHistory(prev => {
+      // 最新のstate(prev)を元に新しい配列を作成
+      const newHistory = [query, ...prev.filter(h => h !== query)].slice(0, 5);
+      
+      // 同時にLocalStorageへ保存
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+      
+      return newHistory;
+    });
   };
 
   // --- Google Maps API を使った強力な検索 ---
   const handlePlaceSearch = async () => {
     if (!placeQuery) return;
-    setSearchStatus("Googleマップで場所を解析中...");
-    addToHistory(placeQuery);
-
+    
+    // ★修正2: SDK未ロード時のガードを最優先で実行
+    // 地図SDKがまだ準備できていない場合は、検索を開始せずにユーザーに通知して終了する
     if (!window.google || !window.google.maps) {
-      setSearchStatus("地図システム準備中...少し待って再試行してください");
+      setSearchStatus("地図を読み込み中...少し待って再試行してください");
       return;
     }
+
+    setSearchStatus("Googleマップで場所を解析中...");
+    addToHistory(placeQuery);
 
     const geocoder = new window.google.maps.Geocoder();
     const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
 
     try {
       // 戦略: まずは Places API (TextSearch) で曖昧検索を試す
-      // 「ラーメン」「スタバ」「東京駅」など、意図を汲み取れる最強の検索
       const placesRequest = {
         query: placeQuery,
-        fields: ['name', 'geometry', 'formatted_address', 'rating', 'user_ratings_total'], // 詳細情報も取得
+        fields: ['name', 'geometry', 'formatted_address', 'rating', 'user_ratings_total'],
       };
 
       placesService.textSearch(placesRequest, (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
-          // ベストな結果を採用
           const hit = results[0];
           const lat = hit.geometry.location.lat();
           const lng = hit.geometry.location.lng();
           
-          // 詳細情報（評価など）があればステータスに表示
           let statusMsg = `「${hit.name}」周辺`;
           if (hit.rating) {
             statusMsg += ` (★${hit.rating})`;
           }
           statusMsg += " を表示中";
 
-          setCurrentLocation({ lat, lng, address: hit.formatted_address }); // 住所も保持
+          setCurrentLocation({ lat, lng, address: hit.formatted_address });
           setSearchStatus(statusMsg);
           console.log("Places Hit:", hit);
 
@@ -5054,13 +5158,12 @@ export const useToiletSearch = () => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           
-          // 逆ジオコーディング: 座標から「○○市○○町」などの住所を取得
+          // 逆ジオコーディング
           if (window.google && window.google.maps) {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
               let addr = "現在地";
               if (status === 'OK' && results[0]) {
-                // 読みやすい住所部分を抽出（国名などを省く工夫も可能）
                 addr = results[0].address_components
                   .filter(c => c.types.includes('locality') || c.types.includes('sublocality') || c.types.includes('neighborhood'))
                   .map(c => c.long_name).reverse().join('') || results[0].formatted_address;
@@ -5071,7 +5174,7 @@ export const useToiletSearch = () => {
               setCurrentLocation({ lat, lng, address: addr });
             });
           } else {
-            // Google Maps未ロード時
+            // Google Maps未ロード時でも、座標さえあれば検索は続行する
             setCurrentLocation({ lat, lng, address: "現在地" });
             setSearchStatus("現在地周辺を表示中");
           }
@@ -5106,7 +5209,7 @@ export const useToiletSearch = () => {
     }, 100);
   };
 
-  // --- データ取得・フィルタリング (既存ロジック) ---
+  // --- データ取得・フィルタリング (変更なし) ---
   useEffect(() => {
     async function fetchData() {
       if (!currentLocation && !placeQuery && searchTrigger === 0) return;
@@ -5122,10 +5225,9 @@ export const useToiletSearch = () => {
           params.append('lng', currentLocation.lng);
           params.append('radius', '5.0');
         } else {
-          // キーワード検索（お掃除は不要、BackendもLIKE検索なので）
+          // キーワード検索
           if (placeQuery) params.append('keyword', placeQuery);
           
-          // フィルター条件の適用（中略：既存コードと同じパラメータ処理）
           const filters = {
              facilityCategory: searchParams.get('facilityCategory'),
              wheelchair: searchParams.get('wheelchair') === 'true',
@@ -5170,7 +5272,7 @@ export const useToiletSearch = () => {
       const localData = loadUserToilets();
       const merged = [...apiData, ...localData];
       
-      // クライアントサイドフィルタリング (中略：既存コードと同じ)
+      // クライアントサイドフィルタリング
       const filters = {
         wheelchair: searchParams.get('wheelchair') === 'true',
         diaper: searchParams.get('diaper') === 'true',
@@ -5209,7 +5311,7 @@ export const useToiletSearch = () => {
       });
 
       if (isKeywordSearch && placeQuery) {
-        const lowerQ = placeQuery.toLowerCase(); // お掃除なしでOK
+        const lowerQ = placeQuery.toLowerCase(); 
         result = result.filter(t => {
           const n = (t.name || "").toLowerCase();
           const a = (t.address || "").toLowerCase();
@@ -5228,8 +5330,7 @@ export const useToiletSearch = () => {
       setFilteredToilets(result);
 
       if (result.length > 0) {
-        // ステータスが「検索中」のままなら更新
-        setSearchStatus(prev => prev.includes('検索中') ? `${result.length}件のトイレが見つかりました` : prev);
+        setSearchStatus(prev => prev.includes('検索中') || prev.includes('読み込み中') ? `${result.length}件のトイレが見つかりました` : prev);
       } else {
          if(!searchStatus.includes('付近')) {
             setSearchStatus("条件に一致するトイレは見つかりませんでした");
@@ -5238,7 +5339,7 @@ export const useToiletSearch = () => {
     }
 
     fetchData();
-  }, [searchParams, currentLocation, searchTrigger]);
+  }, [searchParams, currentLocation, searchTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 初期ロード
   useEffect(() => {
@@ -5258,51 +5359,6 @@ export const useToiletSearch = () => {
     handleHistorySearch
   };
 };
-</file>
-
-<file path="toilet-frontend/package.json">
-{
-  "name": "toilet-frontend",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.7",
-    "@mui/material": "^7.3.7",
-    "@react-google-maps/api": "^2.20.8",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.12.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "jsdom": "^27.4.0",
-    "msw": "^2.12.7",
-    "vite": "npm:rolldown-vite@7.2.5",
-    "vitest": "^4.0.18"
-  },
-  "overrides": {
-    "vite": "npm:rolldown-vite@7.2.5"
-  }
-}
 </file>
 
 <file path="toilet-frontend/src/pages/Edit.jsx">
@@ -5961,31 +6017,6 @@ function MapPanel({ filteredToilets, currentLocation }) {
 export default MapPanel;
 </file>
 
-<file path="backend/backend/src/main/resources/application.properties">
-# PostgreSQL への接続設定
-# 環境変数 DB_URL, DB_USER, DB_PASSWORD があればそれを使い、なければデフォルト値を使います
-spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/imatoilet}
-spring.datasource.username=${DB_USER:postgres}
-spring.datasource.password=${DB_PASSWORD:MyNewPass3969}
-spring.datasource.driver-class-name=org.postgresql.Driver
-
-# JPA/Hibernate の設定
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-
-# --- CORS / Server Config ---
-# WebConfig.java の @Value("${app.cors.allowed-origins}") と一致させています
-app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:5173}
-app.cors.allow-credentials=${CORS_ALLOW_CREDENTIALS:false}
-
-# ポート設定
-server.port=${PORT:8080}
-
-# --- Flyway Config ---
-spring.flyway.baseline-on-migrate=true
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
 package com.imatoilet.backend;
 
@@ -6056,6 +6087,32 @@ public class ToiletApiController {
         return ResponseEntity.noContent().build();
     }
 }
+</file>
+
+<file path="backend/backend/src/main/resources/application.properties">
+# PostgreSQL への接続設定
+# 環境変数 DB_URL, DB_USER, DB_PASSWORD があればそれを使い、なければデフォルト値を使います
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/imatoilet}
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASSWORD:MyNewPass3969}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA/Hibernate の設定
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# --- CORS / Server Config ---
+# WebConfig.java の @Value("${app.cors.allowed-origins}") と一致させています
+app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+app.cors.allow-credentials=${CORS_ALLOW_CREDENTIALS:false}
+app.cors.allowed-origins=http://localhost:5173
+
+# ポート設定
+server.port=${PORT:8080}
+
+# --- Flyway Config ---
+spring.flyway.baseline-on-migrate=true
 </file>
 
 <file path="toilet-frontend/src/pages/Detail.jsx">
