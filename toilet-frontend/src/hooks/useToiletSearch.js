@@ -26,50 +26,58 @@ export const useToiletSearch = () => {
     }
   }, []);
 
+  // ★修正1: 履歴追加を安全な形に変更（Stale State防止 & 同期保存）
   const addToHistory = (query) => {
     if (!query) return;
-    const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 5);
-    setSearchHistory(newHistory);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+
+    setSearchHistory(prev => {
+      // 最新のstate(prev)を元に新しい配列を作成
+      const newHistory = [query, ...prev.filter(h => h !== query)].slice(0, 5);
+      
+      // 同時にLocalStorageへ保存
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+      
+      return newHistory;
+    });
   };
 
   // --- Google Maps API を使った強力な検索 ---
   const handlePlaceSearch = async () => {
     if (!placeQuery) return;
-    setSearchStatus("Googleマップで場所を解析中...");
-    addToHistory(placeQuery);
-
+    
+    // ★修正2: SDK未ロード時のガードを最優先で実行
+    // 地図SDKがまだ準備できていない場合は、検索を開始せずにユーザーに通知して終了する
     if (!window.google || !window.google.maps) {
-      setSearchStatus("地図システム準備中...少し待って再試行してください");
+      setSearchStatus("地図を読み込み中...少し待って再試行してください");
       return;
     }
+
+    setSearchStatus("Googleマップで場所を解析中...");
+    addToHistory(placeQuery);
 
     const geocoder = new window.google.maps.Geocoder();
     const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
 
     try {
       // 戦略: まずは Places API (TextSearch) で曖昧検索を試す
-      // 「ラーメン」「スタバ」「東京駅」など、意図を汲み取れる最強の検索
       const placesRequest = {
         query: placeQuery,
-        fields: ['name', 'geometry', 'formatted_address', 'rating', 'user_ratings_total'], // 詳細情報も取得
+        fields: ['name', 'geometry', 'formatted_address', 'rating', 'user_ratings_total'],
       };
 
       placesService.textSearch(placesRequest, (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
-          // ベストな結果を採用
           const hit = results[0];
           const lat = hit.geometry.location.lat();
           const lng = hit.geometry.location.lng();
           
-          // 詳細情報（評価など）があればステータスに表示
           let statusMsg = `「${hit.name}」周辺`;
           if (hit.rating) {
             statusMsg += ` (★${hit.rating})`;
           }
           statusMsg += " を表示中";
 
-          setCurrentLocation({ lat, lng, address: hit.formatted_address }); // 住所も保持
+          setCurrentLocation({ lat, lng, address: hit.formatted_address });
           setSearchStatus(statusMsg);
           console.log("Places Hit:", hit);
 
@@ -110,13 +118,12 @@ export const useToiletSearch = () => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           
-          // 逆ジオコーディング: 座標から「○○市○○町」などの住所を取得
+          // 逆ジオコーディング
           if (window.google && window.google.maps) {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
               let addr = "現在地";
               if (status === 'OK' && results[0]) {
-                // 読みやすい住所部分を抽出（国名などを省く工夫も可能）
                 addr = results[0].address_components
                   .filter(c => c.types.includes('locality') || c.types.includes('sublocality') || c.types.includes('neighborhood'))
                   .map(c => c.long_name).reverse().join('') || results[0].formatted_address;
@@ -127,7 +134,7 @@ export const useToiletSearch = () => {
               setCurrentLocation({ lat, lng, address: addr });
             });
           } else {
-            // Google Maps未ロード時
+            // Google Maps未ロード時でも、座標さえあれば検索は続行する
             setCurrentLocation({ lat, lng, address: "現在地" });
             setSearchStatus("現在地周辺を表示中");
           }
@@ -162,7 +169,7 @@ export const useToiletSearch = () => {
     }, 100);
   };
 
-  // --- データ取得・フィルタリング (既存ロジック) ---
+  // --- データ取得・フィルタリング (変更なし) ---
   useEffect(() => {
     async function fetchData() {
       if (!currentLocation && !placeQuery && searchTrigger === 0) return;
@@ -178,10 +185,9 @@ export const useToiletSearch = () => {
           params.append('lng', currentLocation.lng);
           params.append('radius', '5.0');
         } else {
-          // キーワード検索（お掃除は不要、BackendもLIKE検索なので）
+          // キーワード検索
           if (placeQuery) params.append('keyword', placeQuery);
           
-          // フィルター条件の適用（中略：既存コードと同じパラメータ処理）
           const filters = {
              facilityCategory: searchParams.get('facilityCategory'),
              wheelchair: searchParams.get('wheelchair') === 'true',
@@ -226,7 +232,7 @@ export const useToiletSearch = () => {
       const localData = loadUserToilets();
       const merged = [...apiData, ...localData];
       
-      // クライアントサイドフィルタリング (中略：既存コードと同じ)
+      // クライアントサイドフィルタリング
       const filters = {
         wheelchair: searchParams.get('wheelchair') === 'true',
         diaper: searchParams.get('diaper') === 'true',
@@ -265,7 +271,7 @@ export const useToiletSearch = () => {
       });
 
       if (isKeywordSearch && placeQuery) {
-        const lowerQ = placeQuery.toLowerCase(); // お掃除なしでOK
+        const lowerQ = placeQuery.toLowerCase(); 
         result = result.filter(t => {
           const n = (t.name || "").toLowerCase();
           const a = (t.address || "").toLowerCase();
@@ -284,8 +290,7 @@ export const useToiletSearch = () => {
       setFilteredToilets(result);
 
       if (result.length > 0) {
-        // ステータスが「検索中」のままなら更新
-        setSearchStatus(prev => prev.includes('検索中') ? `${result.length}件のトイレが見つかりました` : prev);
+        setSearchStatus(prev => prev.includes('検索中') || prev.includes('読み込み中') ? `${result.length}件のトイレが見つかりました` : prev);
       } else {
          if(!searchStatus.includes('付近')) {
             setSearchStatus("条件に一致するトイレは見つかりませんでした");
@@ -294,7 +299,7 @@ export const useToiletSearch = () => {
     }
 
     fetchData();
-  }, [searchParams, currentLocation, searchTrigger]);
+  }, [searchParams, currentLocation, searchTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 初期ロード
   useEffect(() => {
