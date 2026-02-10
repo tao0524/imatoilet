@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // ★useStateを追加
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 // アイコン
@@ -7,7 +7,7 @@ import MyLocationIcon from '@mui/icons-material/MyLocation';
 import MapIcon from '@mui/icons-material/Map';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import CheckIcon from '@mui/icons-material/Check';
-import HistoryIcon from '@mui/icons-material/History'; // ★履歴アイコン追加
+import HistoryIcon from '@mui/icons-material/History';
 
 // カテゴリアイコン
 import TrainIcon from '@mui/icons-material/Train';
@@ -23,11 +23,11 @@ function FilterPanel({
   handleKeywordSearch, 
   handleCurrentLocation,
   handlePlaceSearch,
-  searchHistory,       // ★受け取り
-  handleHistorySearch  // ★受け取り
+  searchHistory,
+  handleHistorySearch
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [showHistory, setShowHistory] = useState(false); // ★表示切り替え用State
+  const [showHistory, setShowHistory] = useState(false);
 
   // URLパラメータ更新用ヘルパー
   const updateParam = (key, value) => {
@@ -56,12 +56,12 @@ function FilterPanel({
             placeholder="場所や施設名を入力" 
             value={placeQuery}
             onChange={(e) => setPlaceQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()} 
-            onFocus={() => setShowHistory(true)} // ★フォーカス時に履歴表示
-            // onBlur={() => setTimeout(() => setShowHistory(false), 200)} // 必要なら
+            // ★重要修正: Enterキーで確実に「地図移動」を実行させる
+            onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()} 
+            onFocus={() => setShowHistory(true)}
           />
           
-          {/* ★履歴ポップアップ (ここから) */}
+          {/* 履歴ポップアップ */}
           {showHistory && searchHistory && searchHistory.length > 0 && (
              <div style={{
                position: 'absolute', top: '42px', left: 0, right: 0,
@@ -93,15 +93,17 @@ function FilterPanel({
                </div>
              </div>
           )}
-          {/* ★履歴ポップアップ (ここまで) */}
 
           <div className="search-actions">
-             <button className="btn-icon-side" onClick={handleKeywordSearch} title="キーワード検索">
+             {/* キーワード検索（リスト絞り込み） */}
+             <button className="btn-icon-side" onClick={handleKeywordSearch} title="リスト内をキーワード検索">
                <SearchIcon fontSize="small"/>
              </button>
+             {/* 地図検索（場所移動） */}
              <button className="btn-icon-side" onClick={handlePlaceSearch} title="地図移動">
                <MapIcon fontSize="small"/>
              </button>
+             {/* 現在地 */}
              <button className="btn-icon-side" onClick={handleCurrentLocation} title="現在地">
                <MyLocationIcon fontSize="small"/>
              </button>
@@ -109,7 +111,7 @@ function FilterPanel({
         </div>
       </section>
 
-      {/* 2. 施設タイプ (変更なし) */}
+      {/* 2. 施設タイプ */}
       <section className="filter-section">
         <h3 className="filter-title">施設の種類</h3>
         <div className="radio-group-vertical">
@@ -142,7 +144,7 @@ function FilterPanel({
         </div>
       </section>
 
-      {/* 3. 設備・条件 (変更なし) */}
+      {/* 3. 設備・条件 */}
       <section className="filter-section">
         <h3 className="filter-title">設備・特徴</h3>
         <div className="check-group-vertical">
@@ -161,7 +163,7 @@ function FilterPanel({
   );
 }
 
-// 部品コンポーネント (変更なし)
+// 部品コンポーネント
 function CheckRow({ label, pKey, icon, checked, onChange }) {
   return (
     <label className={`check-row ${checked ? 'checked' : ''}`}>

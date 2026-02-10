@@ -1,9 +1,8 @@
-// toilet-frontend/src/components/SafeGoogleMap.jsx
 import React, { useState, useEffect } from 'react';
 import { useJsApiLoader, GoogleMap } from '@react-google-maps/api';
 
-// ★ 'places' を追加して、検索機能を使えるようにします
-const LIBRARIES = ['marker', 'places'];
+// ★修正: 'marker' を削除し、'places' のみにしました
+const LIBRARIES = ['places'];
 
 /**
  * Google Mapsの読み込みとエラーハンドリングを一元管理するラッパー
