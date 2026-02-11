@@ -139,71 +139,45 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
       
       <div className="map-area" style={{ position: 'relative' }}>
         
-        {/* コントロールエリア */}
+        {/* コントロールエリア（MapPanel.jsx内） */}
         {selectedToilet && (
-          <div style={{
-            position: 'absolute', top: '10px', left: '10px', zIndex: 10,
-            display: 'flex', flexDirection: 'column', gap: '8px'
-          }}>
-            <div style={{
-              background: 'white', padding: '5px', borderRadius: '8px',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.3)', display: 'flex', gap: '5px'
-            }}>
+          <div className="map-controls-overlay">
+            
+            {/* 上段：移動手段 */}
+            <div className="map-controls-row">
               <button 
+                className={`map-ctrl-btn ${travelMode === "WALKING" ? 'active-walk' : ''}`}
                 onClick={() => setTravelMode("WALKING")}
-                style={{
-                  background: travelMode === "WALKING" ? '#e3f2fd' : 'transparent',
-                  color: travelMode === "WALKING" ? '#1e88e5' : '#666',
-                  border: '1px solid #ddd', borderRadius: '6px', padding: '6px 10px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold'
-                }}
               >
                 <DirectionsWalkIcon fontSize="small" /> 徒歩
               </button>
               <button 
+                className={`map-ctrl-btn ${travelMode === "DRIVING" ? 'active-drive' : ''}`}
                 onClick={() => setTravelMode("DRIVING")}
-                style={{
-                  background: travelMode === "DRIVING" ? '#e3f2fd' : 'transparent',
-                  color: travelMode === "DRIVING" ? '#1e88e5' : '#666',
-                  border: '1px solid #ddd', borderRadius: '6px', padding: '6px 10px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold'
-                }}
               >
                 <DirectionsCarIcon fontSize="small" /> 車
               </button>
             </div>
 
-            <div style={{
-              background: 'white', padding: '5px', borderRadius: '8px',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.3)', display: 'flex', gap: '5px'
-            }}>
+            {/* 下段：出発地点 */}
+            <div className="map-controls-row">
               <button 
-                onClick={() => setOriginMode("GPS")}
+                className={`map-ctrl-btn ${originMode === "GPS" ? 'active-gps' : ''}`}
                 disabled={!realLocation}
                 title={!realLocation ? "現在地が取得できていません" : "現在のGPS位置から出発"}
-                style={{
-                  background: originMode === "GPS" ? '#e8f5e9' : 'transparent',
-                  color: originMode === "GPS" ? '#2e7d32' : (realLocation ? '#666' : '#ccc'),
-                  border: '1px solid #ddd', borderRadius: '6px', padding: '6px 10px',
-                  cursor: realLocation ? 'pointer' : 'not-allowed', 
-                  display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', fontSize: '0.85rem'
-                }}
+                onClick={() => setOriginMode("GPS")}
               >
                 <MyLocationIcon fontSize="small" /> 現在地から
               </button>
               <button 
-                onClick={() => setOriginMode("CENTER")}
+                className={`map-ctrl-btn ${originMode === "CENTER" ? 'active-center' : ''}`}
                 title="検索した場所（地図の中心）から出発"
-                style={{
-                  background: originMode === "CENTER" ? '#fff3e0' : 'transparent',
-                  color: originMode === "CENTER" ? '#ef6c00' : '#666',
-                  border: '1px solid #ddd', borderRadius: '6px', padding: '6px 10px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', fontSize: '0.85rem'
-                }}
+                onClick={() => setOriginMode("CENTER")}
               >
                 <MapIcon fontSize="small" /> 地図中心から
               </button>
             </div>
+            
           </div>
         )}
 
