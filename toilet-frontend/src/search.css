@@ -321,12 +321,215 @@
   margin-left: auto; /* 右端に寄せる */
 }
 
+/* =========================================================
+   追加・修正: フィルタ (アコーディオン・トグルUI)
+========================================================= */
+
+/* 古い四角いチェックボックスのUIを完全に非表示にする */
+.check-box-ui {
+  display: none !important;
+}
+
+/* トグルスイッチの行全体のレイアウト */
+.check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #333;
+  border-bottom: 1px solid #f0f0f0;
+}
+.check-row:last-child {
+  border-bottom: none;
+}
+.check-row input { display: none; }
+
+.check-label-content {
+  display: flex;
+  align-items: center;
+}
+.check-icon {
+  margin-right: 12px;
+  font-size: 1.1rem;
+  width: 24px;
+  display: flex;
+  justify-content: center;
+}
+.check-text {
+  font-weight: bold;
+  color: #444;
+}
+
+/* ★画像モックアップ風：緑色のトグルスイッチ */
+.toggle-switch {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  background-color: #e0e0e0;
+  border-radius: 30px;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.check-row.checked .toggle-switch {
+  background-color: #4CAF50;
+}
+
+.check-row.checked .toggle-switch::after {
+  transform: translateX(22px);
+}
+
+.loc-text {
+  display: none;
+}
+.mobile-toggle-btn {
+  display: none; 
+}
+.accordion-content {
+  display: block; 
+}
+.desktop-only {
+  display: block;
+}
+
+/* =========================================================
+   追加: 検索履歴ポップアップの改善 (PC用ベース)
+========================================================= */
+.history-popup {
+  position: absolute;
+  top: 48px; /* 入力欄のすぐ下 */
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+/* ヘッダーはPCでは隠す */
+.history-popup-header {
+  display: none;
+}
+
+/* 高さ制限とスクロール */
+.history-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.history-item {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #333;
+  transition: background 0.2s;
+}
+.history-item:hover {
+  background: #f5f5f5;
+}
+
+.history-footer {
+  padding: 10px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #888;
+  cursor: pointer;
+  background: #fafafa;
+}
+.history-footer:hover {
+  background: #f0f0f0;
+}
+
+/* 背景はPCでは不要なので隠す */
+.history-backdrop {
+  display: none;
+}
+
 /* =========================================
    ★モバイルレスポンシブ対応 (900px未満)
-   ここを強力に修正しました
 ========================================= */
 @media (max-width: 900px) {
-  
+
+  /* ★追加: スマホ時の履歴モーダル化 */
+  .history-backdrop {
+    display: block;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5); /* 画面全体を暗くする */
+    z-index: 2000;
+    backdrop-filter: blur(2px); /* 少しぼかす（iOS等で綺麗） */
+  }
+
+  .history-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 画面のど真ん中に配置 */
+    width: 90%;
+    max-width: 320px;
+    z-index: 2001; /* 背景より上に浮かす */
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border: none;
+  }
+
+  .history-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    font-weight: bold;
+    color: #444;
+  }
+
+  .history-close-btn {
+    background: #e0e0e0;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .history-list {
+    max-height: 40vh; /* スマホ画面の40%までの高さでスクロール */
+  }
+
+  /* スマホの時は項目を少し大きくしてタップしやすくする */
+  .history-item {
+    padding: 16px;
+    font-size: 1rem;
+  }
+
   /* ラッパー：PCでは隠していたスクロールを有効化 */
   .search-page-wrapper {
     height: auto; 
@@ -338,45 +541,164 @@
   .three-col-layout {
     display: flex;
     flex-direction: column;
-    height: auto; /* 高さは中身なり */
+    height: auto; 
     grid-template-columns: none;
     grid-template-rows: none;
   }
 
-  /* 1. フィルター（上部） */
   .col-filter {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #ddd;
-    /* フィルターの中身が多すぎると地図に辿り着けないため、
-       簡易的に高さを制限してスクロールさせるか、
-       あるいはアコーディオンUIにするのが理想ですが、
-       まずは全体スクロールで対応します */
-    max-height: 300px; /* フィルタエリアが大きすぎないように制限 */
+    /* スクロール制限を解除し、自然なアコーディオンの挙動に任せる */
+    max-height: none; 
+    padding: 16px;
+    flex-shrink: 0;
+  }
+  .filter-panel {
+    padding: 0; 
+  }
+
+  /* スマホの時は、タイトルを消して画面を広く使う */
+  .desktop-only {
+    display: none;
+  }
+  .desktop-only-btn {
+    display: none !important;
+  }
+
+  .filter-section-top {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  /* ★画像モックアップ風：検索窓と現在地ボタンの横並び */
+  .search-box-group {
+    flex-direction: row; 
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .input-search-side {
+    flex: 1; 
+    padding: 12px 16px;
+    border-radius: 24px; 
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .search-actions {
+    display: flex;
     flex-shrink: 0;
   }
   
-  /* 2. 地図（中央） */
-  .col-map {
-    width: 100%;
-    height: 400px; /* スマホでも地図が見やすい高さを確保 */
-    flex-shrink: 0;
-    border-bottom: 1px solid #ddd;
+  /* ★現在地ボタンのモックアップ化 */
+  .btn-location {
+    background-color: #4CAF50 !important;
+    border-color: #4CAF50 !important;
+    border-radius: 24px !important;
+    padding: 0 16px !important;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 44px;
+  }
+  .loc-text {
+    display: inline-block;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+  .loc-icon {
+    color: white !important;
   }
 
-  /* 3. リスト（下部） */
+  /* ★オレンジ色のアコーディオン開閉ボタン */
+  .mobile-toggle-btn {
+    display: block;
+    width: 100%;
+    background: linear-gradient(to bottom, #ff7043, #f4511e);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    font-size: 1rem;
+    transition: transform 0.1s;
+  }
+  .mobile-toggle-btn:active {
+    transform: translateY(2px);
+  }
+  .btn-bottom {
+    margin-top: 16px;
+    box-shadow: none;
+  }
+
+  /* アコーディオンの中身（初期状態は非表示） */
+  .accordion-content {
+    display: none; 
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .accordion-content.open {
+    display: block; 
+  }
+
+  .col-map {
+    width: 100%;
+    /* 地図を少し広めに確保（ボトムシートが被さる分を考慮） */
+    height: 60vh; 
+    flex-shrink: 0;
+    border-bottom: none; /* 線を消してシートとの境界を滑らかに */
+  }
+
+  /* ★ここからがボトムシート風 */
   .col-list {
     width: 100%;
     border-left: none;
     border-top: none;
-    height: auto; /* 下に伸びるように */
+    height: auto;
     flex: 1;
-    box-shadow: none;
-    background: #f0f2f5;
+    background: #f4f6f9;
+    
+    /* 地図の上に少し被せる（マイナスマージン） */
+    margin-top: -20px; 
+    position: relative;
+    z-index: 10;
+    
+    /* 上の角を丸くしてシート感を出す */
+    border-radius: 20px 20px 0 0; 
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.15); /* 上方向に影を落とす */
+    padding-top: 12px; /* ハンドル用の隙間 */
+  }
+
+  /* シート上部の「つまみ（ハンドル）」を描画 */
+  .col-list::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    background: #ccc;
+    border-radius: 3px;
+    margin: 0 auto 12px;
   }
   
-  /* リスト内のスクロール制限を解除（ページ全体でスクロールするため） */
+  /* リストパネル自体の背景や線を消して馴染ませる */
+  .panel--list .panel-head {
+    background: transparent;
+    border-bottom: none;
+    padding: 0 16px 8px;
+  }
+
   .panel--list .list-area {
     overflow-y: visible; 
   }
+
 }

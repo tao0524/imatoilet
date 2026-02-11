@@ -46,8 +46,14 @@ export const useToiletSearch = () => {
   const handlePlaceSearch = async () => {
     if (!placeQuery) return;
     
-    if (!window.google || !window.google.maps) {
-      setSearchStatus("地図を読み込み中...少し待って再試行してください");
+    // ★修正: Geocoderとplacesが完全に読み込まれているか厳密にチェック
+    if (
+      !window.google || 
+      !window.google.maps || 
+      !window.google.maps.Geocoder || 
+      !window.google.maps.places
+    ) {
+      setSearchStatus("地図データを読み込み中です。数秒待ってから再試行してください");
       return;
     }
 
@@ -73,7 +79,6 @@ export const useToiletSearch = () => {
           if (hit.rating) statusMsg += ` (★${hit.rating})`;
           statusMsg += " を表示中";
 
-          // ★変更: 検索時は currentLocation (中心点) だけ更新し、realLocation (GPS) は維持する
           setCurrentLocation({ lat, lng, address: hit.formatted_address });
           setSearchStatus(statusMsg);
 
@@ -111,8 +116,8 @@ export const useToiletSearch = () => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           
-          // 逆ジオコーディング
-          if (window.google && window.google.maps) {
+          // ★修正: Geocoderが完全に存在するときだけ逆ジオコーディング（住所取得）を行う
+          if (window.google && window.google.maps && window.google.maps.Geocoder) {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
               let addr = "現在地";
@@ -126,12 +131,13 @@ export const useToiletSearch = () => {
               }
               const loc = { lat, lng, address: addr };
               setCurrentLocation(loc);
-              setRealLocation(loc); // ★追加: GPS取得時は realLocation も更新
+              setRealLocation(loc);
             });
           } else {
+            // ★APIの読み込みが間に合わなかった場合は、座標だけを使って検索を実行する（エラーで止めない）
             const loc = { lat, lng, address: "現在地" };
             setCurrentLocation(loc);
-            setRealLocation(loc); // ★追加
+            setRealLocation(loc);
             setSearchStatus("現在地周辺を表示中");
           }
         },
