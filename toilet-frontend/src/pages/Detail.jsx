@@ -167,9 +167,13 @@ function Detail() {
       <div className="container">
         
         <div className="detail-nav">
-          <Link to="/search" className="back-link">
-            <ArrowBackIcon fontSize="small" /> 検索結果に戻る
-          </Link>
+          <button 
+            onClick={() => window.history.length > 2 ? navigate(-1) : navigate('/search')}
+            className="back-link"
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <ArrowBackIcon fontSize="small" /> 前の画面に戻る
+          </button>
         </div>
 
         <article className="detail-card">

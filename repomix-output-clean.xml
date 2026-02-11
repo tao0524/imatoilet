@@ -3374,191 +3374,6 @@ function Favorites() {
 export default Favorites;
 </file>
 
-<file path="toilet-frontend/src/pages/Search/FilterPanel.jsx">
-import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-
-// アイコン
-import SearchIcon from '@mui/icons-material/Search';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
-import MapIcon from '@mui/icons-material/Map';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import CheckIcon from '@mui/icons-material/Check';
-import HistoryIcon from '@mui/icons-material/History';
-
-// カテゴリアイコン
-import TrainIcon from '@mui/icons-material/Train';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import ParkIcon from '@mui/icons-material/Park';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import HotelIcon from '@mui/icons-material/Hotel';
-import CategoryIcon from '@mui/icons-material/Category';
-
-function FilterPanel({ 
-  placeQuery, 
-  setPlaceQuery, 
-  handleKeywordSearch, 
-  handleCurrentLocation,
-  handlePlaceSearch,
-  searchHistory,
-  handleHistorySearch
-}) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [showHistory, setShowHistory] = useState(false);
-
-  // URLパラメータ更新用ヘルパー
-  const updateParam = (key, value) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value === null || value === false || value === '') {
-      newParams.delete(key);
-    } else {
-      newParams.set(key, String(value));
-    }
-    setSearchParams(newParams);
-  };
-
-  const getBoolParam = (key) => searchParams.get(key) === 'true';
-  const getStrParam = (key) => searchParams.get(key) || '';
-
-  return (
-    <aside className="filter-panel">
-      {/* 1. キーワード・場所検索エリア */}
-      <section className="filter-section">
-        <h3 className="filter-title">場所・キーワード</h3>
-        
-        <div className="search-box-group" style={{ position: 'relative' }}>
-          <input 
-            type="search" 
-            className="input-search-side"
-            placeholder="場所や施設名を入力" 
-            value={placeQuery}
-            onChange={(e) => setPlaceQuery(e.target.value)}
-            // ★重要修正: Enterキーで確実に「地図移動」を実行させる
-            onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()} 
-            onFocus={() => setShowHistory(true)}
-          />
-          
-          {/* 履歴ポップアップ */}
-          {showHistory && searchHistory && searchHistory.length > 0 && (
-             <div style={{
-               position: 'absolute', top: '42px', left: 0, right: 0,
-               background: '#fff', border: '1px solid #ddd',
-               borderRadius: '8px', zIndex: 1000,
-               boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-             }}>
-               {searchHistory.map((hist, idx) => (
-                 <div 
-                   key={idx}
-                   onClick={() => {
-                     handleHistorySearch(hist);
-                     setShowHistory(false);
-                   }}
-                   style={{
-                     padding: '10px 12px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer',
-                     display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#333'
-                   }}
-                 >
-                   <HistoryIcon fontSize="small" color="action" />
-                   {hist}
-                 </div>
-               ))}
-               <div 
-                 onClick={() => setShowHistory(false)} 
-                 style={{ padding: '8px', textAlign: 'center', fontSize: '0.8rem', color: '#888', cursor: 'pointer' }}
-               >
-                 閉じる
-               </div>
-             </div>
-          )}
-
-          <div className="search-actions">
-             {/* キーワード検索（リスト絞り込み） */}
-             <button className="btn-icon-side" onClick={handleKeywordSearch} title="リスト内をキーワード検索">
-               <SearchIcon fontSize="small"/>
-             </button>
-             {/* 地図検索（場所移動） */}
-             <button className="btn-icon-side" onClick={handlePlaceSearch} title="地図移動">
-               <MapIcon fontSize="small"/>
-             </button>
-             {/* 現在地 */}
-             <button className="btn-icon-side" onClick={handleCurrentLocation} title="現在地">
-               <MyLocationIcon fontSize="small"/>
-             </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. 施設タイプ */}
-      <section className="filter-section">
-        <h3 className="filter-title">施設の種類</h3>
-        <div className="radio-group-vertical">
-          <label className={`radio-row ${getStrParam('facilityCategory') === '' ? 'active' : ''}`}>
-            <input 
-              type="radio" name="cat" 
-              checked={getStrParam('facilityCategory') === ''}
-              onChange={() => updateParam('facilityCategory', '')}
-            />
-            <span className="radio-icon">🏠</span> 指定なし
-          </label>
-          
-          {[
-            { val: 'station', label: '駅・交通', icon: <TrainIcon fontSize="inherit"/> },
-            { val: 'commercial', label: '商業施設', icon: <StorefrontIcon fontSize="inherit"/> },
-            { val: 'park', label: '公園・屋外', icon: <ParkIcon fontSize="inherit"/> },
-            { val: 'public', label: '公共施設', icon: <CategoryIcon fontSize="inherit"/> },
-            { val: 'medical', label: '医療・福祉', icon: <LocalHospitalIcon fontSize="inherit"/> },
-            { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="inherit"/> },
-          ].map(opt => (
-            <label key={opt.val} className={`radio-row ${getStrParam('facilityCategory') === opt.val ? 'active' : ''}`}>
-              <input 
-                type="radio" name="cat" 
-                checked={getStrParam('facilityCategory') === opt.val}
-                onChange={() => updateParam('facilityCategory', opt.val)}
-              />
-              <span className="radio-icon">{opt.icon}</span> {opt.label}
-            </label>
-          ))}
-        </div>
-      </section>
-
-      {/* 3. 設備・条件 */}
-      <section className="filter-section">
-        <h3 className="filter-title">設備・特徴</h3>
-        <div className="check-group-vertical">
-          <CheckRow label="駐車場あり" pKey="parking" icon={<DirectionsCarIcon fontSize="inherit" color="success"/>} checked={getBoolParam('parking')} onChange={updateParam} />
-          <CheckRow label="車椅子対応" pKey="wheelchair" checked={getBoolParam('wheelchair')} onChange={updateParam} />
-          <CheckRow label="オムツ替え" pKey="diaper" checked={getBoolParam('diaper')} onChange={updateParam} />
-          <CheckRow label="24時間利用" pKey="open24h" checked={getBoolParam('open24h')} onChange={updateParam} />
-          <CheckRow label="オストメイト" pKey="ostomate" checked={getBoolParam('ostomate')} onChange={updateParam} />
-          <CheckRow label="授乳室" pKey="nursing_room" checked={getBoolParam('nursing_room')} onChange={updateParam} />
-          <CheckRow label="ウォシュレット" pKey="washlet" checked={getBoolParam('washlet')} onChange={updateParam} />
-          <CheckRow label="男女別" pKey="gender_separated" checked={getBoolParam('gender_separated')} onChange={updateParam} />
-          <CheckRow label="無料" pKey="free" checked={getBoolParam('free')} onChange={updateParam} />
-        </div>
-      </section>
-    </aside>
-  );
-}
-
-// 部品コンポーネント
-function CheckRow({ label, pKey, icon, checked, onChange }) {
-  return (
-    <label className={`check-row ${checked ? 'checked' : ''}`}>
-      <input 
-        type="checkbox" 
-        checked={checked}
-        onChange={(e) => onChange(pKey, e.target.checked)}
-      />
-      <span className="check-box-ui">{checked && <CheckIcon fontSize="inherit"/>}</span>
-      {icon && <span className="check-icon">{icon}</span>}
-      <span className="check-text">{label}</span>
-    </label>
-  );
-}
-
-export default FilterPanel;
-</file>
-
 <file path="toilet-frontend/src/pages/Search/PlaceSearch.jsx">
 import React, { useState } from 'react';
 
@@ -4424,6 +4239,407 @@ function Home() {
 export default Home;
 </file>
 
+<file path="toilet-frontend/src/pages/Search/FilterPanel.jsx">
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+// --- 必須アイコンのインポート（すべて網羅） ---
+import SearchIcon from '@mui/icons-material/Search';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import MapIcon from '@mui/icons-material/Map';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import CheckIcon from '@mui/icons-material/Check';
+import HistoryIcon from '@mui/icons-material/History';
+import TrainIcon from '@mui/icons-material/Train';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ParkIcon from '@mui/icons-material/Park';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import HotelIcon from '@mui/icons-material/Hotel';
+import CategoryIcon from '@mui/icons-material/Category';
+
+function FilterPanel({ 
+  placeQuery, setPlaceQuery, handleKeywordSearch, handleCurrentLocation,
+  handlePlaceSearch, searchHistory, handleHistorySearch
+}) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showHistory, setShowHistory] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // アコーディオン用
+
+  // ポップアップの外側を判定するための ref
+  const historyRef = useRef(null);
+
+  // 外側クリックとEscキーでポップアップを閉じる安全なロジック
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (historyRef.current && !historyRef.current.contains(event.target)) {
+        setShowHistory(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowHistory(false);
+      }
+    };
+
+    if (showHistory) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showHistory]);
+
+  // URLパラメータ更新用ヘルパー
+  const updateParam = (key, value) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === null || value === false || value === '') {
+      newParams.delete(key);
+    } else {
+      newParams.set(key, String(value));
+    }
+    setSearchParams(newParams);
+  };
+
+  const getBoolParam = (key) => searchParams.get(key) === 'true';
+  const getStrParam = (key) => searchParams.get(key) || '';
+
+  return (
+    <aside className="filter-panel">
+      {/* 1. キーワード・場所検索エリア */}
+      <section className="filter-section filter-section-top">
+        <h3 className="filter-title desktop-only">場所・キーワード</h3>
+        
+        <div className="search-box-group" style={{ position: 'relative' }} ref={historyRef}>
+          <input 
+            type="search" 
+            className="input-search-side"
+            placeholder="場所や施設名を入力" 
+            value={placeQuery}
+            onChange={(e) => setPlaceQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()} 
+            onFocus={() => setShowHistory(true)}
+          />
+          
+          {/* 履歴ポップアップ */}
+          {showHistory && searchHistory && searchHistory.length > 0 && (
+            <>
+              <div className="history-backdrop" onClick={() => setShowHistory(false)}></div>
+              <div className="history-popup">
+                <div className="history-popup-header">
+                  <span>過去の検索履歴</span>
+                  <button className="history-close-btn" onClick={() => setShowHistory(false)}>✕</button>
+                </div>
+                <div className="history-list">
+                  {searchHistory.map((hist, idx) => (
+                    <div 
+                      key={idx}
+                      className="history-item"
+                      onClick={() => {
+                        handleHistorySearch(hist);
+                        setShowHistory(false);
+                      }}
+                    >
+                      <HistoryIcon fontSize="small" color="action" />
+                      {hist}
+                    </div>
+                  ))}
+                </div>
+                <div className="history-footer desktop-only" onClick={() => setShowHistory(false)}>
+                  閉じる
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="search-actions">
+             <button className="btn-icon-side desktop-only-btn" onClick={handleKeywordSearch} title="リスト内をキーワード検索">
+               <SearchIcon fontSize="small"/>
+             </button>
+             <button className="btn-icon-side desktop-only-btn" onClick={handlePlaceSearch} title="地図移動">
+               <MapIcon fontSize="small"/>
+             </button>
+             <button className="btn-icon-side btn-location" onClick={handleCurrentLocation} title="現在地">
+               <MyLocationIcon fontSize="small" className="loc-icon"/>
+               <span className="loc-text">現在地</span>
+             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* スマホ用のアコーディオン開閉ボタン */}
+      <button 
+        className="mobile-toggle-btn" 
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {isOpen ? '▲ 詳細条件を閉じる' : '▼ 詳細条件を開く'}
+      </button>
+
+      {/* 開閉するエリア */}
+      <div className={`accordion-content ${isOpen ? 'open' : ''}`}>
+        
+        {/* 2. 施設タイプ */}
+        <section className="filter-section">
+          <h3 className="filter-title">詳細条件（施設）</h3>
+          <div className="radio-group-vertical">
+            <label className={`radio-row ${getStrParam('facilityCategory') === '' ? 'active' : ''}`}>
+              <input 
+                type="radio" name="cat" 
+                checked={getStrParam('facilityCategory') === ''}
+                onChange={() => updateParam('facilityCategory', '')}
+              />
+              <span className="radio-icon">🏠</span> 指定なし
+            </label>
+            
+            {[
+              { val: 'station', label: '駅・交通', icon: <TrainIcon fontSize="inherit"/> },
+              { val: 'commercial', label: '商業施設', icon: <StorefrontIcon fontSize="inherit"/> },
+              { val: 'park', label: '公園・屋外', icon: <ParkIcon fontSize="inherit"/> },
+              { val: 'public', label: '公共施設', icon: <CategoryIcon fontSize="inherit"/> },
+              { val: 'medical', label: '医療・福祉', icon: <LocalHospitalIcon fontSize="inherit"/> },
+              { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="inherit"/> },
+            ].map(opt => (
+              <label key={opt.val} className={`radio-row ${getStrParam('facilityCategory') === opt.val ? 'active' : ''}`}>
+                <input 
+                  type="radio" name="cat" 
+                  checked={getStrParam('facilityCategory') === opt.val}
+                  onChange={() => updateParam('facilityCategory', opt.val)}
+                />
+                <span className="radio-icon">{opt.icon}</span> {opt.label}
+              </label>
+            ))}
+          </div>
+        </section>
+
+        {/* 3. 設備・条件 */}
+        <section className="filter-section" style={{ borderBottom: 'none', marginBottom: 0 }}>
+          <div className="check-group-vertical">
+            <CheckRow label="オムツ交換台" pKey="diaper" icon="👶" checked={getBoolParam('diaper')} onChange={updateParam} />
+            <CheckRow label="車椅子対応" pKey="wheelchair" icon="♿" checked={getBoolParam('wheelchair')} onChange={updateParam} />
+            <CheckRow label="24時間営業" pKey="open24h" icon="🕒" checked={getBoolParam('open24h')} onChange={updateParam} />
+            
+            <CheckRow label="駐車場あり" pKey="parking" icon="🚗" checked={getBoolParam('parking')} onChange={updateParam} />
+            <CheckRow label="オストメイト" pKey="ostomate" icon="➕" checked={getBoolParam('ostomate')} onChange={updateParam} />
+            <CheckRow label="授乳室" pKey="nursing_room" icon="🍼" checked={getBoolParam('nursing_room')} onChange={updateParam} />
+            <CheckRow label="ウォシュレット" pKey="washlet" icon="🚽" checked={getBoolParam('washlet')} onChange={updateParam} />
+            <CheckRow label="男女別" pKey="gender_separated" icon="🚻" checked={getBoolParam('gender_separated')} onChange={updateParam} />
+            <CheckRow label="無料" pKey="free" icon="💰" checked={getBoolParam('free')} onChange={updateParam} />
+          </div>
+        </section>
+        
+        <button 
+          className="mobile-toggle-btn btn-bottom" 
+          onClick={() => setIsOpen(false)}
+        >
+          ▲ 詳細条件を閉じる
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+// トグルスイッチ用の部品コンポーネント
+function CheckRow({ label, pKey, icon, checked, onChange }) {
+  return (
+    <label className={`check-row ${checked ? 'checked' : ''}`}>
+      <div className="check-label-content">
+        {icon && <span className="check-icon">{icon}</span>}
+        <span className="check-text">{label}</span>
+      </div>
+      <input 
+        type="checkbox" 
+        checked={checked}
+        onChange={(e) => onChange(pKey, e.target.checked)}
+      />
+      <span className="toggle-switch"></span>
+    </label>
+  );
+}
+
+export default FilterPanel;
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
+package com.imatoilet.backend;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+
+// ★追加1：リストを使うためのインポート
+import java.util.ArrayList;
+import java.util.List;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+@Entity
+@Table(name = "toilet")
+@Data
+public class Toilet {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // --- 既存フィールド ---
+    
+    @NotBlank(message = "名前は必須です")
+    @Size(max = 100, message = "名前は100文字以内で入力してください")
+    private String name;
+
+    @NotNull(message = "緯度は必須です")
+    private Double lat;
+
+    @NotNull(message = "経度は必須です")
+    private Double lng;
+
+    private String address;
+    private Boolean publicUse;
+    private Boolean diaper;
+    private Boolean wheelchair;
+    private Boolean typePark;
+    private Boolean typeStation;
+    private Boolean typeMall;
+
+    @Size(max = 500, message = "説明は500文字以内で入力してください")
+    private String description;
+    
+    private Boolean open24h;
+
+    // --- 新設計フィールド ---
+    private String facilityCategory;
+    private String locationCategory;
+    private String equipment; // ※これはCSV用として残します
+    private String usageConditions;
+    private String atmosphere;
+
+    @Min(value = 1, message = "清潔度は1以上である必要があります")
+    @Max(value = 5, message = "清潔度は5以下である必要があります")
+    private Integer cleanliness;
+
+    // ★追加: 画像URL (TEXT型に対応)
+    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    private String image;
+
+    // ★追加2：equipmentテーブルと繋がるリスト（N+1対策の窓口）
+    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
+    @ToString.Exclude           // エラー防止（無限ループ対策）
+    @EqualsAndHashCode.Exclude  // エラー防止（無限ループ対策）
+    private List<Equipment> equipmentList = new ArrayList<>();
+
+    // --- 互換性メソッド ---
+    @PrePersist
+    @PreUpdate
+    public void syncCompatibility() {
+        syncOldToNew();
+        syncNewToOld();
+    }
+
+    private void syncOldToNew() {
+        if (this.facilityCategory == null || this.facilityCategory.isEmpty()) {
+            if (Boolean.TRUE.equals(typeStation)) this.facilityCategory = "station";
+            else if (Boolean.TRUE.equals(typePark)) this.facilityCategory = "park";
+            else if (Boolean.TRUE.equals(typeMall)) this.facilityCategory = "commercial";
+        }
+        String currentEq = (this.equipment == null) ? "" : this.equipment;
+        if (Boolean.TRUE.equals(wheelchair) && !currentEq.contains("wheelchair")) {
+            currentEq = addTag(currentEq, "wheelchair");
+        }
+        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper_table")) {
+            currentEq = addTag(currentEq, "diaper_table");
+        }
+        if (Boolean.TRUE.equals(open24h) && !currentEq.contains("open_24h")) {
+            currentEq = addTag(currentEq, "open_24h");
+        }
+        this.equipment = currentEq;
+    }
+
+    private void syncNewToOld() {
+        if (this.facilityCategory != null) {
+            if (this.facilityCategory.equals("station")) this.typeStation = true;
+            else if (this.facilityCategory.equals("park")) this.typePark = true;
+            else if (this.facilityCategory.equals("commercial")) this.typeMall = true;
+        }
+        if (this.equipment != null) {
+            if (this.equipment.contains("wheelchair")) this.wheelchair = true;
+            if (this.equipment.contains("diaper_table")) this.diaper = true;
+            if (this.equipment.contains("open_24h")) this.open24h = true;
+        }
+    }
+
+    private String addTag(String current, String tag) {
+        if (current == null || current.isEmpty()) {
+            return tag;
+        }
+        return current + "," + tag;
+    }
+}
+</file>
+
+<file path="toilet-frontend/src/pages/Search/index.jsx">
+import { useNavigate } from 'react-router-dom';
+import { useToiletSearch } from '../../hooks/useToiletSearch';
+import MapPanel from './MapPanel';
+import ListPanel from './ListPanel';
+import FilterPanel from './FilterPanel';
+import '../../search.css';
+
+function Search() {
+  const navigate = useNavigate();
+  
+  const {
+    filteredToilets,
+    currentLocation,
+    realLocation, // ★追加: フックから受け取る
+    placeQuery,
+    setPlaceQuery,
+    searchStatus, 
+    handlePlaceSearch,
+    handleCurrentLocation,
+    handleKeywordSearch,
+    searchHistory,
+    handleHistorySearch
+  } = useToiletSearch();
+
+  return (
+    <main className="search-page-wrapper">
+      <div className="three-col-layout">
+        <div className="col-filter">
+          <FilterPanel 
+            placeQuery={placeQuery}
+            setPlaceQuery={setPlaceQuery}
+            handleKeywordSearch={handleKeywordSearch}
+            handleCurrentLocation={handleCurrentLocation}
+            handlePlaceSearch={handlePlaceSearch}
+            searchHistory={searchHistory}
+            handleHistorySearch={handleHistorySearch}
+          />
+        </div>
+
+        <div className="col-map">
+          {searchStatus && <div className="map-status-bar">{searchStatus}</div>}
+          <MapPanel 
+            filteredToilets={filteredToilets}
+            currentLocation={currentLocation}
+            realLocation={realLocation} // ★重要: MapPanelにこれを渡さないとGPS機能が動きません
+          />
+        </div>
+
+        <div className="col-list">
+          <ListPanel 
+            filteredToilets={filteredToilets}
+            currentLocation={currentLocation}
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default Search;
+</file>
+
 <file path="toilet-frontend/src/search.css">
 /* =========================================================
    search.css (3カラム・フルハイト版 + モバイル対応)
@@ -4748,12 +4964,215 @@ export default Home;
   margin-left: auto; /* 右端に寄せる */
 }
 
+/* =========================================================
+   追加・修正: フィルタ (アコーディオン・トグルUI)
+========================================================= */
+
+/* 古い四角いチェックボックスのUIを完全に非表示にする */
+.check-box-ui {
+  display: none !important;
+}
+
+/* トグルスイッチの行全体のレイアウト */
+.check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #333;
+  border-bottom: 1px solid #f0f0f0;
+}
+.check-row:last-child {
+  border-bottom: none;
+}
+.check-row input { display: none; }
+
+.check-label-content {
+  display: flex;
+  align-items: center;
+}
+.check-icon {
+  margin-right: 12px;
+  font-size: 1.1rem;
+  width: 24px;
+  display: flex;
+  justify-content: center;
+}
+.check-text {
+  font-weight: bold;
+  color: #444;
+}
+
+/* ★画像モックアップ風：緑色のトグルスイッチ */
+.toggle-switch {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  background-color: #e0e0e0;
+  border-radius: 30px;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.check-row.checked .toggle-switch {
+  background-color: #4CAF50;
+}
+
+.check-row.checked .toggle-switch::after {
+  transform: translateX(22px);
+}
+
+.loc-text {
+  display: none;
+}
+.mobile-toggle-btn {
+  display: none; 
+}
+.accordion-content {
+  display: block; 
+}
+.desktop-only {
+  display: block;
+}
+
+/* =========================================================
+   追加: 検索履歴ポップアップの改善 (PC用ベース)
+========================================================= */
+.history-popup {
+  position: absolute;
+  top: 48px; /* 入力欄のすぐ下 */
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+/* ヘッダーはPCでは隠す */
+.history-popup-header {
+  display: none;
+}
+
+/* 高さ制限とスクロール */
+.history-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.history-item {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #333;
+  transition: background 0.2s;
+}
+.history-item:hover {
+  background: #f5f5f5;
+}
+
+.history-footer {
+  padding: 10px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #888;
+  cursor: pointer;
+  background: #fafafa;
+}
+.history-footer:hover {
+  background: #f0f0f0;
+}
+
+/* 背景はPCでは不要なので隠す */
+.history-backdrop {
+  display: none;
+}
+
 /* =========================================
    ★モバイルレスポンシブ対応 (900px未満)
-   ここを強力に修正しました
 ========================================= */
 @media (max-width: 900px) {
-  
+
+  /* ★追加: スマホ時の履歴モーダル化 */
+  .history-backdrop {
+    display: block;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5); /* 画面全体を暗くする */
+    z-index: 2000;
+    backdrop-filter: blur(2px); /* 少しぼかす（iOS等で綺麗） */
+  }
+
+  .history-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 画面のど真ん中に配置 */
+    width: 90%;
+    max-width: 320px;
+    z-index: 2001; /* 背景より上に浮かす */
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border: none;
+  }
+
+  .history-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    font-weight: bold;
+    color: #444;
+  }
+
+  .history-close-btn {
+    background: #e0e0e0;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .history-list {
+    max-height: 40vh; /* スマホ画面の40%までの高さでスクロール */
+  }
+
+  /* スマホの時は項目を少し大きくしてタップしやすくする */
+  .history-item {
+    padding: 16px;
+    font-size: 1rem;
+  }
+
   /* ラッパー：PCでは隠していたスクロールを有効化 */
   .search-page-wrapper {
     height: auto; 
@@ -4765,227 +5184,167 @@ export default Home;
   .three-col-layout {
     display: flex;
     flex-direction: column;
-    height: auto; /* 高さは中身なり */
+    height: auto; 
     grid-template-columns: none;
     grid-template-rows: none;
   }
 
-  /* 1. フィルター（上部） */
   .col-filter {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #ddd;
-    /* フィルターの中身が多すぎると地図に辿り着けないため、
-       簡易的に高さを制限してスクロールさせるか、
-       あるいはアコーディオンUIにするのが理想ですが、
-       まずは全体スクロールで対応します */
-    max-height: 300px; /* フィルタエリアが大きすぎないように制限 */
+    /* スクロール制限を解除し、自然なアコーディオンの挙動に任せる */
+    max-height: none; 
+    padding: 16px;
+    flex-shrink: 0;
+  }
+  .filter-panel {
+    padding: 0; 
+  }
+
+  /* スマホの時は、タイトルを消して画面を広く使う */
+  .desktop-only {
+    display: none;
+  }
+  .desktop-only-btn {
+    display: none !important;
+  }
+
+  .filter-section-top {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  /* ★画像モックアップ風：検索窓と現在地ボタンの横並び */
+  .search-box-group {
+    flex-direction: row; 
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .input-search-side {
+    flex: 1; 
+    padding: 12px 16px;
+    border-radius: 24px; 
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .search-actions {
+    display: flex;
     flex-shrink: 0;
   }
   
-  /* 2. 地図（中央） */
-  .col-map {
-    width: 100%;
-    height: 400px; /* スマホでも地図が見やすい高さを確保 */
-    flex-shrink: 0;
-    border-bottom: 1px solid #ddd;
+  /* ★現在地ボタンのモックアップ化 */
+  .btn-location {
+    background-color: #4CAF50 !important;
+    border-color: #4CAF50 !important;
+    border-radius: 24px !important;
+    padding: 0 16px !important;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 44px;
+  }
+  .loc-text {
+    display: inline-block;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+  .loc-icon {
+    color: white !important;
   }
 
-  /* 3. リスト（下部） */
+  /* ★オレンジ色のアコーディオン開閉ボタン */
+  .mobile-toggle-btn {
+    display: block;
+    width: 100%;
+    background: linear-gradient(to bottom, #ff7043, #f4511e);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    font-size: 1rem;
+    transition: transform 0.1s;
+  }
+  .mobile-toggle-btn:active {
+    transform: translateY(2px);
+  }
+  .btn-bottom {
+    margin-top: 16px;
+    box-shadow: none;
+  }
+
+  /* アコーディオンの中身（初期状態は非表示） */
+  .accordion-content {
+    display: none; 
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .accordion-content.open {
+    display: block; 
+  }
+
+  .col-map {
+    width: 100%;
+    /* 地図を少し広めに確保（ボトムシートが被さる分を考慮） */
+    height: 60vh; 
+    flex-shrink: 0;
+    border-bottom: none; /* 線を消してシートとの境界を滑らかに */
+  }
+
+  /* ★ここからがボトムシート風 */
   .col-list {
     width: 100%;
     border-left: none;
     border-top: none;
-    height: auto; /* 下に伸びるように */
+    height: auto;
     flex: 1;
-    box-shadow: none;
-    background: #f0f2f5;
+    background: #f4f6f9;
+    
+    /* 地図の上に少し被せる（マイナスマージン） */
+    margin-top: -20px; 
+    position: relative;
+    z-index: 10;
+    
+    /* 上の角を丸くしてシート感を出す */
+    border-radius: 20px 20px 0 0; 
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.15); /* 上方向に影を落とす */
+    padding-top: 12px; /* ハンドル用の隙間 */
+  }
+
+  /* シート上部の「つまみ（ハンドル）」を描画 */
+  .col-list::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    background: #ccc;
+    border-radius: 3px;
+    margin: 0 auto 12px;
   }
   
-  /* リスト内のスクロール制限を解除（ページ全体でスクロールするため） */
+  /* リストパネル自体の背景や線を消して馴染ませる */
+  .panel--list .panel-head {
+    background: transparent;
+    border-bottom: none;
+    padding: 0 16px 8px;
+  }
+
   .panel--list .list-area {
     overflow-y: visible; 
   }
+
 }
-</file>
-
-<file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
-package com.imatoilet.backend;
-
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-
-// ★追加1：リストを使うためのインポート
-import java.util.ArrayList;
-import java.util.List;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
-@Entity
-@Table(name = "toilet")
-@Data
-public class Toilet {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    // --- 既存フィールド ---
-    
-    @NotBlank(message = "名前は必須です")
-    @Size(max = 100, message = "名前は100文字以内で入力してください")
-    private String name;
-
-    @NotNull(message = "緯度は必須です")
-    private Double lat;
-
-    @NotNull(message = "経度は必須です")
-    private Double lng;
-
-    private String address;
-    private Boolean publicUse;
-    private Boolean diaper;
-    private Boolean wheelchair;
-    private Boolean typePark;
-    private Boolean typeStation;
-    private Boolean typeMall;
-
-    @Size(max = 500, message = "説明は500文字以内で入力してください")
-    private String description;
-    
-    private Boolean open24h;
-
-    // --- 新設計フィールド ---
-    private String facilityCategory;
-    private String locationCategory;
-    private String equipment; // ※これはCSV用として残します
-    private String usageConditions;
-    private String atmosphere;
-
-    @Min(value = 1, message = "清潔度は1以上である必要があります")
-    @Max(value = 5, message = "清潔度は5以下である必要があります")
-    private Integer cleanliness;
-
-    // ★追加: 画像URL (TEXT型に対応)
-    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
-    private String image;
-
-    // ★追加2：equipmentテーブルと繋がるリスト（N+1対策の窓口）
-    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
-    @ToString.Exclude           // エラー防止（無限ループ対策）
-    @EqualsAndHashCode.Exclude  // エラー防止（無限ループ対策）
-    private List<Equipment> equipmentList = new ArrayList<>();
-
-    // --- 互換性メソッド ---
-    @PrePersist
-    @PreUpdate
-    public void syncCompatibility() {
-        syncOldToNew();
-        syncNewToOld();
-    }
-
-    private void syncOldToNew() {
-        if (this.facilityCategory == null || this.facilityCategory.isEmpty()) {
-            if (Boolean.TRUE.equals(typeStation)) this.facilityCategory = "station";
-            else if (Boolean.TRUE.equals(typePark)) this.facilityCategory = "park";
-            else if (Boolean.TRUE.equals(typeMall)) this.facilityCategory = "commercial";
-        }
-        String currentEq = (this.equipment == null) ? "" : this.equipment;
-        if (Boolean.TRUE.equals(wheelchair) && !currentEq.contains("wheelchair")) {
-            currentEq = addTag(currentEq, "wheelchair");
-        }
-        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper_table")) {
-            currentEq = addTag(currentEq, "diaper_table");
-        }
-        if (Boolean.TRUE.equals(open24h) && !currentEq.contains("open_24h")) {
-            currentEq = addTag(currentEq, "open_24h");
-        }
-        this.equipment = currentEq;
-    }
-
-    private void syncNewToOld() {
-        if (this.facilityCategory != null) {
-            if (this.facilityCategory.equals("station")) this.typeStation = true;
-            else if (this.facilityCategory.equals("park")) this.typePark = true;
-            else if (this.facilityCategory.equals("commercial")) this.typeMall = true;
-        }
-        if (this.equipment != null) {
-            if (this.equipment.contains("wheelchair")) this.wheelchair = true;
-            if (this.equipment.contains("diaper_table")) this.diaper = true;
-            if (this.equipment.contains("open_24h")) this.open24h = true;
-        }
-    }
-
-    private String addTag(String current, String tag) {
-        if (current == null || current.isEmpty()) {
-            return tag;
-        }
-        return current + "," + tag;
-    }
-}
-</file>
-
-<file path="toilet-frontend/src/pages/Search/index.jsx">
-import { useNavigate } from 'react-router-dom';
-import { useToiletSearch } from '../../hooks/useToiletSearch';
-import MapPanel from './MapPanel';
-import ListPanel from './ListPanel';
-import FilterPanel from './FilterPanel';
-import '../../search.css';
-
-function Search() {
-  const navigate = useNavigate();
-  
-  const {
-    filteredToilets,
-    currentLocation,
-    realLocation, // ★追加: フックから受け取る
-    placeQuery,
-    setPlaceQuery,
-    searchStatus, 
-    handlePlaceSearch,
-    handleCurrentLocation,
-    handleKeywordSearch,
-    searchHistory,
-    handleHistorySearch
-  } = useToiletSearch();
-
-  return (
-    <main className="search-page-wrapper">
-      <div className="three-col-layout">
-        <div className="col-filter">
-          <FilterPanel 
-            placeQuery={placeQuery}
-            setPlaceQuery={setPlaceQuery}
-            handleKeywordSearch={handleKeywordSearch}
-            handleCurrentLocation={handleCurrentLocation}
-            handlePlaceSearch={handlePlaceSearch}
-            searchHistory={searchHistory}
-            handleHistorySearch={handleHistorySearch}
-          />
-        </div>
-
-        <div className="col-map">
-          {searchStatus && <div className="map-status-bar">{searchStatus}</div>}
-          <MapPanel 
-            filteredToilets={filteredToilets}
-            currentLocation={currentLocation}
-            realLocation={realLocation} // ★重要: MapPanelにこれを渡さないとGPS機能が動きません
-          />
-        </div>
-
-        <div className="col-list">
-          <ListPanel 
-            filteredToilets={filteredToilets}
-            currentLocation={currentLocation}
-          />
-        </div>
-      </div>
-    </main>
-  );
-}
-
-export default Search;
 </file>
 
 <file path="toilet-frontend/package.json">
@@ -5545,8 +5904,14 @@ export const useToiletSearch = () => {
   const handlePlaceSearch = async () => {
     if (!placeQuery) return;
     
-    if (!window.google || !window.google.maps) {
-      setSearchStatus("地図を読み込み中...少し待って再試行してください");
+    // ★修正: Geocoderとplacesが完全に読み込まれているか厳密にチェック
+    if (
+      !window.google || 
+      !window.google.maps || 
+      !window.google.maps.Geocoder || 
+      !window.google.maps.places
+    ) {
+      setSearchStatus("地図データを読み込み中です。数秒待ってから再試行してください");
       return;
     }
 
@@ -5572,7 +5937,6 @@ export const useToiletSearch = () => {
           if (hit.rating) statusMsg += ` (★${hit.rating})`;
           statusMsg += " を表示中";
 
-          // ★変更: 検索時は currentLocation (中心点) だけ更新し、realLocation (GPS) は維持する
           setCurrentLocation({ lat, lng, address: hit.formatted_address });
           setSearchStatus(statusMsg);
 
@@ -5610,8 +5974,8 @@ export const useToiletSearch = () => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           
-          // 逆ジオコーディング
-          if (window.google && window.google.maps) {
+          // ★修正: Geocoderが完全に存在するときだけ逆ジオコーディング（住所取得）を行う
+          if (window.google && window.google.maps && window.google.maps.Geocoder) {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
               let addr = "現在地";
@@ -5625,12 +5989,13 @@ export const useToiletSearch = () => {
               }
               const loc = { lat, lng, address: addr };
               setCurrentLocation(loc);
-              setRealLocation(loc); // ★追加: GPS取得時は realLocation も更新
+              setRealLocation(loc);
             });
           } else {
+            // ★APIの読み込みが間に合わなかった場合は、座標だけを使って検索を実行する（エラーで止めない）
             const loc = { lat, lng, address: "現在地" };
             setCurrentLocation(loc);
-            setRealLocation(loc); // ★追加
+            setRealLocation(loc);
             setSearchStatus("現在地周辺を表示中");
           }
         },
@@ -5952,71 +6317,45 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
       
       <div className="map-area" style={{ position: 'relative' }}>
         
-        {/* コントロールエリア */}
+        {/* コントロールエリア（MapPanel.jsx内） */}
         {selectedToilet && (
-          <div style={{
-            position: 'absolute', top: '10px', left: '10px', zIndex: 10,
-            display: 'flex', flexDirection: 'column', gap: '8px'
-          }}>
-            <div style={{
-              background: 'white', padding: '5px', borderRadius: '8px',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.3)', display: 'flex', gap: '5px'
-            }}>
+          <div className="map-controls-overlay">
+            
+            {/* 上段：移動手段 */}
+            <div className="map-controls-row">
               <button 
+                className={`map-ctrl-btn ${travelMode === "WALKING" ? 'active-walk' : ''}`}
                 onClick={() => setTravelMode("WALKING")}
-                style={{
-                  background: travelMode === "WALKING" ? '#e3f2fd' : 'transparent',
-                  color: travelMode === "WALKING" ? '#1e88e5' : '#666',
-                  border: '1px solid #ddd', borderRadius: '6px', padding: '6px 10px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold'
-                }}
               >
                 <DirectionsWalkIcon fontSize="small" /> 徒歩
               </button>
               <button 
+                className={`map-ctrl-btn ${travelMode === "DRIVING" ? 'active-drive' : ''}`}
                 onClick={() => setTravelMode("DRIVING")}
-                style={{
-                  background: travelMode === "DRIVING" ? '#e3f2fd' : 'transparent',
-                  color: travelMode === "DRIVING" ? '#1e88e5' : '#666',
-                  border: '1px solid #ddd', borderRadius: '6px', padding: '6px 10px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold'
-                }}
               >
                 <DirectionsCarIcon fontSize="small" /> 車
               </button>
             </div>
 
-            <div style={{
-              background: 'white', padding: '5px', borderRadius: '8px',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.3)', display: 'flex', gap: '5px'
-            }}>
+            {/* 下段：出発地点 */}
+            <div className="map-controls-row">
               <button 
-                onClick={() => setOriginMode("GPS")}
+                className={`map-ctrl-btn ${originMode === "GPS" ? 'active-gps' : ''}`}
                 disabled={!realLocation}
                 title={!realLocation ? "現在地が取得できていません" : "現在のGPS位置から出発"}
-                style={{
-                  background: originMode === "GPS" ? '#e8f5e9' : 'transparent',
-                  color: originMode === "GPS" ? '#2e7d32' : (realLocation ? '#666' : '#ccc'),
-                  border: '1px solid #ddd', borderRadius: '6px', padding: '6px 10px',
-                  cursor: realLocation ? 'pointer' : 'not-allowed', 
-                  display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', fontSize: '0.85rem'
-                }}
+                onClick={() => setOriginMode("GPS")}
               >
                 <MyLocationIcon fontSize="small" /> 現在地から
               </button>
               <button 
-                onClick={() => setOriginMode("CENTER")}
+                className={`map-ctrl-btn ${originMode === "CENTER" ? 'active-center' : ''}`}
                 title="検索した場所（地図の中心）から出発"
-                style={{
-                  background: originMode === "CENTER" ? '#fff3e0' : 'transparent',
-                  color: originMode === "CENTER" ? '#ef6c00' : '#666',
-                  border: '1px solid #ddd', borderRadius: '6px', padding: '6px 10px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', fontSize: '0.85rem'
-                }}
+                onClick={() => setOriginMode("CENTER")}
               >
                 <MapIcon fontSize="small" /> 地図中心から
               </button>
             </div>
+            
           </div>
         )}
 
