@@ -661,19 +661,41 @@
     box-shadow: none;
   }
 
-  /* アコーディオンの中身（初期状態は非表示） */
+  /* =========================================
+     追加：ボトムシートの登場アニメーション
+  ========================================= */
+  @keyframes slideUpSheet {
+    from {
+      transform: translateY(50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* アコーディオンの中身（滑らかに開閉させる） */
   .accordion-content {
-    display: none; 
     background: #fff;
     border: 1px solid #eee;
     border-radius: 8px;
-    padding: 16px;
     margin-top: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    
+    /* ★変更：display:none をやめて、高さと透明度でアニメーション */
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden; /* 閉じている時は中身を隠す */
+    padding: 0 16px;  /* 縦の余白をなくす */
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .accordion-content.open {
-    display: block; 
+    /* ★変更：開いた時の状態 */
+    max-height: 800px; /* 中身が十分入る高さ */
+    opacity: 1;
+    padding: 16px;     /* 余白を復活させる */
   }
 
   .col-map {
@@ -702,6 +724,9 @@
     border-radius: 20px 20px 0 0; 
     box-shadow: 0 -4px 16px rgba(0,0,0,0.15); /* 上方向に影を落とす */
     padding-top: 12px; /* ハンドル用の隙間 */
+    
+    /* ★追加：読み込み時に下からスッと上がってくるアニメーション */
+    animation: slideUpSheet 0.5s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
   }
 
   /* シート上部の「つまみ（ハンドル）」を描画 */

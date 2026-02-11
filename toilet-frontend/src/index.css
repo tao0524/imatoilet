@@ -17,7 +17,6 @@ body {
 }
 
 /* --- 1. ヘッダー（ロゴ） --- */
-/* HTML内の .logo クラスに対する装飾 */
 .site-header {
   padding: 15px 0;
   background: #fff;
@@ -37,15 +36,14 @@ body {
   font-size: 1.8rem;
   margin: 0 4px;
 }
-/* toilet-frontend/src/index.css の .logo-now を書き換え */
 .logo-now {
-  background-color: #1e88e5; /* メインカラーの青（または #f57c00 のオレンジ） */
-  color: #fff;               /* 文字は白 */
-  font-size: 0.9em;          /* 少し小さく */
-  padding: 2px 8px;          /* 内側の余白 */
-  border-radius: 6px;        /* 角を丸く */
-  margin-right: 6px;         /* アイコンとの隙間を開ける */
-  transform: translateY(3px); /* 少し位置調整 */
+  background-color: #1e88e5; 
+  color: #fff;               
+  font-size: 0.9em;          
+  padding: 2px 8px;          
+  border-radius: 6px;        
+  margin-right: 6px;         
+  transform: translateY(3px); 
 }
 .logo-main { color: #1e88e5; }
 
@@ -53,23 +51,35 @@ body {
 /* --- 2. ヒーローエリア（キャッチコピー） --- */
 .hero {
   text-align: center;
-  margin-bottom: 30px;
-  padding-top: 20px;
+  /* マージンやパディングも可変にして、狭い画面での圧迫感を減らす */
+  margin-bottom: clamp(20px, 4vw, 40px);
+  padding-top: clamp(10px, 3vw, 30px);
 }
 
 .catch {
-  font-size: 1.8rem;
+  /* スマホ 1.8rem -> PC 3.2rem まで滑らかに拡大 */
+  font-size: clamp(1.8rem, 5vw, 3.2rem);
   font-weight: 800;
   line-height: 1.4;
   color: #1e88e5;
-  margin-bottom: 16px;
+  margin-bottom: clamp(16px, 3vw, 24px);
 }
 
 .sub {
-  font-size: 0.95rem;
+  /* スマホ 0.95rem -> PC 1.2rem まで滑らかに拡大 */
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
   color: #546e7a;
   line-height: 1.6;
   font-weight: bold;
+}
+
+.hero-img {
+  /* スマホ 120px -> PC 260px まで滑らかに拡大 */
+  width: clamp(120px, 20vw, 260px);
+  height: auto;
+  margin: 20px auto 0;
+  display: block;
+  opacity: 0.9;
 }
 
 
@@ -83,7 +93,6 @@ body {
   width: 100%;
 }
 
-/* ボタン（大）の補正 */
 .btn-primary, .btn-secondary {
   padding: 18px;
   font-size: 1.1rem;
@@ -92,7 +101,6 @@ body {
   border-radius: 12px;
 }
 
-/* サブボタンの横並びエリア */
 .sub-actions {
   display: flex;
   gap: 10px;
@@ -105,12 +113,10 @@ body {
   text-align: center;
 }
 
-/* トイレ登録ボタン周り */
-/* .btn を足して優先度を上げ、確実に青色を適用させます */
 .btn.btn-register {
   background-color: #fff;
   color: #1e88e5;
-  border: 2px solid #1e88e5; /* 太さを 2px から 1px に変更 */
+  border: 2px solid #1e88e5; 
   margin-top: 10px;
   text-align: center;
 }
@@ -118,7 +124,7 @@ body {
   text-align: center;
   font-size: 0.75rem;
   color: #888;
-  margin-top: -10px; /* ボタンに近づける */
+  margin-top: -10px; 
   margin-bottom: 20px;
 }
 
@@ -159,7 +165,6 @@ body {
   border-bottom: none;
 }
 
-/* ステップ番号の丸 */
 .step-num {
   background: #e3f2fd;
   color: #1e88e5;
@@ -170,7 +175,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  flex-shrink: 0; /* 潰れないようにする */
+  flex-shrink: 0; 
 }
 
 .step-head {
@@ -205,13 +210,11 @@ body {
 
 /* =========================================
    ★PC用レイアウト（画面幅900px以上）
-   ここが「見せ方を変える」魔法の部分です
 ========================================= */
 @media (min-width: 900px) {
 
-  /* --- 全体設定 --- */
   body {
-    background-color: #f0f4f8; /* PCでは少し色味を変えてリッチに */
+    background-color: #f0f4f8; 
   }
 
   .site-header .container {
@@ -219,50 +222,59 @@ body {
     margin: 0 auto;
   }
   .logo {
-    justify-content: flex-start; /* 左寄せ */
+    justify-content: flex-start; 
   }
 
-  /* --- メインエリアをグリッド（格子状）にする --- */
   .top-main .container {
     display: grid;
-    /* 左カラム(可変) + 右カラム(400px固定) */
     grid-template-columns: 1fr 400px; 
     gap: 60px;
-    align-items: center; /* 上下中央揃え */
+    align-items: center; 
     max-width: 1000px;
     margin: 0 auto;
   }
 
-  /* --- 左側：ヒーローエリア（文字） --- */
   .hero {
-    grid-column: 1 / 2; /* 左の列に配置 */
-    text-align: left;   /* 左揃え */
+    grid-column: 1 / 2; 
+    text-align: left;   
     padding-top: 0;
     margin-bottom: 0;
+    
+    /* Flexboxで縦に並べつつ、配置を制御 */
+    display: flex;
+    flex-direction: column; 
+    align-items: flex-start; 
   }
 
   .catch {
-    font-size: 3rem; /* 文字を大きく */
-    margin-bottom: 24px;
+    width: 100%; 
   }
+  
   .sub {
-    font-size: 1.2rem; /* 説明文も大きく */
+    max-width: 100%; 
+    margin-bottom: 20px;
   }
 
-  /* --- 右側：アクションエリア（操作パネル） --- */
+  .hero-img {
+    position: static; 
+    margin-top: 10px;
+    margin-left: auto; 
+    align-self: flex-end; 
+    opacity: 1;
+  }
+
   .actions {
-    grid-column: 2 / 3; /* 右の列に配置 */
+    grid-column: 2 / 3; 
     background: #fff;
     padding: 40px;
     border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(30, 136, 229, 0.15); /* 浮き上がらせる影 */
+    box-shadow: 0 20px 40px rgba(30, 136, 229, 0.15); 
   }
 
-  /* --- 下段：使い方エリア --- */
   .howto {
-    grid-column: 1 / -1; /* 横幅いっぱいに広げる */
+    grid-column: 1 / -1; 
     margin-top: 80px;
-    background: none;    /* 背景を消してなじませる */
+    background: none;    
     box-shadow: none;
     padding: 0;
   }
@@ -272,15 +284,14 @@ body {
     margin-bottom: 40px;
   }
 
-  /* ステップを横4列に並べる */
   .howto-steps {
     flex-direction: row; 
     gap: 20px;
   }
 
   .howto-steps li {
-    flex: 1; /* 4等分 */
-    flex-direction: column; /* 中身は縦並び */
+    flex: 1; 
+    flex-direction: column; 
     align-items: center;
     text-align: center;
     background: #fff;
@@ -298,61 +309,6 @@ body {
   }
   
   .howto-cta {
-    display: none; /* PC画面では下の「今すぐ探す」ボタンは不要なので隠す */
+    display: none; 
   }
-}
-
-/* =========================================
-   追加：ヒーロー画像のスタイル
-========================================= */
-
-/* スマホ：文字の下に少し小さく表示 */
-.hero-img {
-  width: 120px;       /* 小さめに */
-  height: auto;
-  margin: 20px auto 0; /* 上に隙間、中央寄せ */
-  display: block;
-  opacity: 0.9;
-}
-
-/* --- 修正版：PC用レイアウト（一部抜粋） --- */
-@media (min-width: 900px) {
-
-  /* ...（body や .top-main などの設定はそのまま）... */
-  /* --- 左側：ヒーローエリア（文字と画像を整理） --- */
-  .hero {
-    grid-column: 1 / 2;
-    text-align: left;
-    padding-top: 0;
-    margin-bottom: 0;
-    
-    /* ★ここを変更：Flexboxで縦に並べつつ、配置を制御 */
-    display: flex;
-    flex-direction: column; /* 縦並び */
-    align-items: flex-start; /* 左寄せ */
-  }
-
-  .catch {
-    font-size: 3rem;
-    margin-bottom: 24px;
-    width: 100%; /* 幅いっぱいに */
-  }
-  
-  .sub {
-    font-size: 1.2rem;
-    max-width: 100%; /* 幅制限を解除 */
-    margin-bottom: 20px;
-  }
-
-  /* ★ここを変更：画像の位置調整 */
-  .hero-img {
-    position: static; /* 絶対配置をやめる（これで重なりません） */
-    width: 220px;     /* サイズはお好みで */
-    margin-top: 10px;
-    margin-left: auto; /* 右端に寄せる魔法 */
-    align-self: flex-end; /* コンテナ内の右側に配置 */
-    opacity: 1;
-  }
-
-  /* ...（.actions や .howto など、これより下の部分はそのまま）... */
 }
