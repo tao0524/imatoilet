@@ -284,25 +284,56 @@
   border-color: #bbdefb; /* 青っぽく光らせる */
 }
 
+/* --- 上段（名前と距離） --- */
+.toilet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
 .toilet-name {
   font-size: 1rem;
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 10px;
   line-height: 1.4;
+  margin-bottom: 0; /* 下余白はheaderで管理するためゼロに */
 }
 
+/* ★追加: 距離専用のデザイン */
+.toilet-distance {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #fff3e0;
+  color: #ef6c00;
+  font-weight: bold;
+  white-space: nowrap; /* 折り返し禁止 */
+  flex-shrink: 0; /* 潰れないようにする */
+}
+
+/* --- 下段（アイコン横スクロールエリア） --- */
 .toilet-meta {
   font-size: 0.8rem;
   color: #666;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* ★折り返しを禁止 */
   align-items: center;
-  gap: 8px; /* アイコン間の隙間 */
-  line-height: 1.5;
+  gap: 8px;
+  overflow-x: auto; /* ★横スクロールを有効化 */
+  padding-bottom: 4px; /* スクロール時の余白 */
+  
+  /* スクロールバーを隠してスマホアプリっぽくする */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.toilet-meta::-webkit-scrollbar {
+  display: none;
 }
 
-/* アイコンや距離のバッジ装飾 */
 .toilet-meta span {
   display: inline-flex;
   align-items: center;
@@ -311,14 +342,8 @@
   border-radius: 6px;
   font-size: 0.85rem;
   color: #555;
-}
-
-/* 距離表示だけ少し目立たせる */
-.toilet-meta span:last-child {
-  background: #fff3e0;
-  color: #ef6c00;
-  font-weight: bold;
-  margin-left: auto; /* 右端に寄せる */
+  white-space: nowrap; /* 文字の折り返し禁止 */
+  flex-shrink: 0; /* アイコンが潰れないようにする */
 }
 
 /* =========================================================
@@ -701,4 +726,78 @@
     overflow-y: visible; 
   }
 
+}
+
+/* =========================================================
+   地図上の操作ボタン (徒歩/車, 現在地/地図中心) のデザイン
+========================================================= */
+.map-controls-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-controls-row {
+  display: flex;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
+
+.map-ctrl-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  min-height: 44px; /* スマホでもタップしやすい高さ */
+  background: transparent;
+  border: none;
+  border-right: 1px solid #ddd;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-ctrl-btn:last-child {
+  border-right: none;
+}
+
+.map-ctrl-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.map-ctrl-btn:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+  background: #fafafa;
+}
+
+/* --- アクティブ（選択中）時の色分け --- */
+/* 徒歩（青） */
+.map-ctrl-btn.active-walk {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+/* 車（赤） */
+.map-ctrl-btn.active-drive {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* 現在地から / 地図中心から（緑） */
+.map-ctrl-btn.active-gps,
+.map-ctrl-btn.active-center {
+  background: #e8f5e9;
+  color: #2e7d32;
 }

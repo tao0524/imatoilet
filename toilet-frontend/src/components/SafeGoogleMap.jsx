@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useJsApiLoader, GoogleMap } from '@react-google-maps/api';
 
-// ★修正: 'marker' を削除し、'places' のみにしました
-const LIBRARIES = ['places'];
+// ★修正: 'marker' ライブラリを復活させました（AdvancedMarkerElementに必須）
+const LIBRARIES = ['places', 'marker'];
 
-/**
- * Google Mapsの読み込みとエラーハンドリングを一元管理するラッパー
- * API制限(Quota Exceeded)や認証エラー時に、地図の代わりにメッセージを表示します。
- */
 export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
   const [authError, setAuthError] = useState(false);
 
@@ -15,34 +11,27 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: LIBRARIES,
-    language: 'ja', // 日本語化
+    language: 'ja', 
   });
 
-  // 2. gm_authFailure (APIキー無効、請求エラー、クォータ超過など) の検知
+  // 2. gm_authFailure の検知
   useEffect(() => {
     window.gm_authFailure = () => {
-      console.error("Google Maps Authentication Failure (Quota exceeded or Invalid Key)");
+      console.error("Google Maps Authentication Failure");
       setAuthError(true);
     };
-
     return () => {
       window.gm_authFailure = null;
     };
   }, []);
 
-  // --- エラー時の表示 (フォールバック) ---
+  // --- エラー時の表示 ---
   if (loadError || authError) {
     return (
       <div style={{ 
-        ...style, 
-        background: '#f0f0f0', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        flexDirection: 'column',
-        color: '#666',
-        padding: '20px',
-        textAlign: 'center'
+        ...style, background: '#f0f0f0', display: 'flex', alignItems: 'center', 
+        justifyContent: 'center', flexDirection: 'column', color: '#666',
+        padding: '20px', textAlign: 'center'
       }}>
         <h3 style={{ margin: '0 0 10px', color: '#d32f2f' }}>地図を表示できません</h3>
         <p style={{ fontSize: '0.9rem' }}>
@@ -73,6 +62,8 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
         streetViewControl: false,
         mapTypeControl: false,
         fullscreenControl: false,
+        // ★追加: AdvancedMarkerElementを利用するためにマップIDを指定
+        mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
       }}
       {...props}
     >

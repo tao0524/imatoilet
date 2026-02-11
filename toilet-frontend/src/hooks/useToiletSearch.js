@@ -8,28 +8,69 @@ const HISTORY_KEY = 'imatoilet_search_history';
 export const useToiletSearch = () => {
   const [searchParams] = useSearchParams();
 
-  // --- State ---
   const [filteredToilets, setFilteredToilets] = useState([]);
   
-  // currentLocation は「検索の中心（地図の中心）」として扱います
-  const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState(() => {
+    const urlLat = searchParams.get('lat');
+    const urlLng = searchParams.get('lng');
+    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: "現在地" };
+    
+    const saved = sessionStorage.getItem('imatoilet_loc');
+    return saved ? JSON.parse(saved) : null;
+  });
   
-  // ★重要: realLocation は「本当のユーザーの現在地(GPS)」として保持し続けます
-  const [realLocation, setRealLocation] = useState(null);
+  const [realLocation, setRealLocation] = useState(() => {
+    const urlLat = searchParams.get('lat');
+    const urlLng = searchParams.get('lng');
+    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: "現在地" };
+    
+    const saved = sessionStorage.getItem('imatoilet_realLoc');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  const [placeQuery, setPlaceQuery] = useState("");
-  const [searchStatus, setSearchStatus] = useState("");
+  const [placeQuery, setPlaceQuery] = useState(() => {
+    if (searchParams.has('lat')) return ""; 
+    return sessionStorage.getItem('imatoilet_query') || "";
+  });
+  
+  const [searchStatus, setSearchStatus] = useState(() => {
+    if (searchParams.has('lat')) return "現在地周辺を表示中";
+    return sessionStorage.getItem('imatoilet_status') || "";
+  });
+
   const [searchHistory, setSearchHistory] = useState([]);
   const [searchTrigger, setSearchTrigger] = useState(0);
 
-  // 履歴読み込み
+  useEffect(() => {
+    if (currentLocation) sessionStorage.setItem('imatoilet_loc', JSON.stringify(currentLocation));
+    else sessionStorage.removeItem('imatoilet_loc');
+  }, [currentLocation]);
+
+  useEffect(() => {
+    if (realLocation) sessionStorage.setItem('imatoilet_realLoc', JSON.stringify(realLocation));
+    else sessionStorage.removeItem('imatoilet_realLoc');
+  }, [realLocation]);
+
+  useEffect(() => {
+    sessionStorage.setItem('imatoilet_query', placeQuery);
+  }, [placeQuery]);
+
+  useEffect(() => {
+    sessionStorage.setItem('imatoilet_status', searchStatus);
+  }, [searchStatus]);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(HISTORY_KEY);
       if (raw) setSearchHistory(JSON.parse(raw));
-    } catch (e) {
-      console.error(e);
+    } catch (e) { console.error(e); }
+  }, []);
+
+  useEffect(() => {
+    if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
+      handleCurrentLocation();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 履歴追加
@@ -42,17 +83,11 @@ export const useToiletSearch = () => {
     });
   };
 
-  // --- Google Maps API を使った強力な検索 ---
   const handlePlaceSearch = async () => {
     if (!placeQuery) return;
     
-    // ★修正: Geocoderとplacesが完全に読み込まれているか厳密にチェック
-    if (
-      !window.google || 
-      !window.google.maps || 
-      !window.google.maps.Geocoder || 
-      !window.google.maps.places
-    ) {
+    // API読み込み前のエラーを防ぐ厳格なチェック
+    if (!window.google || !window.google.maps || !window.google.maps.Geocoder || !window.google.maps.places) {
       setSearchStatus("地図データを読み込み中です。数秒待ってから再試行してください");
       return;
     }
@@ -60,45 +95,47 @@ export const useToiletSearch = () => {
     setSearchStatus("Googleマップで場所を解析中...");
     addToHistory(placeQuery);
 
-    const geocoder = new window.google.maps.Geocoder();
-    const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
-
     try {
-      const placesRequest = {
-        query: placeQuery,
-        fields: ['name', 'geometry', 'formatted_address', 'rating', 'user_ratings_total'],
+      // ★修正: Places API (New) の searchByText を使用
+      const request = {
+        textQuery: placeQuery,
+        // 新APIでは必要なフィールドだけを厳密に指定します
+        fields: ['displayName', 'location', 'formattedAddress', 'rating', 'userRatingCount'],
+        language: 'ja',
       };
 
-      placesService.textSearch(placesRequest, (results, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
-          const hit = results[0];
-          const lat = hit.geometry.location.lat();
-          const lng = hit.geometry.location.lng();
-          
-          let statusMsg = `「${hit.name}」周辺`;
-          if (hit.rating) statusMsg += ` (★${hit.rating})`;
-          statusMsg += " を表示中";
+      // 古いコールバック方式から、モダンな async/await (Promise) 方式へ移行
+      const { places } = await window.google.maps.places.Place.searchByText(request);
 
-          setCurrentLocation({ lat, lng, address: hit.formatted_address });
-          setSearchStatus(statusMsg);
-
-        } else {
-          geocoder.geocode({ address: placeQuery }, (geoResults, geoStatus) => {
-            if (geoStatus === 'OK' && geoResults[0]) {
-              const hit = geoResults[0];
-              const lat = hit.geometry.location.lat();
-              const lng = hit.geometry.location.lng();
-
-              setCurrentLocation({ lat, lng, address: hit.formatted_address });
-              setSearchStatus(`住所「${hit.formatted_address}」周辺を表示`);
-            } else {
-              setSearchStatus("地図上に見つかりません。登録データから検索します...");
-              setCurrentLocation(null);
-              setSearchTrigger(prev => prev + 1);
-            }
-          });
-        }
-      });
+      if (places && places.length > 0) {
+        const hit = places[0];
+        // 新APIでは geometry.location ではなく直接 location にアクセスします
+        const lat = hit.location.lat();
+        const lng = hit.location.lng();
+        
+        // name -> displayName, formatted_address -> formattedAddress
+        setCurrentLocation({ lat, lng, address: hit.formattedAddress });
+        
+        let statusMsg = `「${hit.displayName}」周辺`;
+        if (hit.rating) statusMsg += ` (★${hit.rating})`;
+        statusMsg += " を表示中";
+        
+        setSearchStatus(statusMsg);
+      } else {
+        // ★既存ロジック維持：見つからなかった場合はジオコーダー（住所検索）にフォールバック
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ address: placeQuery }, (geoResults, geoStatus) => {
+          if (geoStatus === 'OK' && geoResults[0]) {
+            const geoHit = geoResults[0];
+            setCurrentLocation({ lat: geoHit.geometry.location.lat(), lng: geoHit.geometry.location.lng(), address: geoHit.formatted_address });
+            setSearchStatus(`住所「${geoHit.formatted_address}」周辺を表示`);
+          } else {
+            setSearchStatus("地図上に見つかりません。登録データから検索します...");
+            setCurrentLocation(null);
+            setSearchTrigger(prev => prev + 1);
+          }
+        });
+      }
     } catch (e) {
       console.error(e);
       setSearchStatus("検索エラー。登録データから探します...");
@@ -296,10 +333,6 @@ export const useToiletSearch = () => {
 
     fetchData();
   }, [searchParams, currentLocation, searchTrigger]); 
-
-  useEffect(() => {
-    handleCurrentLocation();
-  }, []);
 
   return {
     filteredToilets,
