@@ -1,46 +1,42 @@
-:root{
-  --bg:#f7f9fb;
-  --ink:#1a1a1a;
-  --primary:#1e88e5;
-  --accent:#f57c00;
-  --muted:#666;
-  --radius:14px;
+:root {
+  /* 背景色を一元管理（#f5f7fb を適用） */
+  --bg: #f5f7fb;
+  --ink: #1a1a1a;
+  --primary: #1e88e5;
+  --accent: #f57c00;
+  --muted: #666;
+  --radius: 14px;
 }
 
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  font-family:"Noto Sans JP",system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--ink);
+* {
+  box-sizing: border-box;
 }
 
-/* === src/base.css に追加 === */
+body {
+  margin: 0;
+  font-family: "Noto Sans JP", system-ui, sans-serif;
+  /* 変数 --bg を使用して背景色を指定 */
+  background: var(--bg);
+  color: var(--ink);
+}
 
 a {
-  text-decoration: none; /* 下線を消す */
-  color: inherit;        /* 色を親要素に合わせる */
+  text-decoration: none;
+  color: inherit;
 }
 
 /* =========================
-   レイアウト：センターカラム
+   レイアウト：センターカラム (Fluid Padding)
 ========================= */
-.container{
+.container {
   width: min(1040px, 100%);
   margin-inline: auto;
-  /* スマホでは16px、画面幅に応じて最大32pxまで滑らかに広がる */
   padding-inline: clamp(16px, 3vw, 32px);
 }
 
-/* 背景を薄くしてカードを浮かせる（任意だがおすすめ） */
-body{
-  background: #f5f7fb;
-}
-
 /* =========================
-   トップページ専用スタイル (B案)
-========================================= */
+   トップページ専用スタイル
+========================= */
 .home-wrap {
   min-height: 100vh;
   display: flex;
@@ -55,14 +51,14 @@ body{
   grid-template-columns: 1fr;
   gap: 30px;
   width: 100%;
-  max-width: 400px; /* スマホ時は狭く */
+  max-width: 400px;
 }
 
-/* 左側：ブランドエリア */
 .brand-area {
   text-align: center;
   padding: 20px;
 }
+
 .brand-logo {
   font-size: 3rem;
   font-weight: 800;
@@ -71,18 +67,19 @@ body{
   margin-bottom: 10px;
   display: inline-block;
 }
+
 .brand-logo .icon {
   font-size: 4rem;
   display: block;
   margin-bottom: 0px;
 }
+
 .brand-sub {
   color: #546e7a;
   font-size: 1rem;
   font-weight: bold;
 }
 
-/* 右側：メニューエリア */
 .menu-area {
   background: #fff;
   padding: 30px;
@@ -105,11 +102,14 @@ body{
   text-decoration: none;
   transition: all 0.2s ease;
 }
-.menu-btn:last-child { margin-bottom: 0; }
+
+.menu-btn:last-child {
+  margin-bottom: 0;
+}
 
 .menu-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-color: #1e88e5;
   color: #1e88e5;
 }
@@ -119,34 +119,48 @@ body{
   border-color: #1e88e5;
   color: #fff;
 }
+
 .menu-btn.primary:hover {
   background: #1976d2;
   box-shadow: 0 4px 15px rgba(30, 136, 229, 0.4);
 }
 
-.btn-icon { font-size: 1.4rem; margin-right: 12px; }
-.btn-arrow { font-size: 1.2rem; opacity: 0.5; }
+.btn-icon {
+  font-size: 1.4rem;
+  margin-right: 12px;
+}
 
-/* PC用レイアウト（2カラム化） */
+.btn-arrow {
+  font-size: 1.2rem;
+  opacity: 0.5;
+}
+
 @media (min-width: 800px) {
   .home-grid {
-    grid-template-columns: 1fr 1fr; /* 左右2列 */
+    grid-template-columns: 1fr 1fr;
     max-width: 900px;
     align-items: center;
     gap: 60px;
   }
-  
-  .brand-area { text-align: left; }
-  .brand-logo { font-size: 4rem; }
-  .brand-logo .icon { display: inline-block; margin-right: 10px; }
-  .brand-sub { font-size: 1.2rem; }
+  .brand-area {
+    text-align: left;
+  }
+  .brand-logo {
+    font-size: 4rem;
+  }
+  .brand-logo .icon {
+    display: inline-block;
+    margin-right: 10px;
+  }
+  .brand-sub {
+    font-size: 1.2rem;
+  }
 }
 
 /* =========================
-   詳細ページ (Detail.jsx) - Fluid対応版
+   詳細ページ (Detail.jsx) - Fluid & Grid対応
 ========================= */
 .detail-main {
-  /* 上下の余白も画面に合わせて可変に */
   padding: clamp(20px, 4vw, 40px) 0;
 }
 
@@ -163,6 +177,7 @@ body{
   font-weight: 500;
   transition: color 0.2s;
 }
+
 .back-link:hover {
   color: var(--primary);
 }
@@ -170,49 +185,39 @@ body{
 .detail-card {
   background: #fff;
   border-radius: 24px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   border: 1px solid #eef0f6;
-  
-  /* カード内の余白を可変に（スマホ20px -> PC32px） */
   padding: clamp(20px, 4vw, 32px);
-
-  /* ★魔法のGridレイアウト：メディアクエリ不要！
-     幅340pxの列が2つ入る余裕(約750px以上)があれば自動で2列になり、
-     狭ければ1列に折り返します。 */
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
-  gap: clamp(24px, 4vw, 40px); /* 1列時と2列時で隙間をなめらかに調整 */
+  gap: clamp(24px, 4vw, 40px);
   align-items: start;
 }
 
-/* 画像エリアの枠 */
 .detail-image {
   width: 100%;
   height: auto;
-  aspect-ratio: 4 / 3; /* PC/スマホ共通で美しい比率 */
+  aspect-ratio: 4 / 3;
   border-radius: 16px;
   overflow: hidden;
   background: #f5f5f5;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  margin: 0; /* スマホ特有のマイナスマージンを廃止し、カード内に綺麗に収める */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin: 0;
 }
 
-/* 画像本体 */
 .detail-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover; 
+  object-fit: cover;
   display: block;
 }
 
-/* 文字情報のエリア */
 .detail-content {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-/* ヘッダー周り */
 .detail-header {
   display: flex;
   justify-content: space-between;
@@ -223,13 +228,11 @@ body{
 
 .detail-title {
   margin: 0;
-  /* タイトルも画面に合わせて滑らかに拡大 */
   font-size: clamp(1.3rem, 3vw, 1.6rem);
   line-height: 1.3;
   color: var(--ink);
 }
 
-/* お気に入りボタン */
 .fav-btn {
   display: flex;
   flex-direction: column;
@@ -244,12 +247,12 @@ body{
   min-width: 60px;
   transition: transform 0.2s, color 0.2s;
 }
+
 .fav-btn:hover {
   color: #ffb300;
   transform: scale(1.05);
 }
 
-/* タグ */
 .detail-tags {
   display: flex;
   flex-wrap: wrap;
@@ -269,48 +272,76 @@ body{
   background: #f5f5f5;
   color: #666;
 }
+
 .tag-ok {
   background: #e3f2fd;
   color: #1565c0;
   font-weight: bold;
 }
 
-/* 情報エリア */
 .detail-info {
   margin-bottom: 30px;
 }
+
 .info-label {
   font-size: 0.85rem;
   color: #999;
   margin: 0 0 6px;
 }
+
 .info-text {
   margin: 0 0 20px;
   font-size: 1rem;
   line-height: 1.6;
 }
 
-/* ナビボタン */
 .nav-btn {
-  background: #4285f4; 
+  background: #4285f4;
   color: #fff;
   border: none;
   font-size: 1.1rem;
+  grid-column: 1 / -1;
 }
+
 .nav-btn:hover {
   background: #3367d6;
 }
 
-/* ボタンエリア */
 .detail-actions {
-  margin-top: auto; /* コンテンツが短い場合でもボタンを下部に寄せる */
+  margin-top: auto;
   display: grid;
-  /* ボタンもスペースがあれば自動で2列並びになる魔法 */
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
 }
 
-/* ナビボタン(Googleマップ)だけは、常に全幅(1列)を使って目立たせる */
-.nav-btn {
-  grid-column: 1 / -1;
+/* アクセシビリティ対応：動きを減らす設定が有効な場合、アニメーションを無効化 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================
+   Accessibility: Global Focus Style
+   キーボード操作時のフォーカスリングを強化
+========================================= */
+:focus-visible {
+  outline: 3px solid #0056b3; /* 視認性の高い濃い青 */
+  outline-offset: 2px;        /* 要素と重ならないように隙間を空ける */
+  border-radius: 4px;         /* 角丸に合わせて少し丸める */
+  z-index: 10000;             /* 他の要素より手前に表示 */
+}
+
+/* 既存の outline: none を打ち消す必要がある場合 */
+[type="button"]:focus-visible,
+[type="submit"]:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #0056b3;
+  outline-offset: 2px;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // ★ useRefを追加
 import { useSearchParams } from 'react-router-dom';
 import { loadUserToilets, calcDistance } from '../utils';
 import { API_BASE_URL } from '../config/api';
@@ -10,6 +10,9 @@ export const useToiletSearch = () => {
 
   const [filteredToilets, setFilteredToilets] = useState([]);
   
+  // ★追加: 二重実行防止用のガード
+  const hasInitialized = useRef(false);
+
   const [currentLocation, setCurrentLocation] = useState(() => {
     const urlLat = searchParams.get('lat');
     const urlLng = searchParams.get('lng');
@@ -66,7 +69,14 @@ export const useToiletSearch = () => {
     } catch (e) { console.error(e); }
   }, []);
 
+  // ★修正: 初期ロード用 useEffect にガードを追加
   useEffect(() => {
+    // 開発モード(StrictMode)での二重実行を防ぐ
+    if (hasInitialized.current) {
+      return;
+    }
+    hasInitialized.current = true;
+
     if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
       handleCurrentLocation();
     }
@@ -96,7 +106,7 @@ export const useToiletSearch = () => {
     addToHistory(placeQuery);
 
     try {
-      // ★修正: Places API (New) の searchByText を使用
+      // Places API (New) の searchByText を使用
       const request = {
         textQuery: placeQuery,
         // 新APIでは必要なフィールドだけを厳密に指定します
@@ -122,7 +132,7 @@ export const useToiletSearch = () => {
         
         setSearchStatus(statusMsg);
       } else {
-        // ★既存ロジック維持：見つからなかった場合はジオコーダー（住所検索）にフォールバック
+        // 既存ロジック維持：見つからなかった場合はジオコーダー（住所検索）にフォールバック
         const geocoder = new window.google.maps.Geocoder();
         geocoder.geocode({ address: placeQuery }, (geoResults, geoStatus) => {
           if (geoStatus === 'OK' && geoResults[0]) {
@@ -153,7 +163,7 @@ export const useToiletSearch = () => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           
-          // ★修正: Geocoderが完全に存在するときだけ逆ジオコーディング（住所取得）を行う
+          // Geocoderが完全に存在するときだけ逆ジオコーディング（住所取得）を行う
           if (window.google && window.google.maps && window.google.maps.Geocoder) {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
@@ -171,7 +181,7 @@ export const useToiletSearch = () => {
               setRealLocation(loc);
             });
           } else {
-            // ★APIの読み込みが間に合わなかった場合は、座標だけを使って検索を実行する（エラーで止めない）
+            // APIの読み込みが間に合わなかった場合は、座標だけを使って検索を実行する（エラーで止めない）
             const loc = { lat, lng, address: "現在地" };
             setCurrentLocation(loc);
             setRealLocation(loc);
@@ -207,6 +217,7 @@ export const useToiletSearch = () => {
   // --- データ取得・フィルタリング ---
   useEffect(() => {
     async function fetchData() {
+      // API呼び出し部分 (省略なしでそのまま維持)
       if (!currentLocation && !placeQuery && searchTrigger === 0) return;
 
       let apiData = [];
@@ -237,6 +248,7 @@ export const useToiletSearch = () => {
              paid: searchParams.get('paid') === 'true',
              parking: searchParams.get('parking') === 'true'
           };
+          // ... パラメータ追加ロジック ...
           if (filters.facilityCategory) params.append('facilityCategory', filters.facilityCategory);
           if (filters.wheelchair) params.append('equipment', 'WHEELCHAIR');
           if (filters.diaper) params.append('equipment', 'DIAPER');
@@ -337,7 +349,7 @@ export const useToiletSearch = () => {
   return {
     filteredToilets,
     currentLocation, // 地図の中心
-    realLocation,    // ★追加: 本当のGPS現在地
+    realLocation,    // 本当のGPS現在地
     placeQuery,
     setPlaceQuery,
     searchStatus,

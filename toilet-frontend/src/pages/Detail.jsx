@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import '../base.css';
+import '../components.css';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { loadUserToilets, saveUserToilets } from '../utils';
 import { API_BASE_URL } from '../config/api';
@@ -182,15 +184,16 @@ function Detail() {
           {images.length > 0 && (
             <div className="detail-image" style={{ background: '#f5f5f5' }}>
               {images.length === 1 ? (
-                // 1枚だけの場合
+                // 1枚だけの場合：ファーストビューの可能性が高いため lazy は付けず、asyncのみ
                 <img 
                   src={images[0]} 
                   alt={toilet.name} 
                   style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
                   onClick={() => openLightbox(0)} // クリックで拡大
+                  decoding="async"
                 />
               ) : (
-                // 複数枚の場合（横スクロール）
+                // 複数枚の場合（横スクロール）：画面外の画像は遅延読み込み
                 <div style={{ 
                   display: 'flex', 
                   overflowX: 'auto', 
@@ -218,6 +221,8 @@ function Detail() {
                         cursor: 'pointer' // クリックできることを示す
                       }} 
                       onClick={() => openLightbox(idx)} // クリックで拡大
+                      loading="lazy"
+                      decoding="async"
                     />
                   ))}
                 </div>
@@ -275,7 +280,7 @@ function Detail() {
               <p className="info-text">{displayDesc || "情報なし"}</p>
             </section>
 
-            <footer className="detail-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <footer className="detail-actions">
               <a href={googleMapUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary nav-btn">
                 <DirectionsIcon sx={{mr: 1}} />
                 Googleマップでナビ開始
@@ -344,7 +349,7 @@ function Detail() {
               </button>
             )}
 
-            {/* 画像本体 */}
+            {/* 画像本体：ライトボックスは即表示したいのでlazyなし、ただしasyncは付ける */}
             <img 
               src={images[lightboxIndex]} 
               alt="拡大表示"
@@ -354,6 +359,7 @@ function Detail() {
                 userSelect: 'none'
               }}
               onClick={(e) => e.stopPropagation()} // 画像クリックでは閉じない
+              decoding="async"
             />
 
             {/* 次へボタン (画像が2枚以上あるときだけ表示) */}

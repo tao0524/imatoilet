@@ -50,8 +50,13 @@ function Home() {
               子ども連れや車椅子の方にも配慮した情報を掲載。
             </p>
 
-            {/* 画像を表示 */}
-            <img src="/images/hero.png" alt="イメージ画像" className="hero-img" />
+            {/* 画像を表示: ファーストビューなのでlazyは使わず、asyncのみ適用 */}
+            <img 
+              src="/images/hero.png" 
+              alt="イメージ画像" 
+              className="hero-img" 
+              decoding="async"
+            />
           </section>
 
           <section className="actions">
@@ -61,7 +66,7 @@ function Home() {
             <div className="sub-actions">
               <Link to="/favorites" className="btn btn-sub">⭐ よく使うトイレ</Link>
               
-              {/* ★ここを修正: アラートではなく実際の検索機能を実装 */}
+              {/* 現在地検索ボタン */}
               <button 
                 className="btn btn-sub" 
                 onClick={handleCurrentLocationSearch}
