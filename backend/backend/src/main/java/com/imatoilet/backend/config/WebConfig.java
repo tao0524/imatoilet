@@ -13,7 +13,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     // application.properties の app.cors.allowed-origins を参照
-    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
     private String allowedOrigins;
 
     // Cookie/認証情報を送る必要がある場合だけ true
@@ -23,6 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     @SuppressWarnings("null") // コンパイラのNull警告を抑制（Stream処理の配列変換等で発生するため）
     public void addCorsMappings(@NonNull CorsRegistry registry) {
+        System.out.println("[CORS] addCorsMappings called. allowedOrigins=" + allowedOrigins);
         // 安全対策: nullの場合は空文字扱いにする
         String safeOrigins = Objects.requireNonNullElse(allowedOrigins, "");
 
@@ -35,7 +36,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**")
                 .allowedOrigins(origins)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("Content-Type", "Authorization")
+                .allowedHeaders("*")
                 .allowCredentials(allowCredentials)
                 .maxAge(3600);
     }
