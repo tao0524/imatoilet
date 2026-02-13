@@ -75,7 +75,11 @@ toilet-frontend/.gitignore
 toilet-frontend/eslint.config.js
 toilet-frontend/index.html
 toilet-frontend/package.json
+toilet-frontend/public/apple-touch-icon.png
 toilet-frontend/public/images/hero.png
+toilet-frontend/public/manifest.webmanifest
+toilet-frontend/public/pwa-192x192.png
+toilet-frontend/public/pwa-512x512.png
 toilet-frontend/public/vite.svg
 toilet-frontend/README.md
 toilet-frontend/src/App.css
@@ -120,6 +124,31 @@ toilet-frontend/vitest.config.js
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="toilet-frontend/public/manifest.webmanifest">
+{
+  "name": "Imatoilet - トイレ検索",
+  "short_name": "Imatoilet",
+  "description": "困った“いま”に、いちばん近いトイレを探せるアプリ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0056b3",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+</file>
 
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
@@ -690,7 +719,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     // application.properties の app.cors.allowed-origins を参照
-    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
     private String allowedOrigins;
 
     // Cookie/認証情報を送る必要がある場合だけ true
@@ -700,6 +729,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     @SuppressWarnings("null") // コンパイラのNull警告を抑制（Stream処理の配列変換等で発生するため）
     public void addCorsMappings(@NonNull CorsRegistry registry) {
+        System.out.println("[CORS] addCorsMappings called. allowedOrigins=" + allowedOrigins);
         // 安全対策: nullの場合は空文字扱いにする
         String safeOrigins = Objects.requireNonNullElse(allowedOrigins, "");
 
@@ -712,7 +742,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**")
                 .allowedOrigins(origins)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("Content-Type", "Authorization")
+                .allowedHeaders("*")
                 .allowCredentials(allowCredentials)
                 .maxAge(3600);
     }
@@ -2259,16 +2289,6 @@ describe('utils.js (便利関数)', () => {
 });
 </file>
 
-<file path="toilet-frontend/vite.config.js">
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-})
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Equipment.java">
 package com.imatoilet.backend;
 
@@ -2340,22 +2360,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
-</file>
-
-<file path="toilet-frontend/index.html">
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>toilet-frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
 </file>
 
 <file path="toilet-frontend/src/main.jsx">
@@ -2851,6 +2855,55 @@ export async function uploadToCloudinary(file) {
 }
 </file>
 
+<file path="toilet-frontend/vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: [
+        'favicon.ico', 
+        'apple-touch-icon.png', 
+        'pwa-192x192.png', 
+        'pwa-512x512.png'
+      ],
+      manifest: {
+        name: 'Imatoilet - トイレ検索',
+        short_name: 'Imatoilet',
+        description: '困った“いま”に、いちばん近いトイレを探せるアプリ',
+        theme_color: '#1e88e5',
+        background_color: '#f5f7fb',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        orientation: 'portrait',
+        icons: [
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ]
+      },
+
+      // ★ ここを追加
+      workbox: {
+        navigateFallbackDenylist: [
+          /^\/images\//,
+          /\.png$/,
+          /\.jpg$/,
+          /\.jpeg$/,
+          /\.svg$/,
+          /\.webp$/,
+        ],
+      },
+    })
+  ],
+})
+</file>
+
 <file path="toilet-frontend/vitest.config.js">
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
@@ -3026,6 +3079,32 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
         @Param("equipmentTypes") List<EquipmentType> equipmentTypes
     );
 }
+</file>
+
+<file path="toilet-frontend/index.html">
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- PWA: Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- アイコン（PWA / iOS） -->
+    <link rel="icon" type="image/png" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#1e88e5" />
+    <meta name="description" content="現在地と条件から、今すぐ使えるトイレを探せます。" />
+
+    <title>Imatoilet</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
 </file>
 
 <file path="toilet-frontend/src/App.jsx">
@@ -4609,51 +4688,6 @@ function Search() {
 export default Search;
 </file>
 
-<file path="toilet-frontend/package.json">
-{
-  "name": "toilet-frontend",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.7",
-    "@mui/material": "^7.3.7",
-    "@react-google-maps/api": "^2.20.8",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.12.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "jsdom": "^27.4.0",
-    "msw": "^2.12.7",
-    "vite": "npm:rolldown-vite@7.2.5",
-    "vitest": "^4.0.18"
-  },
-  "overrides": {
-    "vite": "npm:rolldown-vite@7.2.5"
-  }
-}
-</file>
-
 <file path="toilet-frontend/src/pages/Edit.jsx">
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
@@ -5115,6 +5149,52 @@ function Edit() {
 }
 
 export default Edit;
+</file>
+
+<file path="toilet-frontend/package.json">
+{
+  "name": "toilet-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.7",
+    "@mui/material": "^7.3.7",
+    "@react-google-maps/api": "^2.20.8",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.12.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "jsdom": "^27.4.0",
+    "msw": "^2.12.7",
+    "vite": "npm:rolldown-vite@7.2.5",
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@7.2.5"
+  }
+}
 </file>
 
 <file path="toilet-frontend/src/search.css">
@@ -6043,9 +6123,8 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 # --- CORS / Server Config ---
 # WebConfig.java の @Value("${app.cors.allowed-origins}") と一致させています
-app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:4173,http://localhost:5173}
 app.cors.allow-credentials=${CORS_ALLOW_CREDENTIALS:false}
-app.cors.allowed-origins=http://localhost:5173
 
 # ポート設定
 server.port=${PORT:8080}
