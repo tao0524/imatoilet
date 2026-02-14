@@ -127,6 +127,15 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
 
   const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
 
+  // ★フリーズ対策：トイレのピン生成数を制限
+  const MARKER_LIMIT = 50;  
+
+  const markerToilets = useMemo(() => {
+    if (!Array.isArray(filteredToilets)) return [];
+    return filteredToilets.slice(0, MARKER_LIMIT);
+  }, [filteredToilets]);
+
+
   // --- ルート検索ロジック (既存通り維持) ---
   useEffect(() => {
     const startPoint = (originMode === 'GPS' && realLocation) ? realLocation : currentLocation;
@@ -234,7 +243,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
           )}
 
           {/* ★修正: トイレのピン */}
-          {filteredToilets.map((t) => (
+          {markerToilets.map((t) => (
             <AdvancedMarker
               key={t.id}
               map={map}
