@@ -134,7 +134,7 @@ function Detail() {
   if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
   if (!toilet) return <div className="container" style={{padding:'20px'}}>データが見つかりませんでした。<br /><Link to="/search">検索に戻る</Link></div>;
 
-  const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${toilet.lat},${toilet.lng}`;
+  const googleMapUrl = `https://maps.google.com/?q=${toilet.lat},${toilet.lng}`;
 
   const categoryMap = {
     station: '駅・交通',
