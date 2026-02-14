@@ -259,7 +259,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
             <InfoWindow
               position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
               onCloseClick={() => setSelectedToiletId(null)}
-              options={{ pixelOffset: { width: 0, height: -52 } }}
+              options={{ pixelOffset: new window.google.maps.Size(0, -52) }}
             >
               <div style={{ padding: '4px', maxWidth: '220px' }}>
                 <b style={{ fontSize: '1rem', display:'block', marginBottom:'4px' }}>{selectedToilet.name}</b>
@@ -297,7 +297,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
                   詳細を見る
                 </Link>
                 
-                <a href={`http://googleusercontent.com/maps.google.com/?q=${selectedToilet.lat},${selectedToilet.lng}`} 
+                <a href={`https://maps.google.com/?q=${selectedToilet.lat},${selectedToilet.lng}`}
                    target="_blank" rel="noreferrer"
                    style={{ 
                      display: 'block', textAlign: 'center', marginTop: '8px',
