@@ -865,6 +865,7 @@ public class ResourceNotFoundException extends RuntimeException {
 package com.imatoilet.backend;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -873,6 +874,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
+@SuppressWarnings("null") // ★追加: IDEの厳格すぎるNull警告をこのクラス全体で抑制
 public class HelloController {
 
     @Autowired
@@ -885,33 +887,37 @@ public class HelloController {
         return "toilet-list";
     }
 
- // ★変更後：空っぽのデータを「toilet」という名前で渡す
+    // 2. 新規登録画面
     @GetMapping("/new")
     public String showAddForm(Model model) {
         model.addAttribute("toilet", new Toilet());
         return "toilet-form";
     }
 
-    // ★追加：指定したIDのデータを検索して渡す（編集用）
+    // 3. 編集画面
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        Toilet t = repository.findById(id).get(); // IDで検索
-        model.addAttribute("toilet", t);          // 見つかったデータを渡す
-        return "toilet-form";                     // 同じフォーム画面を使う
+    public String showEditForm(@PathVariable @NonNull Long id, Model model) {
+        // IDが見つからない場合は例外を投げる
+        Toilet t = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid toilet Id:" + id));
+        
+        model.addAttribute("toilet", t);
+        return "toilet-form";
     }
 
-    // 3. フォームから送られてきたデータを保存する（新機能！）
+    // 4. 保存処理
     @PostMapping("/save")
-    public String saveToilet(@ModelAttribute Toilet toilet) {
-        repository.save(toilet); // データベースに保存！
-        return "redirect:/";     // 保存したら一覧画面に戻る
+    // ★修正: 引数に @NonNull を追加して「nullではない」と明言する
+    public String saveToilet(@ModelAttribute @NonNull Toilet toilet) {
+        repository.save(toilet);
+        return "redirect:/";
     }
-    
- // 4. 指定したIDのトイレを削除する（新機能！）
-    @GetMapping("/delete/{id}")
-    public String deleteToilet(@PathVariable Long id) {
-        repository.deleteById(id); // 指定されたIDのデータを削除する
-        return "redirect:/";       // 一覧画面に戻る
+
+    // 5. 削除処理
+    @PostMapping("/delete/{id}")
+    public String deleteToilet(@PathVariable @NonNull Long id) {
+        repository.deleteById(id);
+        return "redirect:/";
     }
 }
 </file>
@@ -1165,9 +1171,15 @@ ALTER TABLE toilet ADD COLUMN IF NOT EXISTS image TEXT;
 	                <td th:text="${toilet.address}">住所</td>
 	                <td th:text="${toilet.description}">説明</td>
 					<td style="white-space: nowrap">
-					    <a th:href="@{/edit/{id}(id=${toilet.id})}">編集</a>						
-						/						
-					    <a th:href="@{/delete/{id}(id=${toilet.id})}">削除</a>
+							<a th:href="@{/edit/{id}(id=${toilet.id})}">編集</a>
+							/
+							<form th:action="@{/delete/{id}(id=${toilet.id})}" method="post" style="display:inline;">
+									<button type="submit" 
+													onclick="return confirm('本当に削除しますか？');" 
+													style="cursor:pointer; color:red; border:none; background:none; text-decoration:underline;">
+											削除
+									</button>
+							</form>
 					</td>
 	            </tr>
 	        </tbody>
@@ -1212,6 +1224,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@SuppressWarnings("null")
 class ToiletApiControllerTest {
 
     @Autowired
@@ -2479,202 +2492,6 @@ describe('Detail Page', () => {
 });
 </file>
 
-<file path="toilet-frontend/src/pages/Favorites.jsx">
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { loadUserToilets } from '../utils'; // 自分で登録したデータを読み込む関数
-import './Favorites.css'; // さっき作ったCSSを読み込み
-import { API_BASE_URL } from '../config/api';
-
-// アイコン素材の読み込み
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import SortIcon from '@mui/icons-material/Sort';
-
-function Favorites() {
-  // --- 状態管理 (State) ---
-  const [favorites, setFavorites] = useState([]); // 表示するトイレデータ一覧
-  const [loading, setLoading] = useState(true);   // 読み込み中かどうか
-  const [sortMode, setSortMode] = useState('updated'); // 並び順 ('updated' か 'name')
-  
-  const navigate = useNavigate(); // ページ移動用
-  const FAV_KEY = "imatoilet_favorites"; // LocalStorageの保存キー名
-
-  // --- 1. 画面が開かれたときの処理 ---
-  useEffect(() => {
-    async function fetchFavorites() {
-      // (1) LocalStorageから「お気に入り登録したIDのリスト」だけ取り出す
-      // 例: ["1", "u_12345"]
-      const favIds = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
-
-      if (favIds.length === 0) {
-        setFavorites([]);
-        setLoading(false);
-        return;
-      }
-
-      // (2) すべてのトイレデータ（API + ローカル登録）を用意する
-      let allToilets = [];
-      
-      // バックエンドAPIから取得
-      try {
-        const res = await fetch(API_BASE_URL);
-        const apiData = await res.json();
-        allToilets = [...apiData];
-      } catch (err) {
-        console.error("API Error:", err);
-      }
-
-      // 自分で登録したデータを取得して合体
-      const userData = loadUserToilets();
-      allToilets = [...allToilets, ...userData];
-
-      // (3) 全データの中から、お気に入りIDに含まれるものだけを抽出する (フィルタリング)
-      // 注意: IDの型(数値/文字列)がズレないよう String() で変換して比較
-      const matched = allToilets.filter(t => favIds.includes(String(t.id)));
-      
-      setFavorites(matched);
-      setLoading(false);
-    }
-
-    fetchFavorites();
-  }, []);
-
-  // --- 2. 並び替え処理 ---
-  const getSortedFavorites = () => {
-    // 元の配列を壊さないように [...favorites] でコピーしてからソート
-    return [...favorites].sort((a, b) => {
-      if (sortMode === 'name') {
-        // 名前順 (あいうえお順)
-        return (a.name || "").localeCompare(b.name || "", "ja");
-      } else {
-        // 更新日順 (日付文字列の比較)
-        // データがない場合は古いものとして扱う
-        const dateA = a.updatedAt || "0000-00-00";
-        const dateB = b.updatedAt || "0000-00-00";
-        return dateB.localeCompare(dateA); // 降順（新しい順）
-      }
-    });
-  };
-
-  // --- 3. 削除処理 ---
-  const handleRemove = (id) => {
-    if(!window.confirm("このトイレをお気に入りから削除しますか？")) return;
-
-    // 画面上のリストから削除
-    const nextFavs = favorites.filter(t => String(t.id) !== String(id));
-    setFavorites(nextFavs);
-
-    // LocalStorageのIDリストからも削除
-    const currentIds = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
-    const nextIds = currentIds.filter(favId => favId !== String(id));
-    localStorage.setItem(FAV_KEY, JSON.stringify(nextIds));
-  };
-
-  // --- 4. 全削除処理 ---
-  const handleClearAll = () => {
-    if(!window.confirm("お気に入りをすべて削除しますか？")) return;
-    setFavorites([]); // 画面を空に
-    localStorage.setItem(FAV_KEY, JSON.stringify([])); // 保存データも空に
-  };
-
-  if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
-
-  // 並び替え済みのデータを用意
-  const sortedItems = getSortedFavorites();
-
-  return (
-    <main className="fav-main">
-      <div className="container">
-        
-        {/* 上部ナビ */}
-        <div style={{ marginBottom: '16px' }}>
-          <Link to="/" className="back-link" style={{ display:'inline-flex', alignItems:'center', gap:'4px', color:'#666', textDecoration:'none' }}>
-            <ArrowBackIcon fontSize="small" /> トップに戻る
-          </Link>
-        </div>
-
-        <h2 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>⭐ よく使うトイレ</h2>
-
-        {/* 操作パネル */}
-        <section className="fav-controls">
-          <label className="select-wrap">
-            <span style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-              <SortIcon color="action" /> 並び替え
-            </span>
-            <select 
-              className="select-sort" 
-              value={sortMode} 
-              onChange={(e) => setSortMode(e.target.value)}
-            >
-              <option value="updated">更新日が新しい順</option>
-              <option value="name">名前順</option>
-            </select>
-          </label>
-
-          {favorites.length > 0 && (
-            <button className="btn btn-sub btn-sm" onClick={handleClearAll}>
-              🗑 お気に入りを全削除
-            </button>
-          )}
-        </section>
-
-        {/* リスト表示エリア */}
-        <section className="list-area">
-          {sortedItems.length === 0 ? (
-            <div className="fav-empty">
-              <p>お気に入りがありません。</p>
-              <p style={{ fontSize:'0.9rem', marginTop:'10px' }}>
-                検索結果や詳細ページから<br/>「⭐追加」ボタンを押すとここに表示されます。
-              </p>
-              <Link to="/search" className="btn btn-primary btn-sm" style={{ marginTop:'20px', display:'inline-block', width:'auto' }}>
-                トイレを探しに行く
-              </Link>
-            </div>
-          ) : (
-            sortedItems.map(toilet => (
-              <article key={toilet.id} className="fav-card">
-                <div className="fav-card-name">{toilet.name}</div>
-                
-                <div className="fav-card-meta">
-                  {toilet.wheelchair && <span>♿ 車椅子</span>}
-                  {toilet.diaper && <span>👶 オムツ</span>}
-                  {toilet.open24h && <span>🕒 24時間</span>}
-                  {!toilet.wheelchair && !toilet.diaper && !toilet.open24h && <span>設備情報なし</span>}
-                </div>
-
-                <div className="fav-card-actions">
-                  {/* 詳細ボタン：クリックで詳細ページへ移動 */}
-                  <button 
-                    className="btn btn-secondary btn-sm" 
-                    onClick={() => navigate(`/detail/${toilet.id}`)}
-                    style={{ flex: 1 }}
-                  >
-                    <VisibilityIcon fontSize="small" style={{marginRight:4}} /> 詳細
-                  </button>
-                  
-                  {/* 削除ボタン */}
-                  <button 
-                    className="btn btn-danger-outline" 
-                    onClick={() => handleRemove(toilet.id)}
-                  >
-                    <DeleteOutlineIcon fontSize="small" /> 削除
-                  </button>
-                </div>
-              </article>
-            ))
-          )}
-        </section>
-
-      </div>
-    </main>
-  );
-}
-
-export default Favorites;
-</file>
-
 <file path="toilet-frontend/src/pages/Search/ListPanel.jsx">
 import { useNavigate } from 'react-router-dom';
 
@@ -2825,82 +2642,6 @@ function PlaceSearch({
 }
 
 export default PlaceSearch;
-</file>
-
-<file path="toilet-frontend/src/utils.js">
-// 環境変数 (VITE_API_BASE_URL) を読み込んで定数としてエクスポート
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/toilets';
-
-export const STORAGE_KEY = "imatoilet_user_toilets_v1";
-
-// ユーザー登録データを読み込む
-export function loadUserToilets() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-// ユーザー登録データを保存する
-export function saveUserToilets(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-}
-
-// ID生成
-export function makeId() {
-  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
-}
-
-// 現在日付 (YYYY-MM-DD)
-export function nowISO() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-// 2点間の距離計算 (Haversine formula)
-export function calcDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// ★追加: Cloudinaryへの画像アップロード関数
-export async function uploadToCloudinary(file) {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
-
-  // Cloudinaryへ送信
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: formData
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
-  }
-
-  const data = await res.json();
-  return data.secure_url; // httpsから始まるURLを返す
-}
 </file>
 
 <file path="toilet-frontend/vite.config.js">
@@ -3757,6 +3498,225 @@ function FilterChip({ label, name, checked, onChange, highlight }) {
 export default Conditions;
 </file>
 
+<file path="toilet-frontend/src/pages/Favorites.jsx">
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { loadUserToilets } from '../utils'; // 自分で登録したデータを読み込む関数
+import './Favorites.css'; // さっき作ったCSSを読み込み
+import { API_BASE_URL } from '../config/api';
+
+// アイコン素材の読み込み
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import SortIcon from '@mui/icons-material/Sort';
+
+function Favorites() {
+  // --- 状態管理 (State) ---
+  const [favorites, setFavorites] = useState([]); // 表示するトイレデータ一覧
+  const [loading, setLoading] = useState(true);   // 読み込み中かどうか
+  const [sortMode, setSortMode] = useState('updated'); // 並び順 ('updated' か 'name')
+  
+  const navigate = useNavigate(); // ページ移動用
+  const FAV_KEY = "imatoilet_favorites"; // LocalStorageの保存キー名
+
+  // --- 1. 画面が開かれたときの処理 ---
+  useEffect(() => {
+    async function fetchFavorites() {
+      // (1) LocalStorageから「お気に入り登録したIDのリスト」だけ取り出す
+      const favIds = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
+
+      if (favIds.length === 0) {
+        setFavorites([]);
+        setLoading(false);
+        return;
+      }
+
+      // (2) IDを「ローカル用(u_始まり)」と「バックエンド用」に分別
+      const localIds = favIds.filter(id => String(id).startsWith('u_'));
+      const backendIds = favIds.filter(id => !String(id).startsWith('u_'));
+
+      let loadedToilets = [];
+
+      // A. ローカルデータの取得
+      // (全ローカルデータから、お気に入りIDに一致するものだけ抽出)
+      if (localIds.length > 0) {
+        const userToilets = loadUserToilets();
+        const foundLocal = userToilets.filter(t => localIds.includes(String(t.id)));
+        loadedToilets = [...loadedToilets, ...foundLocal];
+      }
+
+      // B. バックエンドデータの取得 (ID指定で並列取得)
+      if (backendIds.length > 0) {
+        try {
+          // IDごとに個別にfetchする「約束(Promise)」のリストを作る
+          const promises = backendIds.map(async (id) => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/${id}`);
+              if (res.ok) {
+                return await res.json();
+              }
+              return null; // 削除済みなどで見つからない場合
+            } catch (err) {
+              console.error(`Fetch failed for ID ${id}:`, err);
+              return null;
+            }
+          });
+
+          // Promise.allで並列実行し、全ての結果が揃うのを待つ
+          const apiResults = await Promise.all(promises);
+          
+          // null(エラーや削除済み)を除外してリストに追加
+          const foundApi = apiResults.filter(item => item !== null);
+          loadedToilets = [...loadedToilets, ...foundApi];
+
+        } catch (err) {
+          console.error("API Error:", err);
+        }
+      }
+
+      // (3) 結果を画面にセット
+      setFavorites(loadedToilets);
+      setLoading(false);
+    }
+
+    fetchFavorites();
+  }, []);
+
+  // --- 2. 並び替え処理 ---
+  const getSortedFavorites = () => {
+    // 元の配列を壊さないように [...favorites] でコピーしてからソート
+    return [...favorites].sort((a, b) => {
+      if (sortMode === 'name') {
+        // 名前順 (あいうえお順)
+        return (a.name || "").localeCompare(b.name || "", "ja");
+      } else {
+        // 更新日順 (日付文字列の比較)
+        // データがない場合は古いものとして扱う
+        const dateA = a.updatedAt || "0000-00-00";
+        const dateB = b.updatedAt || "0000-00-00";
+        return dateB.localeCompare(dateA); // 降順（新しい順）
+      }
+    });
+  };
+
+  // --- 3. 削除処理 ---
+  const handleRemove = (id) => {
+    if(!window.confirm("このトイレをお気に入りから削除しますか？")) return;
+
+    // 画面上のリストから削除
+    const nextFavs = favorites.filter(t => String(t.id) !== String(id));
+    setFavorites(nextFavs);
+
+    // LocalStorageのIDリストからも削除
+    const currentIds = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
+    const nextIds = currentIds.filter(favId => favId !== String(id));
+    localStorage.setItem(FAV_KEY, JSON.stringify(nextIds));
+  };
+
+  // --- 4. 全削除処理 ---
+  const handleClearAll = () => {
+    if(!window.confirm("お気に入りをすべて削除しますか？")) return;
+    setFavorites([]); // 画面を空に
+    localStorage.setItem(FAV_KEY, JSON.stringify([])); // 保存データも空に
+  };
+
+  if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
+
+  // 並び替え済みのデータを用意
+  const sortedItems = getSortedFavorites();
+
+  return (
+    <main className="fav-main">
+      <div className="container">
+        
+        {/* 上部ナビ */}
+        <div style={{ marginBottom: '16px' }}>
+          <Link to="/" className="back-link" style={{ display:'inline-flex', alignItems:'center', gap:'4px', color:'#666', textDecoration:'none' }}>
+            <ArrowBackIcon fontSize="small" /> トップに戻る
+          </Link>
+        </div>
+
+        <h2 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>⭐ よく使うトイレ</h2>
+
+        {/* 操作パネル */}
+        <section className="fav-controls">
+          <label className="select-wrap">
+            <span style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+              <SortIcon color="action" /> 並び替え
+            </span>
+            <select 
+              className="select-sort" 
+              value={sortMode} 
+              onChange={(e) => setSortMode(e.target.value)}
+            >
+              <option value="updated">更新日が新しい順</option>
+              <option value="name">名前順</option>
+            </select>
+          </label>
+
+          {favorites.length > 0 && (
+            <button className="btn btn-sub btn-sm" onClick={handleClearAll}>
+              🗑 お気に入りを全削除
+            </button>
+          )}
+        </section>
+
+        {/* リスト表示エリア */}
+        <section className="list-area">
+          {sortedItems.length === 0 ? (
+            <div className="fav-empty">
+              <p>お気に入りがありません。</p>
+              <p style={{ fontSize:'0.9rem', marginTop:'10px' }}>
+                検索結果や詳細ページから<br/>「⭐追加」ボタンを押すとここに表示されます。
+              </p>
+              <Link to="/search" className="btn btn-primary btn-sm" style={{ marginTop:'20px', display:'inline-block', width:'auto' }}>
+                トイレを探しに行く
+              </Link>
+            </div>
+          ) : (
+            sortedItems.map(toilet => (
+              <article key={toilet.id} className="fav-card">
+                <div className="fav-card-name">{toilet.name}</div>
+                
+                <div className="fav-card-meta">
+                  {toilet.wheelchair && <span>♿ 車椅子</span>}
+                  {toilet.diaper && <span>👶 オムツ</span>}
+                  {toilet.open24h && <span>🕒 24時間</span>}
+                  {!toilet.wheelchair && !toilet.diaper && !toilet.open24h && <span>設備情報なし</span>}
+                </div>
+
+                <div className="fav-card-actions">
+                  {/* 詳細ボタン：クリックで詳細ページへ移動 */}
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    onClick={() => navigate(`/detail/${toilet.id}`)}
+                    style={{ flex: 1 }}
+                  >
+                    <VisibilityIcon fontSize="small" style={{marginRight:4}} /> 詳細
+                  </button>
+                  
+                  {/* 削除ボタン */}
+                  <button 
+                    className="btn btn-danger-outline" 
+                    onClick={() => handleRemove(toilet.id)}
+                  >
+                    <DeleteOutlineIcon fontSize="small" /> 削除
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
+        </section>
+
+      </div>
+    </main>
+  );
+}
+
+export default Favorites;
+</file>
+
 <file path="toilet-frontend/src/pages/Search/FilterPanel.jsx">
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -3977,6 +3937,79 @@ function CheckRow({ label, pKey, icon, checked, onChange }) {
 }
 
 export default FilterPanel;
+</file>
+
+<file path="toilet-frontend/src/utils.js">
+export const STORAGE_KEY = "imatoilet_user_toilets_v1";
+
+// ユーザー登録データを読み込む
+export function loadUserToilets() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// ユーザー登録データを保存する
+export function saveUserToilets(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+// ID生成
+export function makeId() {
+  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
+}
+
+// 現在日付 (YYYY-MM-DD)
+export function nowISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// 2点間の距離計算 (Haversine formula)
+export function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ★追加: Cloudinaryへの画像アップロード関数
+export async function uploadToCloudinary(file) {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+
+  // Cloudinaryへ送信
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
+  }
+
+  const data = await res.json();
+  return data.secure_url; // httpsから始まるURLを返す
+}
 </file>
 
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
@@ -4445,82 +4478,6 @@ a:focus-visible {
 }
 </file>
 
-<file path="toilet-frontend/src/components/SafeGoogleMap.jsx">
-import React, { useState, useEffect } from 'react';
-import { useJsApiLoader, GoogleMap } from '@react-google-maps/api';
-
-// ★修正: 'marker' ライブラリを復活させました（AdvancedMarkerElementに必須）
-const LIBRARIES = ['places', 'marker'];
-
-export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
-  const [authError, setAuthError] = useState(false);
-
-  // 1. Google Maps SDKのロード設定
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-    language: 'ja', 
-  });
-
-  // 2. gm_authFailure の検知
-  useEffect(() => {
-    window.gm_authFailure = () => {
-      console.error("Google Maps Authentication Failure");
-      setAuthError(true);
-    };
-    return () => {
-      window.gm_authFailure = null;
-    };
-  }, []);
-
-  // --- エラー時の表示 ---
-  if (loadError || authError) {
-    return (
-      <div style={{ 
-        ...style, background: '#f0f0f0', display: 'flex', alignItems: 'center', 
-        justifyContent: 'center', flexDirection: 'column', color: '#666',
-        padding: '20px', textAlign: 'center'
-      }}>
-        <h3 style={{ margin: '0 0 10px', color: '#d32f2f' }}>地図を表示できません</h3>
-        <p style={{ fontSize: '0.9rem' }}>
-          現在、アクセス集中またはデモ制限のため<br/>
-          Google Mapsの表示を一時的に停止しています。<br/>
-          <strong>リスト一覧からトイレ情報を確認してください。</strong>
-        </p>
-      </div>
-    );
-  }
-
-  // --- ロード中 ---
-  if (!isLoaded) {
-    return (
-      <div style={{ ...style, background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p>地図を読み込み中...</p>
-      </div>
-    );
-  }
-
-  // --- 正常表示 ---
-  return (
-    <GoogleMap
-      mapContainerStyle={style}
-      center={center}
-      zoom={zoom}
-      options={{
-        streetViewControl: false,
-        mapTypeControl: false,
-        fullscreenControl: false,
-        // ★追加: AdvancedMarkerElementを利用するためにマップIDを指定
-        mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
-      }}
-      {...props}
-    >
-      {children}
-    </GoogleMap>
-  );
-};
-</file>
-
 <file path="toilet-frontend/src/pages/Home.jsx">
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -4734,6 +4691,123 @@ function Search() {
 }
 
 export default Search;
+</file>
+
+<file path="toilet-frontend/src/components/SafeGoogleMap.jsx">
+import React, { useState, useEffect } from 'react';
+import { useJsApiLoader, GoogleMap } from '@react-google-maps/api';
+
+// ★ここは変更なし（AdvancedMarkerElementに必須）
+const LIBRARIES = ['places', 'marker'];
+
+export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
+  const [authError, setAuthError] = useState(false);
+
+  // 1. Google Maps SDKのロード設定
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: LIBRARIES,
+    language: 'ja', 
+  });
+
+  // 2. gm_authFailure (認証エラー) の検知
+  useEffect(() => {
+    window.gm_authFailure = () => {
+      console.error("Google Maps Authentication Failure");
+      setAuthError(true);
+    };
+    return () => {
+      window.gm_authFailure = null;
+    };
+  }, []);
+
+  // エラー時の救済画面 ---
+  if (loadError || authError) {
+    // 外部リンク用のURL作成
+    const fallbackUrl = center 
+      ? `https://www.google.com/maps?q=${center.lat},${center.lng}`
+      : "https://www.google.com/maps";
+
+    return (
+      <div style={{ 
+        ...style, 
+        background: '#f8f9fa', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        flexDirection: 'column', 
+        color: '#5f6368',
+        padding: '24px', 
+        textAlign: 'center',
+        border: '1px solid #e0e0e0',
+        borderRadius: '8px'
+      }}>
+        <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🗺️</div>
+        <h3 style={{ margin: '0 0 12px', color: '#d93025', fontSize: '1.1rem' }}>地図を読み込めませんでした</h3>
+        <p style={{ fontSize: '0.9rem', margin: '0 0 24px', lineHeight: '1.5', color: '#666' }}>
+          一時的な通信エラーか、サービスの制限の可能性があります。<br/>
+          (開発者ツールでコンソールを確認してください)
+        </p>
+        
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {/* 救済ボタン1: 再読み込み */}
+            <button 
+                onClick={() => window.location.reload()}
+                style={{
+                    padding: '10px 18px', background: '#fff', border: '1px solid #dadce0',
+                    borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#1a73e8',
+                    fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+            >
+                <span>↻</span> 再読み込み
+            </button>
+            
+            {/* 救済ボタン2: 公式サイトへ飛ばす */}
+            <a 
+                href={fallbackUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    padding: '10px 18px', background: '#1a73e8', border: 'none',
+                    borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#fff',
+                    textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+            >
+                Googleマップで開く ↗
+            </a>
+        </div>
+      </div>
+    );
+  }
+
+  // --- ロード中 ---
+  if (!isLoaded) {
+    return (
+      <div style={{ ...style, background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#666', fontSize: '0.9rem' }}>地図を読み込み中...</p>
+      </div>
+    );
+  }
+
+  // --- 正常表示 ---
+  return (
+    <GoogleMap
+      mapContainerStyle={style}
+      center={center}
+      zoom={zoom}
+      options={{
+        streetViewControl: false,
+        mapTypeControl: false,
+        fullscreenControl: false,
+        // AdvancedMarkerElementを利用するためにマップIDを指定
+        mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
+      }}
+      {...props}
+    >
+      {children}
+    </GoogleMap>
+  );
+};
 </file>
 
 <file path="toilet-frontend/src/pages/Edit.jsx">
@@ -6158,10 +6232,10 @@ public class ToiletApiController {
 
 <file path="backend/backend/src/main/resources/application.properties">
 # PostgreSQL への接続設定
-# 環境変数 DB_URL, DB_USER, DB_PASSWORD があればそれを使い、なければデフォルト値を使います
-spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/imatoilet}
-spring.datasource.username=${DB_USER:postgres}
-spring.datasource.password=${DB_PASSWORD:MyNewPass3969}
+# ★重要: 環境変数 DB_URL, DB_USER, DB_PASSWORD の設定が必須です（デフォルト値廃止）
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USER}
+spring.datasource.password=${DB_PASSWORD}
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # JPA/Hibernate の設定
@@ -7249,7 +7323,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
                   詳細を見る
                 </Link>
                 
-                <a href={`https://maps.google.com/?q=${selectedToilet.lat},${selectedToilet.lng}`}
+                <a href={`https://www.google.com/maps?q=${selectedToilet.lat},${selectedToilet.lng}`}
                    target="_blank" rel="noreferrer"
                    style={{ 
                      display: 'block', textAlign: 'center', marginTop: '8px',
@@ -7325,10 +7399,16 @@ function Detail() {
         processToiletData(found);
       } else {
         try {
-          const res = await fetch(API_BASE_URL);
-          const data = await res.json();
-          const found = data.find(t => String(t.id) === id);
-          processToiletData(found);
+          // ★変更: IDを指定して1件だけ取得する (N+1問題の解消)
+          const res = await fetch(`${API_BASE_URL}/${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            processToiletData(data);
+          } else {
+            // 404などのエラーハンドリング
+            console.error("Toilet not found");
+            setLoading(false);
+          }
         } catch (error) {
           console.error("Fetch error:", error);
           setLoading(false);
@@ -7407,8 +7487,8 @@ function Detail() {
   if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
   if (!toilet) return <div className="container" style={{padding:'20px'}}>データが見つかりませんでした。<br /><Link to="/search">検索に戻る</Link></div>;
 
-  const googleMapUrl = `https://maps.google.com/?q=${toilet.lat},${toilet.lng}`;
-
+  const googleMapUrl = `https://www.google.com/maps?q=${toilet.lat},${toilet.lng}`;
+  
   const categoryMap = {
     station: '駅・交通',
     commercial: '商業施設',

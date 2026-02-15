@@ -1,13 +1,18 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "java",
-      "name": "Spring Boot - BackendApplication",
-      "request": "launch",
-      "mainClass": "com.imatoilet.backend.BackendApplication",
-      "projectName": "backend",
-      "console": "integratedTerminal"
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Backend Application (Imatoilet)",
+            "request": "launch",
+            "mainClass": "com.imatoilet.backend.BackendApplication",
+            "projectName": "backend",
+            "console": "integratedTerminal",
+            "env": {
+                "DB_URL": "jdbc:postgresql://localhost:5432/imatoilet",
+                "DB_USER": "postgres",
+                "DB_PASSWORD": "MyNewPass3969"
+            }
+        }
+    ]
 }

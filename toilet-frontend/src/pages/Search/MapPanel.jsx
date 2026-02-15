@@ -297,7 +297,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
                   詳細を見る
                 </Link>
                 
-                <a href={`http://googleusercontent.com/maps.google.com/maps?q=${selectedToilet.lat},${selectedToilet.lng}`}
+                <a href={`https://www.google.com/maps?q=${selectedToilet.lat},${selectedToilet.lng}`}
                    target="_blank" rel="noreferrer"
                    style={{ 
                      display: 'block', textAlign: 'center', marginTop: '8px',
