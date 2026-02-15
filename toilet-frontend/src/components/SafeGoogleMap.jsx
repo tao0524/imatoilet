@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useJsApiLoader, GoogleMap } from '@react-google-maps/api';
 
-// ★修正: 'marker' ライブラリを復活させました（AdvancedMarkerElementに必須）
+// ★ここは変更なし（AdvancedMarkerElementに必須）
 const LIBRARIES = ['places', 'marker'];
 
 export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
@@ -14,7 +14,7 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
     language: 'ja', 
   });
 
-  // 2. gm_authFailure の検知
+  // 2. gm_authFailure (認証エラー) の検知
   useEffect(() => {
     window.gm_authFailure = () => {
       console.error("Google Maps Authentication Failure");
@@ -25,20 +25,61 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
     };
   }, []);
 
-  // --- エラー時の表示 ---
+  // エラー時の救済画面 ---
   if (loadError || authError) {
+    // 外部リンク用のURL作成
+    const fallbackUrl = center 
+      ? `http://googleusercontent.com/maps.google.com/maps?q=${center.lat},${center.lng}`
+      : "http://googleusercontent.com/maps.google.com/maps";
+
     return (
       <div style={{ 
-        ...style, background: '#f0f0f0', display: 'flex', alignItems: 'center', 
-        justifyContent: 'center', flexDirection: 'column', color: '#666',
-        padding: '20px', textAlign: 'center'
+        ...style, 
+        background: '#f8f9fa', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        flexDirection: 'column', 
+        color: '#5f6368',
+        padding: '24px', 
+        textAlign: 'center',
+        border: '1px solid #e0e0e0',
+        borderRadius: '8px'
       }}>
-        <h3 style={{ margin: '0 0 10px', color: '#d32f2f' }}>地図を表示できません</h3>
-        <p style={{ fontSize: '0.9rem' }}>
-          現在、アクセス集中またはデモ制限のため<br/>
-          Google Mapsの表示を一時的に停止しています。<br/>
-          <strong>リスト一覧からトイレ情報を確認してください。</strong>
+        <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🗺️</div>
+        <h3 style={{ margin: '0 0 12px', color: '#d93025', fontSize: '1.1rem' }}>地図を読み込めませんでした</h3>
+        <p style={{ fontSize: '0.9rem', margin: '0 0 24px', lineHeight: '1.5', color: '#666' }}>
+          一時的な通信エラーか、サービスの制限の可能性があります。<br/>
+          (開発者ツールでコンソールを確認してください)
         </p>
+        
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {/* 救済ボタン1: 再読み込み */}
+            <button 
+                onClick={() => window.location.reload()}
+                style={{
+                    padding: '10px 18px', background: '#fff', border: '1px solid #dadce0',
+                    borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#1a73e8',
+                    fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+            >
+                <span>↻</span> 再読み込み
+            </button>
+            
+            {/* 救済ボタン2: 公式サイトへ飛ばす */}
+            <a 
+                href={fallbackUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    padding: '10px 18px', background: '#1a73e8', border: 'none',
+                    borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#fff',
+                    textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+            >
+                Googleマップで開く ↗
+            </a>
+        </div>
       </div>
     );
   }
@@ -47,7 +88,7 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
   if (!isLoaded) {
     return (
       <div style={{ ...style, background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p>地図を読み込み中...</p>
+        <p style={{ color: '#666', fontSize: '0.9rem' }}>地図を読み込み中...</p>
       </div>
     );
   }
@@ -62,7 +103,7 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
         streetViewControl: false,
         mapTypeControl: false,
         fullscreenControl: false,
-        // ★追加: AdvancedMarkerElementを利用するためにマップIDを指定
+        // AdvancedMarkerElementを利用するためにマップIDを指定
         mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
       }}
       {...props}
