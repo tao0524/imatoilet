@@ -1,6 +1,7 @@
 package com.imatoilet.backend;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
+@SuppressWarnings("null") // ★追加: IDEの厳格すぎるNull警告をこのクラス全体で抑制
 public class HelloController {
 
     @Autowired
@@ -21,32 +23,36 @@ public class HelloController {
         return "toilet-list";
     }
 
- // ★変更後：空っぽのデータを「toilet」という名前で渡す
+    // 2. 新規登録画面
     @GetMapping("/new")
     public String showAddForm(Model model) {
         model.addAttribute("toilet", new Toilet());
         return "toilet-form";
     }
 
-    // ★追加：指定したIDのデータを検索して渡す（編集用）
+    // 3. 編集画面
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        Toilet t = repository.findById(id).get(); // IDで検索
-        model.addAttribute("toilet", t);          // 見つかったデータを渡す
-        return "toilet-form";                     // 同じフォーム画面を使う
+    public String showEditForm(@PathVariable @NonNull Long id, Model model) {
+        // IDが見つからない場合は例外を投げる
+        Toilet t = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid toilet Id:" + id));
+        
+        model.addAttribute("toilet", t);
+        return "toilet-form";
     }
 
-    // 3. フォームから送られてきたデータを保存する（新機能！）
+    // 4. 保存処理
     @PostMapping("/save")
-    public String saveToilet(@ModelAttribute Toilet toilet) {
-        repository.save(toilet); // データベースに保存！
-        return "redirect:/";     // 保存したら一覧画面に戻る
+    // ★修正: 引数に @NonNull を追加して「nullではない」と明言する
+    public String saveToilet(@ModelAttribute @NonNull Toilet toilet) {
+        repository.save(toilet);
+        return "redirect:/";
     }
-    
- // 4. 指定したIDのトイレを削除する（新機能！）
-    @GetMapping("/delete/{id}")
-    public String deleteToilet(@PathVariable Long id) {
-        repository.deleteById(id); // 指定されたIDのデータを削除する
-        return "redirect:/";       // 一覧画面に戻る
+
+    // 5. 削除処理
+    @PostMapping("/delete/{id}")
+    public String deleteToilet(@PathVariable @NonNull Long id) {
+        repository.deleteById(id);
+        return "redirect:/";
     }
 }

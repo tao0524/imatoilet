@@ -29,8 +29,8 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
   if (loadError || authError) {
     // 外部リンク用のURL作成
     const fallbackUrl = center 
-      ? `http://googleusercontent.com/maps.google.com/maps?q=${center.lat},${center.lng}`
-      : "http://googleusercontent.com/maps.google.com/maps";
+      ? `https://www.google.com/maps?q=${center.lat},${center.lng}`
+      : "https://www.google.com/maps";
 
     return (
       <div style={{ 
