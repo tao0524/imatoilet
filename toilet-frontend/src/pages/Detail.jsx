@@ -1,6 +1,6 @@
 import '../base.css';
 import '../components.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { loadUserToilets, saveUserToilets } from '../utils';
 import { API_BASE_URL } from '../config/api';
@@ -160,15 +160,28 @@ function Detail() {
   // --- ライトボックス操作関数 ---
   const openLightbox = (index) => setLightboxIndex(index);
   
-  const nextImage = (e) => {
+  const nextImage = useCallback((e) => {
     e && e.stopPropagation();
     setLightboxIndex((prev) => (prev + 1) % images.length);
-  };
+  }, [images.length]);
 
-  const prevImage = (e) => {
+  const prevImage = useCallback((e) => {
     e && e.stopPropagation();
     setLightboxIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  }, [images.length]);
+
+  // ★キーボード操作でライトボックスを閉じる/移動する
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxIndex === null) return;
+      
+      if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowRight') nextImage(e);
+      if (e.key === 'ArrowLeft') prevImage(e);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, nextImage, prevImage]);
 
   return (
     <main className="detail-main">

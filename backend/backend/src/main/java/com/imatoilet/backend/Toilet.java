@@ -97,8 +97,8 @@ public class Toilet {
         if (Boolean.TRUE.equals(wheelchair) && !currentEq.contains("wheelchair")) {
             currentEq = addTag(currentEq, "wheelchair");
         }
-        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper_table")) {
-            currentEq = addTag(currentEq, "diaper_table");
+        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper")) {
+            currentEq = addTag(currentEq, "diaper");
         }
         if (Boolean.TRUE.equals(open24h) && !currentEq.contains("open_24h")) {
             currentEq = addTag(currentEq, "open_24h");
@@ -114,7 +114,7 @@ public class Toilet {
         }
         if (this.equipment != null) {
             if (this.equipment.contains("wheelchair")) this.wheelchair = true;
-            if (this.equipment.contains("diaper_table")) this.diaper = true;
+            if (this.equipment.contains("diaper")) this.diaper = true;
             if (this.equipment.contains("open_24h")) this.open24h = true;
         }
     }

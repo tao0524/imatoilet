@@ -9,13 +9,11 @@ import java.util.List;
 
 public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 
-    // N+1対策済みの全件取得
     @Override
     @EntityGraph(attributePaths = {"equipmentList"})
     @NonNull
     List<Toilet> findAll();
 
-    // 1. 位置情報検索 (PostgreSQLネイティブクエリ / 半径km指定)
     @Query(value = "SELECT * FROM toilet t WHERE " +
            "(6371 * acos(least(1.0, greatest(-1.0, " +
            "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
@@ -28,10 +26,8 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
         @Param("radius") Double radius
     );
 
-    // 2. 条件検索 (JPQL / 正規化されたEquipmentテーブルとのJOIN)
-    // S0フェーズ: EquipmentTypeのリストに含まれる設備を持つトイレを検索
-    // キーワードは name, address, description, equipment(CSV) を対象にする
-    @Query("SELECT DISTINCT t FROM Toilet t " +
+    // 修正7: HAVING COUNT を使用して AND条件にする
+    @Query("SELECT t FROM Toilet t " +
            "LEFT JOIN t.equipmentList e " +
            "WHERE " +
            "(:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) AND " +
@@ -41,11 +37,14 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
            "  t.address LIKE %:keyword% OR " +
            "  t.description LIKE %:keyword% OR " +
            "  t.equipment LIKE %:keyword%) AND " +
-           "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes)")
+           "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes) " +
+           "GROUP BY t " +
+           "HAVING (:equipmentTypes IS NULL OR COUNT(DISTINCT e.type) = :typeCount)")
     List<Toilet> searchBySpecs(
         @Param("facilityCategory") String facilityCategory,
         @Param("minCleanliness") Integer minCleanliness,
         @Param("keyword") String keyword,
-        @Param("equipmentTypes") List<EquipmentType> equipmentTypes
+        @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
+        @Param("typeCount") Long typeCount // 追加
     );
 }
