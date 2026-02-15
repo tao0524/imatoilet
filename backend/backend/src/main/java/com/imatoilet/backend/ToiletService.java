@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors; // ★追加
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -47,9 +47,13 @@ public class ToiletService {
                 if (types.isEmpty()) types = null;
             }
 
+            // 修正7: typesのサイズをカウントして渡す (AND検索用)
+            Long typeCount = (types != null) ? (long) types.size() : null;
+
             // 条件が一つでもあれば検索、なければ全件
             if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
-                return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
+                // 修正7: 引数に typeCount を追加して呼び出す
+                return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types, typeCount);
             } else {
                 return toiletRepository.findAll();
             }
@@ -89,10 +93,6 @@ public class ToiletService {
                         // CSV文字列の中に、指定された設備キーが含まれているか確認
                         // 例: req="WHEELCHAIR" -> tEq="wheelchair,diaper" (大文字小文字の違いを吸収するか要検討だが、
                         // 現状のデータは小文字、リクエストは大文字の可能性があるため、toLowerCaseで合わせるのが安全)
-                        
-                        // ※ EquipmentType enum名とDB内の文字列が一致している前提であればそのままでOKですが、
-                        // DBが小文字(wheelchair)、リクエストが大文字(WHEELCHAIR)の場合は変換が必要。
-                        // ここでは安全のため、両方小文字にしてチェックします。
                         if (!tEq.toLowerCase().contains(req.toLowerCase())) {
                             return false; 
                         }
