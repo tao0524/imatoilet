@@ -48,6 +48,7 @@ backend/backend/mvnw
 backend/backend/mvnw.cmd
 backend/backend/pom.xml
 backend/backend/src/main/java/com/imatoilet/backend/BackendApplication.java
+backend/backend/src/main/java/com/imatoilet/backend/config/SecurityConfig.java
 backend/backend/src/main/java/com/imatoilet/backend/config/WebConfig.java
 backend/backend/src/main/java/com/imatoilet/backend/DataLoader.java
 backend/backend/src/main/java/com/imatoilet/backend/Equipment.java
@@ -124,6 +125,113 @@ toilet-frontend/vitest.config.js
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/config/SecurityConfig.java">
+package com.imatoilet.backend.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Value("${app.admin.username}")
+    private String adminUsername;
+
+    @Value("${app.admin.password}")
+    private String adminPassword;
+
+    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
+    private String allowedOrigins;
+
+    @Value("${app.cors.allow-credentials:false}")
+    private boolean allowCredentials;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            // CORS設定を適用
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // CSRF無効化 (REST APIのため)
+            .csrf(csrf -> csrf.disable())
+            // セッション管理をステートレスに
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // アクセス制御
+            .authorizeHttpRequests(auth -> auth
+                // API: 参照系は許可
+                .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
+                // API: 更新系は認証必須
+                .requestMatchers(HttpMethod.POST, "/api/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/**").authenticated()
+                // その他 (Web画面等) は許可
+                .anyRequest().permitAll()
+            )
+            // Basic認証を有効化
+            .httpBasic(Customizer.withDefaults());
+
+        return http.build();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        UserDetails admin = User.builder()
+                .username(adminUsername)
+                .password(passwordEncoder().encode(adminPassword))
+                .roles("ADMIN")
+                .build();
+        return new InMemoryUserDetailsManager(admin);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    // CORS設定 Bean定義 (WebConfigから移行)
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // Origins設定
+        String[] origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+        configuration.setAllowedOrigins(List.of(origins));
+        
+        // メソッド・ヘッダー設定
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(allowCredentials);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
+    }
+}
+</file>
 
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
@@ -861,67 +969,6 @@ public class ResourceNotFoundException extends RuntimeException {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/HelloController.java">
-package com.imatoilet.backend;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-
-@Controller
-@SuppressWarnings("null") // ★追加: IDEの厳格すぎるNull警告をこのクラス全体で抑制
-public class HelloController {
-
-    @Autowired
-    private ToiletRepository repository;
-
-    // 1. 一覧画面を表示する
-    @GetMapping("/")
-    public String showToiletList(Model model) {
-        model.addAttribute("toilets", repository.findAll());
-        return "toilet-list";
-    }
-
-    // 2. 新規登録画面
-    @GetMapping("/new")
-    public String showAddForm(Model model) {
-        model.addAttribute("toilet", new Toilet());
-        return "toilet-form";
-    }
-
-    // 3. 編集画面
-    @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable @NonNull Long id, Model model) {
-        // IDが見つからない場合は例外を投げる
-        Toilet t = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid toilet Id:" + id));
-        
-        model.addAttribute("toilet", t);
-        return "toilet-form";
-    }
-
-    // 4. 保存処理
-    @PostMapping("/save")
-    // ★修正: 引数に @NonNull を追加して「nullではない」と明言する
-    public String saveToilet(@ModelAttribute @NonNull Toilet toilet) {
-        repository.save(toilet);
-        return "redirect:/";
-    }
-
-    // 5. 削除処理
-    @PostMapping("/delete/{id}")
-    public String deleteToilet(@PathVariable @NonNull Long id) {
-        repository.deleteById(id);
-        return "redirect:/";
-    }
-}
-</file>
-
 <file path="backend/backend/src/main/resources/db/migration/V2__add_equipment_table.sql">
 -- V2__add_equipment_table.sql
 -- Phase 2-1: Equipmentテーブル追加＆既存データ移行（PostgreSQL）
@@ -1145,102 +1192,21 @@ ALTER TABLE toilet ADD COLUMN IF NOT EXISTS image TEXT;
 </html>
 </file>
 
-<file path="backend/backend/src/main/resources/templates/toilet-list.html">
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>トイレ検索</title>
-</head>
-<body>
-    <h1>トイレ一覧</h1>
-    
-	<table border="1">
-	        <thead>
-	            <tr>
-	                <th>ID</th>
-	                <th>名前</th>
-	                <th>住所</th>
-	                <th>説明</th>
-	                <th>操作</th> </tr>
-	        </thead>
-	        <tbody>
-	            <tr th:each="toilet : ${toilets}">
-	                <td th:text="${toilet.id}">ID</td>
-	                <td th:text="${toilet.name}">名前</td>
-	                <td th:text="${toilet.address}">住所</td>
-	                <td th:text="${toilet.description}">説明</td>
-					<td style="white-space: nowrap">
-							<a th:href="@{/edit/{id}(id=${toilet.id})}">編集</a>
-							/
-							<form th:action="@{/delete/{id}(id=${toilet.id})}" method="post" style="display:inline;">
-									<button type="submit" 
-													onclick="return confirm('本当に削除しますか？');" 
-													style="cursor:pointer; color:red; border:none; background:none; text-decoration:underline;">
-											削除
-									</button>
-							</form>
-					</td>
-	            </tr>
-	        </tbody>
-	    </table>
-    
-    <br>
-    <a href="/new">新しいトイレを登録する</a>
-</body>
-</html>
-</file>
-
 <file path="backend/backend/src/test/java/com/imatoilet/backend/BackendApplicationTests.java">
 package com.imatoilet.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
 class BackendApplicationTests {
 
 	@Test
+	@WithMockUser
 	void contextLoads() {
 	}
 
-}
-</file>
-
-<file path="backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java">
-package com.imatoilet.backend;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@SpringBootTest
-@AutoConfigureMockMvc
-@SuppressWarnings("null")
-class ToiletApiControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Test
-    void shouldReturnListOfToilets() throws Exception {
-        // APIを叩いて検証
-        mockMvc.perform(get("/api/toilets"))
-               // 1. ステータスコードが 200 (OK) であること
-               .andExpect(status().isOk())
-               // 2. コンテンツタイプが JSON であること
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               // 3. 返ってきたデータが「配列（リスト）」形式であること
-               .andExpect(jsonPath("$").isArray()); 
-    }
 }
 </file>
 
@@ -2138,13 +2104,8 @@ describe('utils.js (便利関数)', () => {
 <file path="backend/backend/src/main/java/com/imatoilet/backend/config/WebConfig.java">
 package com.imatoilet.backend.config;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.lang.NonNull;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
@@ -2158,26 +2119,10 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.cors.allow-credentials:false}")
     private boolean allowCredentials;
 
-    @Override
-    @SuppressWarnings("null") // コンパイラのNull警告を抑制（Stream処理の配列変換等で発生するため）
-    public void addCorsMappings(@NonNull CorsRegistry registry) {
-        System.out.println("[CORS] addCorsMappings called. allowedOrigins=" + allowedOrigins);
-        // 安全対策: nullの場合は空文字扱いにする
-        String safeOrigins = Objects.requireNonNullElse(allowedOrigins, "");
+    // 修正3: SecurityConfigにCORS設定を移管したため、
+    // ここでの addCorsMappings 設定は削除（無効化）しました。
+    // SecurityConfig.java 側でCORS設定が一括管理されます。
 
-        String[] origins = Arrays.stream(safeOrigins.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
-
-        // APIだけに適用
-        registry.addMapping("/api/**")
-                .allowedOrigins(origins)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(allowCredentials)
-                .maxAge(3600);
-    }
 }
 </file>
 
@@ -2217,6 +2162,67 @@ public class Equipment {
     public Equipment(Toilet toilet, EquipmentType type) {
         this.toilet = toilet;
         this.type = type;
+    }
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/HelloController.java">
+package com.imatoilet.backend;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+
+@Controller
+@SuppressWarnings("null") // ★追加: IDEの厳格すぎるNull警告をこのクラス全体で抑制
+public class HelloController {
+
+    @Autowired
+    private ToiletRepository repository;
+
+    // 1. 一覧画面を表示する
+    @GetMapping("/")
+    public String showToiletList(Model model) {
+        model.addAttribute("toilets", repository.findAll());
+        return "toilet-list";
+    }
+
+    // 2. 新規登録画面
+    @GetMapping("/new")
+    public String showAddForm(Model model) {
+        model.addAttribute("toilet", new Toilet());
+        return "toilet-form";
+    }
+
+    // 3. 編集画面
+    @GetMapping("/edit/{id}")
+    public String showEditForm(@PathVariable @NonNull Long id, Model model) {
+        // IDが見つからない場合は例外を投げる
+        Toilet t = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid toilet Id:" + id));
+        
+        model.addAttribute("toilet", t);
+        return "toilet-form";
+    }
+
+    // 4. 保存処理
+    @PostMapping("/save")
+    // ★修正: 引数に @NonNull を追加して「nullではない」と明言する
+    public String saveToilet(@ModelAttribute @NonNull Toilet toilet) {
+        repository.save(toilet);
+        return "redirect:/";
+    }
+
+    // 5. 削除処理
+    @PostMapping("/delete/{id}")
+    public String deleteToilet(@PathVariable @NonNull Long id) {
+        repository.deleteById(id);
+        return "redirect:/";
     }
 }
 </file>
@@ -2386,6 +2392,91 @@ public class ToiletService {
             throw new ResourceNotFoundException("トイレ", "id", safeId);
         }
         toiletRepository.deleteById(safeId);
+    }
+}
+</file>
+
+<file path="backend/backend/src/main/resources/templates/toilet-list.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>トイレ検索</title>
+</head>
+<body>
+    <h1>トイレ一覧</h1>
+    
+	<table border="1">
+	        <thead>
+	            <tr>
+	                <th>ID</th>
+	                <th>名前</th>
+	                <th>住所</th>
+	                <th>説明</th>
+	                <th>操作</th> </tr>
+	        </thead>
+	        <tbody>
+	            <tr th:each="toilet : ${toilets}">
+	                <td th:text="${toilet.id}">ID</td>
+	                <td th:text="${toilet.name}">名前</td>
+	                <td th:text="${toilet.address}">住所</td>
+	                <td th:text="${toilet.description}">説明</td>
+					<td style="white-space: nowrap">
+							<a th:href="@{/edit/{id}(id=${toilet.id})}">編集</a>
+							/
+							<form th:action="@{/delete/{id}(id=${toilet.id})}" method="post" style="display:inline;">
+									<button type="submit" 
+													onclick="return confirm('本当に削除しますか？');" 
+													style="cursor:pointer; color:red; border:none; background:none; text-decoration:underline;">
+											削除
+									</button>
+							</form>
+					</td>
+	            </tr>
+	        </tbody>
+	    </table>
+    
+    <br>
+    <a href="/new">新しいトイレを登録する</a>
+</body>
+</html>
+</file>
+
+<file path="backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java">
+package com.imatoilet.backend;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser; // ★追加
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@SuppressWarnings("null")
+class ToiletApiControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @WithMockUser // ★追加: これで「認証済みユーザー」としてテストが実行されます
+    void shouldReturnListOfToilets() throws Exception {
+        // APIを叩いて検証
+        mockMvc.perform(get("/api/toilets"))
+               // 1. ステータスコードが 200 (OK) であること
+               .andExpect(status().isOk())
+               // 2. コンテンツタイプが JSON であること
+               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+               // 3. 返ってきたデータが「配列（リスト）」形式であること
+               .andExpect(jsonPath("$").isArray()); 
     }
 }
 </file>
@@ -2781,6 +2872,22 @@ export default defineConfig({
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-database-postgresql</artifactId>
     </dependency>
+
+    <dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+    <dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
     
   </dependencies>
 
@@ -4018,8 +4125,6 @@ package com.imatoilet.backend;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
-
-// ★追加1：リストを使うためのインポート
 import java.util.ArrayList;
 import java.util.List;
 import lombok.EqualsAndHashCode;
@@ -4045,7 +4150,10 @@ public class Toilet {
     @NotNull(message = "経度は必須です")
     private Double lng;
 
+    // 修正4: バリデーション追加
+    @Size(max = 200, message = "住所は200文字以内で入力してください")
     private String address;
+
     private Boolean publicUse;
     private Boolean diaper;
     private Boolean wheelchair;
@@ -4059,9 +4167,23 @@ public class Toilet {
     private Boolean open24h;
 
     // --- 新設計フィールド ---
+    // 修正4: バリデーション追加
+    @Pattern(
+        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
+        message = "施設カテゴリの値が不正です"
+    )
     private String facilityCategory;
+    
     private String locationCategory;
+    
+    // 修正4: バリデーション追加
+    @Size(max = 500, message = "設備情報は500文字以内で入力してください")
+    @Pattern(
+        regexp = "^([a-z_0-9]+(,[a-z_0-9]+)*)?$",
+        message = "設備情報の形式が不正です"
+    )
     private String equipment; // ※これはCSV用として残します
+    
     private String usageConditions;
     private String atmosphere;
 
@@ -4069,14 +4191,14 @@ public class Toilet {
     @Max(value = 5, message = "清潔度は5以下である必要があります")
     private Integer cleanliness;
 
-    // ★追加: 画像URL (TEXT型に対応)
+    // 修正4: バリデーション追加 (XSS対策)
     @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    @Pattern(regexp = "^(https?://.*)?$", message = "画像URLの形式が不正です")
     private String image;
 
-    // ★追加2：equipmentテーブルと繋がるリスト（N+1対策の窓口）
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
-    @ToString.Exclude           // エラー防止（無限ループ対策）
-    @EqualsAndHashCode.Exclude  // エラー防止（無限ループ対策）
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Equipment> equipmentList = new ArrayList<>();
 
     // --- 互換性メソッド ---
@@ -4693,123 +4815,6 @@ function Search() {
 export default Search;
 </file>
 
-<file path="toilet-frontend/src/components/SafeGoogleMap.jsx">
-import React, { useState, useEffect } from 'react';
-import { useJsApiLoader, GoogleMap } from '@react-google-maps/api';
-
-// ★ここは変更なし（AdvancedMarkerElementに必須）
-const LIBRARIES = ['places', 'marker'];
-
-export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
-  const [authError, setAuthError] = useState(false);
-
-  // 1. Google Maps SDKのロード設定
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-    language: 'ja', 
-  });
-
-  // 2. gm_authFailure (認証エラー) の検知
-  useEffect(() => {
-    window.gm_authFailure = () => {
-      console.error("Google Maps Authentication Failure");
-      setAuthError(true);
-    };
-    return () => {
-      window.gm_authFailure = null;
-    };
-  }, []);
-
-  // エラー時の救済画面 ---
-  if (loadError || authError) {
-    // 外部リンク用のURL作成
-    const fallbackUrl = center 
-      ? `https://www.google.com/maps?q=${center.lat},${center.lng}`
-      : "https://www.google.com/maps";
-
-    return (
-      <div style={{ 
-        ...style, 
-        background: '#f8f9fa', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        flexDirection: 'column', 
-        color: '#5f6368',
-        padding: '24px', 
-        textAlign: 'center',
-        border: '1px solid #e0e0e0',
-        borderRadius: '8px'
-      }}>
-        <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🗺️</div>
-        <h3 style={{ margin: '0 0 12px', color: '#d93025', fontSize: '1.1rem' }}>地図を読み込めませんでした</h3>
-        <p style={{ fontSize: '0.9rem', margin: '0 0 24px', lineHeight: '1.5', color: '#666' }}>
-          一時的な通信エラーか、サービスの制限の可能性があります。<br/>
-          (開発者ツールでコンソールを確認してください)
-        </p>
-        
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {/* 救済ボタン1: 再読み込み */}
-            <button 
-                onClick={() => window.location.reload()}
-                style={{
-                    padding: '10px 18px', background: '#fff', border: '1px solid #dadce0',
-                    borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#1a73e8',
-                    fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'
-                }}
-            >
-                <span>↻</span> 再読み込み
-            </button>
-            
-            {/* 救済ボタン2: 公式サイトへ飛ばす */}
-            <a 
-                href={fallbackUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                    padding: '10px 18px', background: '#1a73e8', border: 'none',
-                    borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#fff',
-                    textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'
-                }}
-            >
-                Googleマップで開く ↗
-            </a>
-        </div>
-      </div>
-    );
-  }
-
-  // --- ロード中 ---
-  if (!isLoaded) {
-    return (
-      <div style={{ ...style, background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#666', fontSize: '0.9rem' }}>地図を読み込み中...</p>
-      </div>
-    );
-  }
-
-  // --- 正常表示 ---
-  return (
-    <GoogleMap
-      mapContainerStyle={style}
-      center={center}
-      zoom={zoom}
-      options={{
-        streetViewControl: false,
-        mapTypeControl: false,
-        fullscreenControl: false,
-        // AdvancedMarkerElementを利用するためにマップIDを指定
-        mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
-      }}
-      {...props}
-    >
-      {children}
-    </GoogleMap>
-  );
-};
-</file>
-
 <file path="toilet-frontend/src/pages/Edit.jsx">
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
@@ -5317,6 +5322,123 @@ export default Edit;
     "vite": "npm:rolldown-vite@7.2.5"
   }
 }
+</file>
+
+<file path="toilet-frontend/src/components/SafeGoogleMap.jsx">
+import React, { useState, useEffect } from 'react';
+import { useJsApiLoader, GoogleMap } from '@react-google-maps/api';
+
+// ★ここは変更なし（AdvancedMarkerElementに必須）
+const LIBRARIES = ['places', 'marker'];
+
+export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
+  const [authError, setAuthError] = useState(false);
+
+  // 1. Google Maps SDKのロード設定
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: LIBRARIES,
+    language: 'ja', 
+  });
+
+  // 2. gm_authFailure (認証エラー) の検知
+  useEffect(() => {
+    window.gm_authFailure = () => {
+      console.error("Google Maps Authentication Failure");
+      setAuthError(true);
+    };
+    return () => {
+      window.gm_authFailure = null;
+    };
+  }, []);
+
+  // エラー時の救済画面 ---
+  if (loadError || authError) {
+    // 外部リンク用のURL作成
+    const fallbackUrl = center 
+      ? `https://www.google.com/maps?q=${center.lat},${center.lng}`
+      : "https://www.google.com/maps";
+
+    return (
+      <div style={{ 
+        ...style, 
+        background: '#f8f9fa', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        flexDirection: 'column', 
+        color: '#5f6368',
+        padding: '24px', 
+        textAlign: 'center',
+        border: '1px solid #e0e0e0',
+        borderRadius: '8px'
+      }}>
+        <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🗺️</div>
+        <h3 style={{ margin: '0 0 12px', color: '#d93025', fontSize: '1.1rem' }}>地図を読み込めませんでした</h3>
+        <p style={{ fontSize: '0.9rem', margin: '0 0 24px', lineHeight: '1.5', color: '#666' }}>
+          一時的な通信エラーか、サービスの制限の可能性があります。<br/>
+          (開発者ツールでコンソールを確認してください)
+        </p>
+        
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {/* 救済ボタン1: 再読み込み */}
+            <button 
+                onClick={() => window.location.reload()}
+                style={{
+                    padding: '10px 18px', background: '#fff', border: '1px solid #dadce0',
+                    borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#1a73e8',
+                    fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+            >
+                <span>↻</span> 再読み込み
+            </button>
+            
+            {/* 救済ボタン2: 公式サイトへ飛ばす */}
+            <a 
+                href={fallbackUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    padding: '10px 18px', background: '#1a73e8', border: 'none',
+                    borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#fff',
+                    textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+            >
+                Googleマップで開く ↗
+            </a>
+        </div>
+      </div>
+    );
+  }
+
+  // --- ロード中 ---
+  if (!isLoaded) {
+    return (
+      <div style={{ ...style, background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#666', fontSize: '0.9rem' }}>地図を読み込み中...</p>
+      </div>
+    );
+  }
+
+  // --- 正常表示 ---
+  return (
+    <GoogleMap
+      mapContainerStyle={style}
+      center={center}
+      zoom={zoom}
+      options={{
+        streetViewControl: false,
+        mapTypeControl: false,
+        fullscreenControl: false,
+        // AdvancedMarkerElementを利用するためにマップIDを指定
+        mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
+      }}
+      {...props}
+    >
+      {children}
+    </GoogleMap>
+  );
+};
 </file>
 
 <file path="toilet-frontend/src/search.css">
@@ -6230,31 +6352,6 @@ public class ToiletApiController {
 }
 </file>
 
-<file path="backend/backend/src/main/resources/application.properties">
-# PostgreSQL への接続設定
-# ★重要: 環境変数 DB_URL, DB_USER, DB_PASSWORD の設定が必須です（デフォルト値廃止）
-spring.datasource.url=${DB_URL}
-spring.datasource.username=${DB_USER}
-spring.datasource.password=${DB_PASSWORD}
-spring.datasource.driver-class-name=org.postgresql.Driver
-
-# JPA/Hibernate の設定
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-
-# --- CORS / Server Config ---
-# WebConfig.java の @Value("${app.cors.allowed-origins}") と一致させています
-app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:4173,http://localhost:5173}
-app.cors.allow-credentials=${CORS_ALLOW_CREDENTIALS:false}
-
-# ポート設定
-server.port=${PORT:8080}
-
-# --- Flyway Config ---
-spring.flyway.baseline-on-migrate=true
-</file>
-
 <file path="toilet-frontend/src/pages/Register.jsx">
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -6658,6 +6755,38 @@ function Register() {
 }
 
 export default Register;
+</file>
+
+<file path="backend/backend/src/main/resources/application.properties">
+# PostgreSQL への接続設定
+# ★重要: 環境変数 DB_URL, DB_USER, DB_PASSWORD の設定が必須です（デフォルト値廃止）
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USER}
+spring.datasource.password=${DB_PASSWORD}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA/Hibernate の設定
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# --- CORS / Server Config ---
+# WebConfig.java の @Value("${app.cors.allowed-origins}") と一致させています
+app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:4173,http://localhost:5173}
+app.cors.allow-credentials=${CORS_ALLOW_CREDENTIALS:false}
+
+# ポート設定
+server.port=${PORT:8080}
+
+# --- Flyway Config ---
+spring.flyway.baseline-on-migrate=true
+
+# --- Flyway Config ---
+spring.flyway.baseline-on-migrate=true
+
+# 修正3: 管理者認証情報 (環境変数で設定すること)
+app.admin.username=${ADMIN_USERNAME}
+app.admin.password=${ADMIN_PASSWORD}
 </file>
 
 <file path="toilet-frontend/src/hooks/useToiletSearch.js">
