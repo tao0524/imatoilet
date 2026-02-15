@@ -1,12 +1,7 @@
 package com.imatoilet.backend.config;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.lang.NonNull;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
@@ -20,24 +15,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.cors.allow-credentials:false}")
     private boolean allowCredentials;
 
-    @Override
-    @SuppressWarnings("null") // コンパイラのNull警告を抑制（Stream処理の配列変換等で発生するため）
-    public void addCorsMappings(@NonNull CorsRegistry registry) {
-        System.out.println("[CORS] addCorsMappings called. allowedOrigins=" + allowedOrigins);
-        // 安全対策: nullの場合は空文字扱いにする
-        String safeOrigins = Objects.requireNonNullElse(allowedOrigins, "");
+    // 修正3: SecurityConfigにCORS設定を移管したため、
+    // ここでの addCorsMappings 設定は削除（無効化）しました。
+    // SecurityConfig.java 側でCORS設定が一括管理されます。
 
-        String[] origins = Arrays.stream(safeOrigins.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
-
-        // APIだけに適用
-        registry.addMapping("/api/**")
-                .allowedOrigins(origins)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(allowCredentials)
-                .maxAge(3600);
-    }
 }

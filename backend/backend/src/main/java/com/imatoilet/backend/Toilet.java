@@ -3,8 +3,6 @@ package com.imatoilet.backend;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
-
-// ★追加1：リストを使うためのインポート
 import java.util.ArrayList;
 import java.util.List;
 import lombok.EqualsAndHashCode;
@@ -30,7 +28,10 @@ public class Toilet {
     @NotNull(message = "経度は必須です")
     private Double lng;
 
+    // 修正4: バリデーション追加
+    @Size(max = 200, message = "住所は200文字以内で入力してください")
     private String address;
+
     private Boolean publicUse;
     private Boolean diaper;
     private Boolean wheelchair;
@@ -44,9 +45,23 @@ public class Toilet {
     private Boolean open24h;
 
     // --- 新設計フィールド ---
+    // 修正4: バリデーション追加
+    @Pattern(
+        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
+        message = "施設カテゴリの値が不正です"
+    )
     private String facilityCategory;
+    
     private String locationCategory;
+    
+    // 修正4: バリデーション追加
+    @Size(max = 500, message = "設備情報は500文字以内で入力してください")
+    @Pattern(
+        regexp = "^([a-z_0-9]+(,[a-z_0-9]+)*)?$",
+        message = "設備情報の形式が不正です"
+    )
     private String equipment; // ※これはCSV用として残します
+    
     private String usageConditions;
     private String atmosphere;
 
@@ -54,14 +69,14 @@ public class Toilet {
     @Max(value = 5, message = "清潔度は5以下である必要があります")
     private Integer cleanliness;
 
-    // ★追加: 画像URL (TEXT型に対応)
+    // 修正4: バリデーション追加 (XSS対策)
     @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    @Pattern(regexp = "^(https?://.*)?$", message = "画像URLの形式が不正です")
     private String image;
 
-    // ★追加2：equipmentテーブルと繋がるリスト（N+1対策の窓口）
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
-    @ToString.Exclude           // エラー防止（無限ループ対策）
-    @EqualsAndHashCode.Exclude  // エラー防止（無限ループ対策）
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Equipment> equipmentList = new ArrayList<>();
 
     // --- 互換性メソッド ---
