@@ -23,7 +23,6 @@ function Favorites() {
   useEffect(() => {
     async function fetchFavorites() {
       // (1) LocalStorageから「お気に入り登録したIDのリスト」だけ取り出す
-      // 例: ["1", "u_12345"]
       const favIds = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
 
       if (favIds.length === 0) {
@@ -32,27 +31,51 @@ function Favorites() {
         return;
       }
 
-      // (2) すべてのトイレデータ（API + ローカル登録）を用意する
-      let allToilets = [];
-      
-      // バックエンドAPIから取得
-      try {
-        const res = await fetch(API_BASE_URL);
-        const apiData = await res.json();
-        allToilets = [...apiData];
-      } catch (err) {
-        console.error("API Error:", err);
+      // (2) IDを「ローカル用(u_始まり)」と「バックエンド用」に分別
+      const localIds = favIds.filter(id => String(id).startsWith('u_'));
+      const backendIds = favIds.filter(id => !String(id).startsWith('u_'));
+
+      let loadedToilets = [];
+
+      // A. ローカルデータの取得
+      // (全ローカルデータから、お気に入りIDに一致するものだけ抽出)
+      if (localIds.length > 0) {
+        const userToilets = loadUserToilets();
+        const foundLocal = userToilets.filter(t => localIds.includes(String(t.id)));
+        loadedToilets = [...loadedToilets, ...foundLocal];
       }
 
-      // 自分で登録したデータを取得して合体
-      const userData = loadUserToilets();
-      allToilets = [...allToilets, ...userData];
+      // B. バックエンドデータの取得 (ID指定で並列取得)
+      if (backendIds.length > 0) {
+        try {
+          // IDごとに個別にfetchする「約束(Promise)」のリストを作る
+          const promises = backendIds.map(async (id) => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/${id}`);
+              if (res.ok) {
+                return await res.json();
+              }
+              return null; // 削除済みなどで見つからない場合
+            } catch (err) {
+              console.error(`Fetch failed for ID ${id}:`, err);
+              return null;
+            }
+          });
 
-      // (3) 全データの中から、お気に入りIDに含まれるものだけを抽出する (フィルタリング)
-      // 注意: IDの型(数値/文字列)がズレないよう String() で変換して比較
-      const matched = allToilets.filter(t => favIds.includes(String(t.id)));
-      
-      setFavorites(matched);
+          // Promise.allで並列実行し、全ての結果が揃うのを待つ
+          const apiResults = await Promise.all(promises);
+          
+          // null(エラーや削除済み)を除外してリストに追加
+          const foundApi = apiResults.filter(item => item !== null);
+          loadedToilets = [...loadedToilets, ...foundApi];
+
+        } catch (err) {
+          console.error("API Error:", err);
+        }
+      }
+
+      // (3) 結果を画面にセット
+      setFavorites(loadedToilets);
       setLoading(false);
     }
 

@@ -1,6 +1,3 @@
-// 環境変数 (VITE_API_BASE_URL) を読み込んで定数としてエクスポート
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/toilets';
-
 export const STORAGE_KEY = "imatoilet_user_toilets_v1";
 
 // ユーザー登録データを読み込む

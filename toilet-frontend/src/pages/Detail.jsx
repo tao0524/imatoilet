@@ -52,10 +52,16 @@ function Detail() {
         processToiletData(found);
       } else {
         try {
-          const res = await fetch(API_BASE_URL);
-          const data = await res.json();
-          const found = data.find(t => String(t.id) === id);
-          processToiletData(found);
+          // ★変更: IDを指定して1件だけ取得する (N+1問題の解消)
+          const res = await fetch(`${API_BASE_URL}/${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            processToiletData(data);
+          } else {
+            // 404などのエラーハンドリング
+            console.error("Toilet not found");
+            setLoading(false);
+          }
         } catch (error) {
           console.error("Fetch error:", error);
           setLoading(false);
@@ -134,7 +140,7 @@ function Detail() {
   if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
   if (!toilet) return <div className="container" style={{padding:'20px'}}>データが見つかりませんでした。<br /><Link to="/search">検索に戻る</Link></div>;
 
-  const googleMapUrl = `https://maps.google.com/?q=${toilet.lat},${toilet.lng}`;
+  const googleMapUrl = `http://googleusercontent.com/maps.google.com/maps?q=${toilet.lat},${toilet.lng}`;
 
   const categoryMap = {
     station: '駅・交通',

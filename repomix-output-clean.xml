@@ -125,31 +125,6 @@ toilet-frontend/vitest.config.js
 <files>
 This section contains the contents of the repository's files.
 
-<file path="toilet-frontend/public/manifest.webmanifest">
-{
-  "name": "Imatoilet - トイレ検索",
-  "short_name": "Imatoilet",
-  "description": "困った“いま”に、いちばん近いトイレを探せるアプリ",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0056b3",
-  "icons": [
-    {
-      "src": "/pwa-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
-}
-</file>
-
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
 *.cmd text eol=crlf
@@ -703,52 +678,6 @@ public class BackendApplication {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/config/WebConfig.java">
-package com.imatoilet.backend.config;
-
-import java.util.Arrays;
-import java.util.Objects;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.lang.NonNull;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-@Configuration
-public class WebConfig implements WebMvcConfigurer {
-
-    // application.properties の app.cors.allowed-origins を参照
-    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
-    private String allowedOrigins;
-
-    // Cookie/認証情報を送る必要がある場合だけ true
-    @Value("${app.cors.allow-credentials:false}")
-    private boolean allowCredentials;
-
-    @Override
-    @SuppressWarnings("null") // コンパイラのNull警告を抑制（Stream処理の配列変換等で発生するため）
-    public void addCorsMappings(@NonNull CorsRegistry registry) {
-        System.out.println("[CORS] addCorsMappings called. allowedOrigins=" + allowedOrigins);
-        // 安全対策: nullの場合は空文字扱いにする
-        String safeOrigins = Objects.requireNonNullElse(allowedOrigins, "");
-
-        String[] origins = Arrays.stream(safeOrigins.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
-
-        // APIだけに適用
-        registry.addMapping("/api/**")
-                .allowedOrigins(origins)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(allowCredentials)
-                .maxAge(3600);
-    }
-}
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/DataLoader.java">
 package com.imatoilet.backend;
 
@@ -983,127 +912,6 @@ public class HelloController {
     public String deleteToilet(@PathVariable Long id) {
         repository.deleteById(id); // 指定されたIDのデータを削除する
         return "redirect:/";       // 一覧画面に戻る
-    }
-}
-</file>
-
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java">
-package com.imatoilet.backend;
-
-import com.imatoilet.backend.exception.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects; // ★追加: Nullチェック用
-import java.util.Optional;
-
-@Service
-@Transactional
-public class ToiletService {
-
-    @Autowired
-    private ToiletRepository toiletRepository;
-
-    // --- 検索ロジック ---
-    public List<Toilet> searchToilets(
-            Double lat, Double lng, Double radius,
-            String facilityCategory, Integer minCleanliness,
-            String keyword, List<String> equipment
-    ) {
-        // 1. 緯度経度による半径検索
-        if (lat != null && lng != null) {
-            double r = (radius != null) ? radius : 5.0;
-            return toiletRepository.findWithinRadius(lat, lng, r);
-        }
-
-        // 2. 条件検索
-        if (facilityCategory != null || minCleanliness != null || keyword != null || (equipment != null && !equipment.isEmpty())) {
-            
-            List<EquipmentType> types = null;
-            if (equipment != null && !equipment.isEmpty()) {
-                types = new ArrayList<>();
-                for (String eq : equipment) {
-                    try {
-                        types.add(EquipmentType.valueOf(eq));
-                    } catch (IllegalArgumentException e) {
-                        // 無効な値は無視
-                    }
-                }
-                if (types.isEmpty()) types = null;
-            }
-
-            return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
-        }
-
-        // 3. 全件取得
-        return toiletRepository.findAll();
-    }
-
-    // --- ID検索 ---
-    public Toilet getToilet(Long id) {
-        // ★修正: nullチェックを行い、警告を解消
-        Long safeId = Objects.requireNonNull(id, "ID must not be null");
-        
-        return toiletRepository.findById(safeId)
-                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
-    }
-
-    // --- 新規登録 ---
-    public Toilet createToilet(Toilet toilet) {
-        if (toilet.getCleanliness() == null) {
-            toilet.setCleanliness(3);
-        }
-        return toiletRepository.save(toilet);
-    }
-
-    // --- 更新ロジック ---
-    public Toilet updateToilet(Long id, Toilet details) {
-        // getToilet内でnullチェック済みなので、ここはそのまま呼び出すだけで安全
-        Toilet toilet = getToilet(id);
-
-        Optional.ofNullable(details.getName())
-                .filter(s -> !s.isBlank())
-                .ifPresent(toilet::setName);
-
-        Optional.ofNullable(details.getAddress())
-                .filter(s -> !s.isBlank())
-                .ifPresent(toilet::setAddress);
-
-        Optional.ofNullable(details.getDescription())
-                .ifPresent(toilet::setDescription);
-
-        Optional.ofNullable(details.getImage())
-                .ifPresent(toilet::setImage);
-        
-        Optional.ofNullable(details.getFacilityCategory())
-                .ifPresent(toilet::setFacilityCategory);
-
-        Optional.ofNullable(details.getEquipment())
-                .ifPresent(toilet::setEquipment);
-
-        Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
-        Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
-        Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
-
-        Optional.ofNullable(details.getWheelchair()).ifPresent(toilet::setWheelchair);
-        Optional.ofNullable(details.getDiaper()).ifPresent(toilet::setDiaper);
-        Optional.ofNullable(details.getOpen24h()).ifPresent(toilet::setOpen24h);
-
-        return toiletRepository.save(toilet);
-    }
-
-    // --- 削除 ---
-    public void deleteToilet(Long id) {
-        // ★修正: nullチェックを行い、警告を解消
-        Long safeId = Objects.requireNonNull(id, "ID must not be null");
-
-        if (!toiletRepository.existsById(safeId)) {
-            throw new ResourceNotFoundException("トイレ", "id", safeId);
-        }
-        toiletRepository.deleteById(safeId);
     }
 }
 </file>
@@ -1466,6 +1274,31 @@ export default defineConfig([
     },
   },
 ])
+</file>
+
+<file path="toilet-frontend/public/manifest.webmanifest">
+{
+  "name": "Imatoilet - トイレ検索",
+  "short_name": "Imatoilet",
+  "description": "困った“いま”に、いちばん近いトイレを探せるアプリ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0056b3",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
 </file>
 
 <file path="toilet-frontend/public/vite.svg">
@@ -2289,6 +2122,52 @@ describe('utils.js (便利関数)', () => {
 });
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/config/WebConfig.java">
+package com.imatoilet.backend.config;
+
+import java.util.Arrays;
+import java.util.Objects;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    // application.properties の app.cors.allowed-origins を参照
+    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
+    private String allowedOrigins;
+
+    // Cookie/認証情報を送る必要がある場合だけ true
+    @Value("${app.cors.allow-credentials:false}")
+    private boolean allowCredentials;
+
+    @Override
+    @SuppressWarnings("null") // コンパイラのNull警告を抑制（Stream処理の配列変換等で発生するため）
+    public void addCorsMappings(@NonNull CorsRegistry registry) {
+        System.out.println("[CORS] addCorsMappings called. allowedOrigins=" + allowedOrigins);
+        // 安全対策: nullの場合は空文字扱いにする
+        String safeOrigins = Objects.requireNonNullElse(allowedOrigins, "");
+
+        String[] origins = Arrays.stream(safeOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+
+        // APIだけに適用
+        registry.addMapping("/api/**")
+                .allowedOrigins(origins)
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(allowCredentials)
+                .maxAge(3600);
+    }
+}
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Equipment.java">
 package com.imatoilet.backend;
 
@@ -2325,6 +2204,175 @@ public class Equipment {
     public Equipment(Toilet toilet, EquipmentType type) {
         this.toilet = toilet;
         this.type = type;
+    }
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.exception.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors; // ★追加
+
+@Service
+@Transactional
+public class ToiletService {
+
+    @Autowired
+    private ToiletRepository toiletRepository;
+
+    // --- 検索ロジック ---
+    public List<Toilet> searchToilets(
+            Double lat, Double lng, Double radius,
+            String facilityCategory, Integer minCleanliness,
+            String keyword, List<String> equipment
+    ) {
+        // 1. まずベースとなるリストを取得
+        List<Toilet> results;
+
+        if (lat != null && lng != null) {
+            // 位置情報がある場合：半径検索を実行
+            double r = (radius != null) ? radius : 5.0;
+            results = toiletRepository.findWithinRadius(lat, lng, r);
+        } else {
+            // 位置情報がない場合：条件検索または全件取得
+            // EquipmentTypeへの変換
+            List<EquipmentType> types = null;
+            if (equipment != null && !equipment.isEmpty()) {
+                types = new ArrayList<>();
+                for (String eq : equipment) {
+                    try {
+                        types.add(EquipmentType.valueOf(eq));
+                    } catch (IllegalArgumentException e) {
+                        // 無効な値は無視
+                    }
+                }
+                if (types.isEmpty()) types = null;
+            }
+
+            // 条件が一つでもあれば検索、なければ全件
+            if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
+                return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
+            } else {
+                return toiletRepository.findAll();
+            }
+        }
+
+        // 2. 位置情報検索の結果に対して、さらに条件でフィルタリング (Java側で実行)
+        // ※ searchBySpecs相当のロジックをストリームで適用
+        return results.stream()
+            .filter(t -> {
+                // (A) カテゴリ判定
+                if (facilityCategory != null && !facilityCategory.isEmpty()) {
+                    if (!facilityCategory.equals(t.getFacilityCategory())) return false;
+                }
+                
+                // (B) 清潔度判定
+                if (minCleanliness != null) {
+                    if (t.getCleanliness() == null || t.getCleanliness() < minCleanliness) return false;
+                }
+                
+                // (C) キーワード判定 (名前、住所、説明、設備文字列)
+                if (keyword != null && !keyword.isEmpty()) {
+                    String k = keyword.toLowerCase();
+                    boolean matchName = t.getName() != null && t.getName().toLowerCase().contains(k);
+                    boolean matchAddr = t.getAddress() != null && t.getAddress().toLowerCase().contains(k);
+                    boolean matchDesc = t.getDescription() != null && t.getDescription().toLowerCase().contains(k);
+                    boolean matchEq   = t.getEquipment() != null && t.getEquipment().toLowerCase().contains(k);
+                    
+                    if (!matchName && !matchAddr && !matchDesc && !matchEq) return false;
+                }
+                
+                // (D) 設備判定 (AND条件: 指定された設備すべてを持っているか)
+                if (equipment != null && !equipment.isEmpty()) {
+                    // トイレ側の equipment 文字列 (CSV) を取得
+                    String tEq = (t.getEquipment() != null) ? t.getEquipment() : "";
+                    
+                    for (String req : equipment) {
+                        // CSV文字列の中に、指定された設備キーが含まれているか確認
+                        // 例: req="WHEELCHAIR" -> tEq="wheelchair,diaper" (大文字小文字の違いを吸収するか要検討だが、
+                        // 現状のデータは小文字、リクエストは大文字の可能性があるため、toLowerCaseで合わせるのが安全)
+                        
+                        // ※ EquipmentType enum名とDB内の文字列が一致している前提であればそのままでOKですが、
+                        // DBが小文字(wheelchair)、リクエストが大文字(WHEELCHAIR)の場合は変換が必要。
+                        // ここでは安全のため、両方小文字にしてチェックします。
+                        if (!tEq.toLowerCase().contains(req.toLowerCase())) {
+                            return false; 
+                        }
+                    }
+                }
+                
+                return true;
+            })
+            .collect(Collectors.toList());
+    }
+
+    // --- ID検索 ---
+    public Toilet getToilet(Long id) {
+        Long safeId = Objects.requireNonNull(id, "ID must not be null");
+        return toiletRepository.findById(safeId)
+                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
+    }
+
+    // --- 新規登録 ---
+    public Toilet createToilet(Toilet toilet) {
+        if (toilet.getCleanliness() == null) {
+            toilet.setCleanliness(3);
+        }
+        return toiletRepository.save(toilet);
+    }
+
+    // --- 更新ロジック ---
+    public Toilet updateToilet(Long id, Toilet details) {
+        Toilet toilet = getToilet(id);
+
+        Optional.ofNullable(details.getName())
+                .filter(s -> !s.isBlank())
+                .ifPresent(toilet::setName);
+
+        Optional.ofNullable(details.getAddress())
+                .filter(s -> !s.isBlank())
+                .ifPresent(toilet::setAddress);
+
+        Optional.ofNullable(details.getDescription())
+                .ifPresent(toilet::setDescription);
+
+        Optional.ofNullable(details.getImage())
+                .ifPresent(toilet::setImage);
+        
+        Optional.ofNullable(details.getFacilityCategory())
+                .ifPresent(toilet::setFacilityCategory);
+
+        Optional.ofNullable(details.getEquipment())
+                .ifPresent(toilet::setEquipment);
+
+        Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
+        Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
+        Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
+
+        Optional.ofNullable(details.getWheelchair()).ifPresent(toilet::setWheelchair);
+        Optional.ofNullable(details.getDiaper()).ifPresent(toilet::setDiaper);
+        Optional.ofNullable(details.getOpen24h()).ifPresent(toilet::setOpen24h);
+
+        return toiletRepository.save(toilet);
+    }
+
+    // --- 削除 ---
+    public void deleteToilet(Long id) {
+        Long safeId = Objects.requireNonNull(id, "ID must not be null");
+
+        if (!toiletRepository.existsById(safeId)) {
+            throw new ResourceNotFoundException("トイレ", "id", safeId);
+        }
+        toiletRepository.deleteById(safeId);
     }
 }
 </file>
@@ -6133,683 +6181,6 @@ server.port=${PORT:8080}
 spring.flyway.baseline-on-migrate=true
 </file>
 
-<file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-// ★修正: Marker のインポートを削除（独自の AdvancedMarker に置き換えるため）
-import { InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
-import { SafeGoogleMap } from '../../components/SafeGoogleMap';
-import { Link } from 'react-router-dom';
-
-// アイコン
-import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
-import MapIcon from '@mui/icons-material/Map';
-
-const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
-const CONTAINER_STYLE = { width: '100%', height: '100%' };
-
-// --- 既存のSVGピンアイコン生成関数 ---
-const getPinIcon = (toilet) => {
-  let color = '#757575'; 
-  let text = '🚽';
-  switch (toilet.facilityCategory) {
-    case 'station': color = '#ef5350'; text = '🚉'; break;
-    case 'park': color = '#43a047'; text = '🌳'; break;
-    case 'commercial': case 'convenience': color = '#fb8c00'; text = '🛍️'; break;
-    case 'public': color = '#3949ab'; text = '🏢'; break;
-    case 'medical': color = '#e91e63'; text = '🏥'; break;
-    case 'hotel_tourism': color = '#8e24aa'; text = '🏨'; break;
-    default: break;
-  }
-  const wheelchairBadge = toilet.wheelchair ? `
-    <circle cx="32" cy="10" r="9" fill="#1976d2" stroke="white" stroke-width="1.5" />
-    <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
-  ` : '';
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="44" height="52" viewBox="0 0 44 52">
-      <path fill="${color}" d="M20 2C8.95 2 0 10.95 0 22c0 10.5 17 26 19 27.8a1.5 1.5 0 0 0 2 0C23 48 40 32.5 40 22 40 10.95 31.05 2 20 2z" />
-      <circle cx="20" cy="22" r="14" fill="white" opacity="0.3" />
-      <text x="20" y="29" font-size="20" text-anchor="middle" fill="white" font-family="Segoe UI, sans-serif">${text}</text>
-      ${wheelchairBadge}
-    </svg>
-  `.trim();
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-};
-
-// =========================================================================
-// ★新規追加: AdvancedMarkerElement を安全に呼び出すカスタムコンポーネント
-// =========================================================================
-const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
-  const onClickRef = useRef(onClick);
-  
-  // onClick関数が再生成されてもピンが再描画されないようRefに保持
-  useEffect(() => { onClickRef.current = onClick; }, [onClick]);
-
-  useEffect(() => {
-    if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
-
-    let contentEl = document.createElement('div');
-    
-    // 見た目の出し分け（トイレピン、中心ピン、現在地ピン）
-    if (iconSrc) {
-      const img = document.createElement('img');
-      img.src = iconSrc;
-      img.style.width = '44px';
-      img.style.height = '52px';
-      img.style.cursor = 'pointer';
-      contentEl.appendChild(img);
-    } else if (isCenter) {
-      Object.assign(contentEl.style, {
-        width: '16px', height: '16px', backgroundColor: '#FF9800',
-        border: '2px solid white', borderRadius: '50%', opacity: '0.8'
-      });
-    } else if (isRealLocation) {
-      Object.assign(contentEl.style, {
-        width: '24px', height: '24px', backgroundColor: '#4285F4',
-        border: '3px solid white', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-      });
-    }
-
-    const marker = new window.google.maps.marker.AdvancedMarkerElement({
-      map, position, title, content: contentEl,
-    });
-
-    const listener = marker.addListener('gmp-click', () => {
-      if (onClickRef.current) onClickRef.current();
-    });
-
-    return () => {
-      window.google.maps.event.removeListener(listener);
-      marker.map = null;
-    };
-  }, [map, position.lat, position.lng, title, iconSrc, isCenter, isRealLocation]);
-
-  return null;
-};
-// =========================================================================
-
-
-function MapPanel({ filteredToilets, currentLocation, realLocation }) {
-  const [selectedToiletId, setSelectedToiletId] = useState(null);
-  const [directionsResponse, setDirectionsResponse] = useState(null);
-  const [routeInfo, setRouteInfo] = useState("");
-  const [travelMode, setTravelMode] = useState("WALKING");
-  const [originMode, setOriginMode] = useState(realLocation ? 'GPS' : 'CENTER');
-
-  const [map, setMap] = useState(null);
-
-  useEffect(() => { if(realLocation) setOriginMode('GPS'); }, [realLocation]);
-
-  useEffect(() => {
-    setSelectedToiletId(null);
-    setDirectionsResponse(null);
-    setRouteInfo("");
-    setTravelMode("WALKING");
-  }, [currentLocation]);
-
-  const center = useMemo(() => {
-    return currentLocation ? { lat: currentLocation.lat, lng: currentLocation.lng } : DEFAULT_CENTER;
-  }, [currentLocation]);
-
-  const onMapLoad = useCallback((mapInstance) => { setMap(mapInstance); }, []);
-
-  useEffect(() => {
-    if (map && currentLocation) {
-      map.panTo({ lat: currentLocation.lat, lng: currentLocation.lng });
-    }
-  }, [currentLocation, map]);
-
-  const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
-
-  // --- ルート検索ロジック (既存通り維持) ---
-  useEffect(() => {
-    const startPoint = (originMode === 'GPS' && realLocation) ? realLocation : currentLocation;
-
-    if (selectedToilet && startPoint && window.google) {
-      const directionsService = new window.google.maps.DirectionsService();
-      const origin = { lat: startPoint.lat, lng: startPoint.lng };
-      const destination = { lat: selectedToilet.lat, lng: selectedToilet.lng };
-
-      const request = { origin, destination, travelMode: window.google.maps.TravelMode[travelMode] };
-
-      directionsService.route(request, (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          setDirectionsResponse(result);
-          const leg = result.routes[0].legs[0];
-          setRouteInfo(`${leg.duration.text} (${leg.distance.text})`);
-        } else {
-          if (travelMode === "WALKING") {
-            directionsService.route({ ...request, travelMode: window.google.maps.TravelMode.DRIVING }, (resCar, statusCar) => {
-              if (statusCar === window.google.maps.DirectionsStatus.OK) {
-                setDirectionsResponse(resCar);
-                const leg = resCar.routes[0].legs[0];
-                setRouteInfo(`(車) ${leg.duration.text} (${leg.distance.text})`);
-              } else {
-                setDirectionsResponse(null);
-                setRouteInfo("ルートが見つかりません");
-              }
-            });
-          } else {
-            setDirectionsResponse(null);
-            setRouteInfo("ルートが見つかりません");
-          }
-        }
-      });
-    } else {
-      setDirectionsResponse(null);
-      setRouteInfo("");
-    }
-  }, [selectedToiletId, realLocation, selectedToilet, travelMode, originMode]); 
-
-  return (
-    <section className="panel panel--map">
-      <header className="panel-head">
-        <h2 className="panel-title">地図</h2>
-      </header>
-      
-      <div className="map-area" style={{ position: 'relative' }}>
-        
-        {selectedToilet && (
-          <div className="map-controls-overlay">
-            <div className="map-controls-row">
-              <button className={`map-ctrl-btn ${travelMode === "WALKING" ? 'active-walk' : ''}`} onClick={() => setTravelMode("WALKING")}>
-                <DirectionsWalkIcon fontSize="small" /> 徒歩
-              </button>
-              <button className={`map-ctrl-btn ${travelMode === "DRIVING" ? 'active-drive' : ''}`} onClick={() => setTravelMode("DRIVING")}>
-                <DirectionsCarIcon fontSize="small" /> 車
-              </button>
-            </div>
-            <div className="map-controls-row">
-              <button className={`map-ctrl-btn ${originMode === "GPS" ? 'active-gps' : ''}`} disabled={!realLocation} onClick={() => setOriginMode("GPS")}>
-                <MyLocationIcon fontSize="small" /> 現在地から
-              </button>
-              <button className={`map-ctrl-btn ${originMode === "CENTER" ? 'active-center' : ''}`} onClick={() => setOriginMode("CENTER")}>
-                <MapIcon fontSize="small" /> 地図中心から
-              </button>
-            </div>
-          </div>
-        )}
-
-        <SafeGoogleMap center={center} zoom={14} style={CONTAINER_STYLE} onLoad={onMapLoad}>
-          
-          {/* ★修正: 検索中心のピン */}
-          {currentLocation && (
-            <AdvancedMarker
-              map={map}
-              position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
-              title={`地図の中心: ${currentLocation.address || ''}`}
-              isCenter={true}
-            />
-          )}
-
-          {/* ★修正: 現在地のピン */}
-          {realLocation && (
-            <AdvancedMarker
-              map={map}
-              position={{ lat: realLocation.lat, lng: realLocation.lng }}
-              title="あなたの現在地"
-              isRealLocation={true}
-            />
-          )}
-
-          {/* ルート表示 */}
-          {directionsResponse && (
-            <DirectionsRenderer
-              options={{
-                directions: directionsResponse,
-                suppressMarkers: true,
-                polylineOptions: {
-                  strokeColor: travelMode === 'WALKING' ? "#4285F4" : "#FF5252",
-                  strokeWeight: 5,
-                  strokeOpacity: 0.7
-                }
-              }}
-            />
-          )}
-
-          {/* ★修正: トイレのピン */}
-          {filteredToilets.map((t) => (
-            <AdvancedMarker
-              key={t.id}
-              map={map}
-              position={{ lat: t.lat, lng: t.lng }}
-              title={t.name}
-              iconSrc={getPinIcon(t)}
-              onClick={() => setSelectedToiletId(t.id)}
-            />
-          ))}
-
-          {/* InfoWindow は既存のまま */}
-          {selectedToilet && (
-            <InfoWindow
-              position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
-              onCloseClick={() => setSelectedToiletId(null)}
-              options={{ pixelOffset: { width: 0, height: -52 } }}
-            >
-              <div style={{ padding: '4px', maxWidth: '220px' }}>
-                <b style={{ fontSize: '1rem', display:'block', marginBottom:'4px' }}>{selectedToilet.name}</b>
-                
-                {routeInfo && (
-                  <div style={{ 
-                    background: travelMode === 'WALKING' ? '#e3f2fd' : '#ffebee', 
-                    color: travelMode === 'WALKING' ? '#0d47a1' : '#c62828', 
-                    padding:'4px 8px', borderRadius:'4px', fontSize:'0.85rem', fontWeight:'bold', 
-                    marginBottom:'8px', display:'flex', alignItems:'center', gap:'4px'
-                  }}>
-                    {travelMode === 'WALKING' ? <DirectionsWalkIcon fontSize="small"/> : <DirectionsCarIcon fontSize="small"/>}
-                    {routeInfo}
-                  </div>
-                )}
-                
-                <div style={{ margin: '6px 0', fontSize: '0.85rem', color: '#444' }}>
-                   {'⭐'.repeat(selectedToilet.cleanliness || 3)}
-                </div>
-
-                <div style={{ marginBottom: '8px' }}>
-                  {selectedToilet.wheelchair && <span title="車椅子" style={{ marginRight:4 }}>♿</span>}
-                  {selectedToilet.diaper && <span title="オムツ" style={{ marginRight:4 }}>👶</span>}
-                  {selectedToilet.open24h && <span title="24時間">🕒</span>}
-                </div>
-
-                <Link 
-                  to={`/detail/${selectedToilet.id}`}
-                  style={{ 
-                    display: 'block', textAlign: 'center', background: '#1e88e5', 
-                    color: 'white', padding: '8px', borderRadius: '6px', 
-                    textDecoration: 'none', fontSize: '0.9rem', fontWeight:'bold'
-                  }}
-                >
-                  詳細を見る
-                </Link>
-                
-                <a href={`http://googleusercontent.com/maps.google.com/?q=${selectedToilet.lat},${selectedToilet.lng}`} 
-                   target="_blank" rel="noreferrer"
-                   style={{ 
-                     display: 'block', textAlign: 'center', marginTop: '8px',
-                     fontSize: '0.75rem', color: '#666', textDecoration: 'underline'
-                   }}
-                >
-                  Googleマップアプリで開く
-                </a>
-              </div>
-            </InfoWindow>
-          )}
-        </SafeGoogleMap>
-      </div>
-    </section>
-  );
-}
-
-export default MapPanel;
-</file>
-
-<file path="toilet-frontend/src/hooks/useToiletSearch.js">
-import { useState, useEffect, useRef } from 'react'; // ★ useRefを追加
-import { useSearchParams } from 'react-router-dom';
-import { loadUserToilets, calcDistance } from '../utils';
-import { API_BASE_URL } from '../config/api';
-
-const HISTORY_KEY = 'imatoilet_search_history';
-
-export const useToiletSearch = () => {
-  const [searchParams] = useSearchParams();
-
-  const [filteredToilets, setFilteredToilets] = useState([]);
-  
-  // ★追加: 二重実行防止用のガード
-  const hasInitialized = useRef(false);
-
-  const [currentLocation, setCurrentLocation] = useState(() => {
-    const urlLat = searchParams.get('lat');
-    const urlLng = searchParams.get('lng');
-    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: "現在地" };
-    
-    const saved = sessionStorage.getItem('imatoilet_loc');
-    return saved ? JSON.parse(saved) : null;
-  });
-  
-  const [realLocation, setRealLocation] = useState(() => {
-    const urlLat = searchParams.get('lat');
-    const urlLng = searchParams.get('lng');
-    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: "現在地" };
-    
-    const saved = sessionStorage.getItem('imatoilet_realLoc');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [placeQuery, setPlaceQuery] = useState(() => {
-    if (searchParams.has('lat')) return ""; 
-    return sessionStorage.getItem('imatoilet_query') || "";
-  });
-  
-  const [searchStatus, setSearchStatus] = useState(() => {
-    if (searchParams.has('lat')) return "現在地周辺を表示中";
-    return sessionStorage.getItem('imatoilet_status') || "";
-  });
-
-  const [searchHistory, setSearchHistory] = useState([]);
-  const [searchTrigger, setSearchTrigger] = useState(0);
-
-  useEffect(() => {
-    if (currentLocation) sessionStorage.setItem('imatoilet_loc', JSON.stringify(currentLocation));
-    else sessionStorage.removeItem('imatoilet_loc');
-  }, [currentLocation]);
-
-  useEffect(() => {
-    if (realLocation) sessionStorage.setItem('imatoilet_realLoc', JSON.stringify(realLocation));
-    else sessionStorage.removeItem('imatoilet_realLoc');
-  }, [realLocation]);
-
-  useEffect(() => {
-    sessionStorage.setItem('imatoilet_query', placeQuery);
-  }, [placeQuery]);
-
-  useEffect(() => {
-    sessionStorage.setItem('imatoilet_status', searchStatus);
-  }, [searchStatus]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(HISTORY_KEY);
-      if (raw) setSearchHistory(JSON.parse(raw));
-    } catch (e) { console.error(e); }
-  }, []);
-
-  // ★修正: 初期ロード用 useEffect にガードを追加
-  useEffect(() => {
-    // 開発モード(StrictMode)での二重実行を防ぐ
-    if (hasInitialized.current) {
-      return;
-    }
-    hasInitialized.current = true;
-
-    if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
-      handleCurrentLocation();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 履歴追加
-  const addToHistory = (query) => {
-    if (!query) return;
-    setSearchHistory(prev => {
-      const newHistory = [query, ...prev.filter(h => h !== query)].slice(0, 5);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
-      return newHistory;
-    });
-  };
-
-  const handlePlaceSearch = async () => {
-    if (!placeQuery) return;
-    
-    // API読み込み前のエラーを防ぐ厳格なチェック
-    if (!window.google || !window.google.maps || !window.google.maps.Geocoder || !window.google.maps.places) {
-      setSearchStatus("地図データを読み込み中です。数秒待ってから再試行してください");
-      return;
-    }
-
-    setSearchStatus("Googleマップで場所を解析中...");
-    addToHistory(placeQuery);
-
-    try {
-      // Places API (New) の searchByText を使用
-      const request = {
-        textQuery: placeQuery,
-        // 新APIでは必要なフィールドだけを厳密に指定します
-        fields: ['displayName', 'location', 'formattedAddress', 'rating', 'userRatingCount'],
-        language: 'ja',
-      };
-
-      // 古いコールバック方式から、モダンな async/await (Promise) 方式へ移行
-      const { places } = await window.google.maps.places.Place.searchByText(request);
-
-      if (places && places.length > 0) {
-        const hit = places[0];
-        // 新APIでは geometry.location ではなく直接 location にアクセスします
-        const lat = hit.location.lat();
-        const lng = hit.location.lng();
-        
-        // name -> displayName, formatted_address -> formattedAddress
-        setCurrentLocation({ lat, lng, address: hit.formattedAddress });
-        
-        let statusMsg = `「${hit.displayName}」周辺`;
-        if (hit.rating) statusMsg += ` (★${hit.rating})`;
-        statusMsg += " を表示中";
-        
-        setSearchStatus(statusMsg);
-      } else {
-        // 既存ロジック維持：見つからなかった場合はジオコーダー（住所検索）にフォールバック
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ address: placeQuery }, (geoResults, geoStatus) => {
-          if (geoStatus === 'OK' && geoResults[0]) {
-            const geoHit = geoResults[0];
-            setCurrentLocation({ lat: geoHit.geometry.location.lat(), lng: geoHit.geometry.location.lng(), address: geoHit.formatted_address });
-            setSearchStatus(`住所「${geoHit.formatted_address}」周辺を表示`);
-          } else {
-            setSearchStatus("地図上に見つかりません。登録データから検索します...");
-            setCurrentLocation(null);
-            setSearchTrigger(prev => prev + 1);
-          }
-        });
-      }
-    } catch (e) {
-      console.error(e);
-      setSearchStatus("検索エラー。登録データから探します...");
-      setCurrentLocation(null);
-      setSearchTrigger(prev => prev + 1);
-    }
-  };
-
-  // --- 現在地取得 & 逆ジオコーディング ---
-  const handleCurrentLocation = () => {
-    setSearchStatus("現在地を取得中...");
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          
-          // Geocoderが完全に存在するときだけ逆ジオコーディング（住所取得）を行う
-          if (window.google && window.google.maps && window.google.maps.Geocoder) {
-            const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-              let addr = "現在地";
-              if (status === 'OK' && results[0]) {
-                addr = results[0].address_components
-                  .filter(c => c.types.includes('locality') || c.types.includes('sublocality') || c.types.includes('neighborhood'))
-                  .map(c => c.long_name).reverse().join('') || results[0].formatted_address;
-                setSearchStatus(`現在地: ${addr} 付近`);
-              } else {
-                setSearchStatus("現在地周辺を表示中");
-              }
-              const loc = { lat, lng, address: addr };
-              setCurrentLocation(loc);
-              setRealLocation(loc);
-            });
-          } else {
-            // APIの読み込みが間に合わなかった場合は、座標だけを使って検索を実行する（エラーで止めない）
-            const loc = { lat, lng, address: "現在地" };
-            setCurrentLocation(loc);
-            setRealLocation(loc);
-            setSearchStatus("現在地周辺を表示中");
-          }
-        },
-        (err) => {
-          console.error(err);
-          setSearchStatus("現在地の取得に失敗しました");
-        }
-      );
-    } else {
-      setSearchStatus("ブラウザが位置情報に対応していません");
-    }
-  };
-
-  const handleKeywordSearch = () => {
-    if (!placeQuery) return;
-    addToHistory(placeQuery);
-    setSearchStatus("キーワードで登録データを検索中...");
-    setCurrentLocation(null);
-    setSearchTrigger(prev => prev + 1);
-  };
-
-  const handleHistorySearch = (query) => {
-    setPlaceQuery(query);
-    setTimeout(() => {
-        const btn = document.querySelector('.btn-icon-side[title="地図移動"]'); 
-        if(btn) btn.click();
-    }, 100);
-  };
-
-  // --- データ取得・フィルタリング ---
-  useEffect(() => {
-    async function fetchData() {
-      // API呼び出し部分 (省略なしでそのまま維持)
-      if (!currentLocation && !placeQuery && searchTrigger === 0) return;
-
-      let apiData = [];
-      let isKeywordSearch = !currentLocation; 
-
-      try {
-        const params = new URLSearchParams();
-
-        if (currentLocation) {
-          params.append('lat', currentLocation.lat);
-          params.append('lng', currentLocation.lng);
-          params.append('radius', '5.0');
-        } else {
-          if (placeQuery) params.append('keyword', placeQuery);
-          // (フィルタパラメータの構築)
-           const filters = {
-             facilityCategory: searchParams.get('facilityCategory'),
-             wheelchair: searchParams.get('wheelchair') === 'true',
-             diaper: searchParams.get('diaper') === 'true',
-             open24h: searchParams.get('open24h') === 'true',
-             ostomate: searchParams.get('ostomate') === 'true',
-             nursing_room: searchParams.get('nursing_room') === 'true',
-             washlet: searchParams.get('washlet') === 'true',
-             visual_support: searchParams.get('visual_support') === 'true',
-             gender_separated: searchParams.get('gender_separated') === 'true',
-             unisex: searchParams.get('unisex') === 'true',
-             free: searchParams.get('free') === 'true',
-             paid: searchParams.get('paid') === 'true',
-             parking: searchParams.get('parking') === 'true'
-          };
-          // ... パラメータ追加ロジック ...
-          if (filters.facilityCategory) params.append('facilityCategory', filters.facilityCategory);
-          if (filters.wheelchair) params.append('equipment', 'WHEELCHAIR');
-          if (filters.diaper) params.append('equipment', 'DIAPER');
-          if (filters.open24h) params.append('equipment', 'OPEN_24H');
-          if (filters.ostomate) params.append('equipment', 'OSTOMATE');
-          if (filters.nursing_room) params.append('equipment', 'NURSING_ROOM');
-          if (filters.washlet) params.append('equipment', 'WASHLET');
-          if (filters.visual_support) params.append('equipment', 'VISUAL_SUPPORT');
-          if (filters.gender_separated) params.append('equipment', 'GENDER_SEPARATED');
-          if (filters.unisex) params.append('equipment', 'UNISEX');
-          if (filters.free) params.append('equipment', 'FREE');
-          if (filters.paid) params.append('equipment', 'PAID');
-          if (filters.parking) params.append('equipment', 'PARKING');
-        }
-
-        const queryString = params.toString();
-        const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
-
-        const res = await fetch(url);
-        if (res.ok) {
-          apiData = await res.json();
-        }
-      } catch (err) {
-        console.error("API Fetch Error:", err);
-      }
-
-      const localData = loadUserToilets();
-      const merged = [...apiData, ...localData];
-      
-      const filters = {
-        wheelchair: searchParams.get('wheelchair') === 'true',
-        diaper: searchParams.get('diaper') === 'true',
-        open24h: searchParams.get('open24h') === 'true',
-        public: searchParams.get('public') === 'true',
-        babyChair: searchParams.get('babyChair') === 'true',
-        facilityCategory: searchParams.get('facilityCategory') || '',
-        ostomate: searchParams.get('ostomate') === 'true',
-        nursing_room: searchParams.get('nursing_room') === 'true',
-        washlet: searchParams.get('washlet') === 'true',
-        visual_support: searchParams.get('visual_support') === 'true',
-        gender_separated: searchParams.get('gender_separated') === 'true',
-        unisex: searchParams.get('unisex') === 'true',
-        free: searchParams.get('free') === 'true',
-        paid: searchParams.get('paid') === 'true',
-        parking: searchParams.get('parking') === 'true',
-      };
-
-      let result = merged.filter(t => {
-          if (filters.wheelchair && !t.wheelchair) return false;
-          if (filters.diaper && !t.diaper) return false;
-          if (filters.open24h && !t.open24h) return false;
-          if (filters.public && !t.publicUse) return false;
-          if (filters.facilityCategory && (!t.facilityCategory || t.facilityCategory !== filters.facilityCategory)) return false;
-          const eqStr = t.equipment || ""; 
-          if (filters.ostomate && !eqStr.includes('ostomate')) return false;
-          if (filters.nursing_room && !eqStr.includes('nursing_room')) return false;
-          if (filters.washlet && !eqStr.includes('washlet')) return false;
-          if (filters.visual_support && !eqStr.includes('visual_support')) return false;
-          if (filters.gender_separated && !eqStr.includes('gender_separated')) return false;
-          if (filters.unisex && !eqStr.includes('unisex')) return false;
-          if (filters.free && !eqStr.includes('free')) return false;
-          if (filters.paid && !eqStr.includes('paid')) return false;
-          if (filters.parking && !eqStr.includes('parking')) return false;
-          return true;
-      });
-
-      if (isKeywordSearch && placeQuery) {
-        const lowerQ = placeQuery.toLowerCase(); 
-        result = result.filter(t => {
-          const n = (t.name || "").toLowerCase();
-          const a = (t.address || "").toLowerCase();
-          const d = (t.description || "").toLowerCase();
-          return n.includes(lowerQ) || a.includes(lowerQ) || d.includes(lowerQ);
-        });
-      }
-
-      if (currentLocation) {
-        result = result.map(t => {
-          const dist = calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng);
-          return { ...t, distance: dist };
-        }).sort((a, b) => a.distance - b.distance);
-      }
-
-      setFilteredToilets(result);
-
-      if (result.length > 0) {
-        setSearchStatus(prev => prev.includes('検索中') || prev.includes('読み込み中') ? `${result.length}件のトイレが見つかりました` : prev);
-      } else {
-         if(!searchStatus.includes('付近')) {
-            setSearchStatus("条件に一致するトイレは見つかりませんでした");
-         }
-      }
-    }
-
-    fetchData();
-  }, [searchParams, currentLocation, searchTrigger]); 
-
-  return {
-    filteredToilets,
-    currentLocation, // 地図の中心
-    realLocation,    // 本当のGPS現在地
-    placeQuery,
-    setPlaceQuery,
-    searchStatus,
-    handlePlaceSearch,
-    handleCurrentLocation,
-    handleKeywordSearch,
-    searchHistory,
-    handleHistorySearch
-  };
-};
-</file>
-
 <file path="toilet-frontend/src/pages/Register.jsx">
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -7215,6 +6586,690 @@ function Register() {
 export default Register;
 </file>
 
+<file path="toilet-frontend/src/hooks/useToiletSearch.js">
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { loadUserToilets, calcDistance } from '../utils';
+import { API_BASE_URL } from '../config/api';
+
+const HISTORY_KEY = 'imatoilet_search_history';
+
+export const useToiletSearch = () => {
+  const [searchParams] = useSearchParams();
+
+  const [filteredToilets, setFilteredToilets] = useState([]);
+  
+  // 二重実行防止用のガード
+  const hasInitialized = useRef(false);
+
+  const [currentLocation, setCurrentLocation] = useState(() => {
+    const urlLat = searchParams.get('lat');
+    const urlLng = searchParams.get('lng');
+    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: "現在地" };
+    
+    const saved = sessionStorage.getItem('imatoilet_loc');
+    return saved ? JSON.parse(saved) : null;
+  });
+  
+  const [realLocation, setRealLocation] = useState(() => {
+    const urlLat = searchParams.get('lat');
+    const urlLng = searchParams.get('lng');
+    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: "現在地" };
+    
+    const saved = sessionStorage.getItem('imatoilet_realLoc');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [placeQuery, setPlaceQuery] = useState(() => {
+    if (searchParams.has('lat')) return ""; 
+    return sessionStorage.getItem('imatoilet_query') || "";
+  });
+  
+  const [searchStatus, setSearchStatus] = useState(() => {
+    if (searchParams.has('lat')) return "現在地周辺を表示中";
+    return sessionStorage.getItem('imatoilet_status') || "";
+  });
+
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [searchTrigger, setSearchTrigger] = useState(0);
+
+  // --- セッション保存 ---
+  useEffect(() => {
+    if (currentLocation) sessionStorage.setItem('imatoilet_loc', JSON.stringify(currentLocation));
+    else sessionStorage.removeItem('imatoilet_loc');
+  }, [currentLocation]);
+
+  useEffect(() => {
+    if (realLocation) sessionStorage.setItem('imatoilet_realLoc', JSON.stringify(realLocation));
+    else sessionStorage.removeItem('imatoilet_realLoc');
+  }, [realLocation]);
+
+  useEffect(() => {
+    sessionStorage.setItem('imatoilet_query', placeQuery);
+  }, [placeQuery]);
+
+  useEffect(() => {
+    sessionStorage.setItem('imatoilet_status', searchStatus);
+  }, [searchStatus]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (raw) setSearchHistory(JSON.parse(raw));
+    } catch (e) { console.error(e); }
+  }, []);
+
+  // --- 初期化ロジック ---
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
+      handleCurrentLocation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 履歴追加
+  const addToHistory = (query) => {
+    if (!query) return;
+    setSearchHistory(prev => {
+      const newHistory = [query, ...prev.filter(h => h !== query)].slice(0, 5);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+
+  // --- 【修正済み】場所検索 (Classic API / asyncなし) ---
+  const handlePlaceSearch = (overrideQuery) => {
+    const query = (typeof overrideQuery === 'string') ? overrideQuery : placeQuery;
+    if (!query) return;
+    
+    // API読み込みチェック
+    if (!window.google || !window.google.maps || !window.google.maps.places) {
+      setSearchStatus("地図データを読み込み中です。少し待ってから再試行してください");
+      return;
+    }
+
+    setSearchStatus("Googleマップで場所を解析中...");
+    addToHistory(query);
+
+    // 1. PlacesService (Classic API) を使用
+    // ダミーのdiv要素を渡して初期化（地図インスタンス不要）
+    const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+
+    const request = {
+      query: query,
+      fields: ['name', 'geometry', 'formatted_address', 'rating'],
+    };
+
+    // コールバック方式なので await は使いません
+    service.textSearch(request, (results, status) => {
+      if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+        const hit = results[0];
+        const lat = hit.geometry.location.lat();
+        const lng = hit.geometry.location.lng();
+
+        setCurrentLocation({ 
+          lat, 
+          lng, 
+          address: hit.formatted_address || hit.name 
+        });
+
+        let statusMsg = `「${hit.name}」周辺`;
+        if (hit.rating) statusMsg += ` (★${hit.rating})`;
+        statusMsg += " を表示中";
+        setSearchStatus(statusMsg);
+        
+      } else {
+        // 2. 失敗時は Geocoder にフォールバック
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ address: query }, (geoResults, geoStatus) => {
+          if (geoStatus === 'OK' && geoResults[0]) {
+            const geoHit = geoResults[0];
+            setCurrentLocation({
+              lat: geoHit.geometry.location.lat(),
+              lng: geoHit.geometry.location.lng(),
+              address: geoHit.formatted_address
+            });
+            setSearchStatus(`住所「${geoHit.formatted_address}」周辺を表示`);
+          } else {
+            console.warn("Search failed:", status, geoStatus);
+            setSearchStatus("地図上に見つかりません。登録データから検索します...");
+            setCurrentLocation(null);
+            setSearchTrigger(prev => prev + 1);
+          }
+        });
+      }
+    });
+  };
+
+  // --- 現在地取得 ---
+  const handleCurrentLocation = () => {
+    setSearchStatus("現在地を取得中...");
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          
+          if (window.google && window.google.maps && window.google.maps.Geocoder) {
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+              let addr = "現在地";
+              if (status === 'OK' && results[0]) {
+                addr = results[0].address_components
+                  .filter(c => c.types.includes('locality') || c.types.includes('sublocality') || c.types.includes('neighborhood'))
+                  .map(c => c.long_name).reverse().join('') || results[0].formatted_address;
+                setSearchStatus(`現在地: ${addr} 付近`);
+              } else {
+                setSearchStatus("現在地周辺を表示中");
+              }
+              const loc = { lat, lng, address: addr };
+              setCurrentLocation(loc);
+              setRealLocation(loc);
+            });
+          } else {
+            const loc = { lat, lng, address: "現在地" };
+            setCurrentLocation(loc);
+            setRealLocation(loc);
+            setSearchStatus("現在地周辺を表示中");
+          }
+        },
+        (err) => {
+          console.error(err);
+          setSearchStatus("現在地の取得に失敗しました");
+        }
+      );
+    } else {
+      setSearchStatus("ブラウザが位置情報に対応していません");
+    }
+  };
+
+  const handleKeywordSearch = () => {
+    if (!placeQuery) return;
+    addToHistory(placeQuery);
+    setSearchStatus("キーワードで登録データを検索中...");
+    setCurrentLocation(null);
+    setSearchTrigger(prev => prev + 1);
+  };
+
+  // --- 【修正済み】履歴検索 (直接呼び出し) ---
+  const handleHistorySearch = (query) => {
+    setPlaceQuery(query);
+    // DOM操作ではなく、直接関数を呼び出します
+    handlePlaceSearch(query);
+  };
+
+  // --- データ取得 (fetchDataはasync/awaitを使ってOK) ---
+  useEffect(() => {
+    async function fetchData() {
+      if (!currentLocation && !placeQuery && searchTrigger === 0) return;
+
+      let apiData = [];
+      let isKeywordSearch = !currentLocation; 
+
+      try {
+        const params = new URLSearchParams();
+
+        if (currentLocation) {
+          params.append('lat', currentLocation.lat);
+          params.append('lng', currentLocation.lng);
+          params.append('radius', '5.0');
+        } else {
+          if (placeQuery) params.append('keyword', placeQuery);
+          
+          // フィルタパラメータ
+           const filters = {
+             facilityCategory: searchParams.get('facilityCategory'),
+             wheelchair: searchParams.get('wheelchair') === 'true',
+             diaper: searchParams.get('diaper') === 'true',
+             open24h: searchParams.get('open24h') === 'true',
+             ostomate: searchParams.get('ostomate') === 'true',
+             nursing_room: searchParams.get('nursing_room') === 'true',
+             washlet: searchParams.get('washlet') === 'true',
+             visual_support: searchParams.get('visual_support') === 'true',
+             gender_separated: searchParams.get('gender_separated') === 'true',
+             unisex: searchParams.get('unisex') === 'true',
+             free: searchParams.get('free') === 'true',
+             paid: searchParams.get('paid') === 'true',
+             parking: searchParams.get('parking') === 'true'
+          };
+          
+          if (filters.facilityCategory) params.append('facilityCategory', filters.facilityCategory);
+          if (filters.wheelchair) params.append('equipment', 'WHEELCHAIR');
+          if (filters.diaper) params.append('equipment', 'DIAPER');
+          if (filters.open24h) params.append('equipment', 'OPEN_24H');
+          if (filters.ostomate) params.append('equipment', 'OSTOMATE');
+          if (filters.nursing_room) params.append('equipment', 'NURSING_ROOM');
+          if (filters.washlet) params.append('equipment', 'WASHLET');
+          if (filters.visual_support) params.append('equipment', 'VISUAL_SUPPORT');
+          if (filters.gender_separated) params.append('equipment', 'GENDER_SEPARATED');
+          if (filters.unisex) params.append('equipment', 'UNISEX');
+          if (filters.free) params.append('equipment', 'FREE');
+          if (filters.paid) params.append('equipment', 'PAID');
+          if (filters.parking) params.append('equipment', 'PARKING');
+        }
+
+        const queryString = params.toString();
+        const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
+
+        const res = await fetch(url);
+        if (res.ok) {
+          apiData = await res.json();
+        }
+      } catch (err) {
+        console.error("API Fetch Error:", err);
+      }
+
+      const localData = loadUserToilets();
+      const merged = [...apiData, ...localData];
+      
+      const filters = {
+        wheelchair: searchParams.get('wheelchair') === 'true',
+        diaper: searchParams.get('diaper') === 'true',
+        open24h: searchParams.get('open24h') === 'true',
+        public: searchParams.get('public') === 'true',
+        babyChair: searchParams.get('babyChair') === 'true',
+        facilityCategory: searchParams.get('facilityCategory') || '',
+        ostomate: searchParams.get('ostomate') === 'true',
+        nursing_room: searchParams.get('nursing_room') === 'true',
+        washlet: searchParams.get('washlet') === 'true',
+        visual_support: searchParams.get('visual_support') === 'true',
+        gender_separated: searchParams.get('gender_separated') === 'true',
+        unisex: searchParams.get('unisex') === 'true',
+        free: searchParams.get('free') === 'true',
+        paid: searchParams.get('paid') === 'true',
+        parking: searchParams.get('parking') === 'true',
+      };
+
+      let result = merged.filter(t => {
+          if (filters.wheelchair && !t.wheelchair) return false;
+          if (filters.diaper && !t.diaper) return false;
+          if (filters.open24h && !t.open24h) return false;
+          if (filters.public && !t.publicUse) return false;
+          if (filters.facilityCategory && (!t.facilityCategory || t.facilityCategory !== filters.facilityCategory)) return false;
+          const eqStr = t.equipment || ""; 
+          if (filters.ostomate && !eqStr.includes('ostomate')) return false;
+          if (filters.nursing_room && !eqStr.includes('nursing_room')) return false;
+          if (filters.washlet && !eqStr.includes('washlet')) return false;
+          if (filters.visual_support && !eqStr.includes('visual_support')) return false;
+          if (filters.gender_separated && !eqStr.includes('gender_separated')) return false;
+          if (filters.unisex && !eqStr.includes('unisex')) return false;
+          if (filters.free && !eqStr.includes('free')) return false;
+          if (filters.paid && !eqStr.includes('paid')) return false;
+          if (filters.parking && !eqStr.includes('parking')) return false;
+          return true;
+      });
+
+      if (isKeywordSearch && placeQuery) {
+        const lowerQ = placeQuery.toLowerCase(); 
+        result = result.filter(t => {
+          const n = (t.name || "").toLowerCase();
+          const a = (t.address || "").toLowerCase();
+          const d = (t.description || "").toLowerCase();
+          return n.includes(lowerQ) || a.includes(lowerQ) || d.includes(lowerQ);
+        });
+      }
+
+      if (currentLocation) {
+        result = result.map(t => {
+          const dist = calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng);
+          return { ...t, distance: dist };
+        }).sort((a, b) => a.distance - b.distance);
+      }
+
+      setFilteredToilets(result);
+
+      if (result.length > 0) {
+        setSearchStatus(prev => prev.includes('検索中') || prev.includes('読み込み中') ? `${result.length}件のトイレが見つかりました` : prev);
+      } else {
+         if(!searchStatus.includes('付近')) {
+            setSearchStatus("条件に一致するトイレは見つかりませんでした");
+         }
+      }
+    }
+
+    fetchData();
+  }, [searchParams, currentLocation, searchTrigger]); 
+
+  return {
+    filteredToilets,
+    currentLocation,
+    realLocation,
+    placeQuery,
+    setPlaceQuery,
+    searchStatus,
+    handlePlaceSearch,
+    handleCurrentLocation,
+    handleKeywordSearch,
+    searchHistory,
+    handleHistorySearch
+  };
+};
+</file>
+
+<file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+// ★修正: Marker のインポートを削除（独自の AdvancedMarker に置き換えるため）
+import { InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
+import { SafeGoogleMap } from '../../components/SafeGoogleMap';
+import { Link } from 'react-router-dom';
+
+// アイコン
+import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import MapIcon from '@mui/icons-material/Map';
+
+const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
+const CONTAINER_STYLE = { width: '100%', height: '100%' };
+
+// --- 既存のSVGピンアイコン生成関数 ---
+const getPinIcon = (toilet) => {
+  let color = '#757575'; 
+  let text = '🚽';
+  switch (toilet.facilityCategory) {
+    case 'station': color = '#ef5350'; text = '🚉'; break;
+    case 'park': color = '#43a047'; text = '🌳'; break;
+    case 'commercial': case 'convenience': color = '#fb8c00'; text = '🛍️'; break;
+    case 'public': color = '#3949ab'; text = '🏢'; break;
+    case 'medical': color = '#e91e63'; text = '🏥'; break;
+    case 'hotel_tourism': color = '#8e24aa'; text = '🏨'; break;
+    default: break;
+  }
+  const wheelchairBadge = toilet.wheelchair ? `
+    <circle cx="32" cy="10" r="9" fill="#1976d2" stroke="white" stroke-width="1.5" />
+    <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
+  ` : '';
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="44" height="52" viewBox="0 0 44 52">
+      <path fill="${color}" d="M20 2C8.95 2 0 10.95 0 22c0 10.5 17 26 19 27.8a1.5 1.5 0 0 0 2 0C23 48 40 32.5 40 22 40 10.95 31.05 2 20 2z" />
+      <circle cx="20" cy="22" r="14" fill="white" opacity="0.3" />
+      <text x="20" y="29" font-size="20" text-anchor="middle" fill="white" font-family="Segoe UI, sans-serif">${text}</text>
+      ${wheelchairBadge}
+    </svg>
+  `.trim();
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
+// =========================================================================
+// ★新規追加: AdvancedMarkerElement を安全に呼び出すカスタムコンポーネント
+// =========================================================================
+const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
+  const onClickRef = useRef(onClick);
+  
+  // onClick関数が再生成されてもピンが再描画されないようRefに保持
+  useEffect(() => { onClickRef.current = onClick; }, [onClick]);
+
+  useEffect(() => {
+    if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
+
+    let contentEl = document.createElement('div');
+    
+    // 見た目の出し分け（トイレピン、中心ピン、現在地ピン）
+    if (iconSrc) {
+      const img = document.createElement('img');
+      img.src = iconSrc;
+      img.style.width = '44px';
+      img.style.height = '52px';
+      img.style.cursor = 'pointer';
+      contentEl.appendChild(img);
+    } else if (isCenter) {
+      Object.assign(contentEl.style, {
+        width: '16px', height: '16px', backgroundColor: '#FF9800',
+        border: '2px solid white', borderRadius: '50%', opacity: '0.8'
+      });
+    } else if (isRealLocation) {
+      Object.assign(contentEl.style, {
+        width: '24px', height: '24px', backgroundColor: '#4285F4',
+        border: '3px solid white', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+      });
+    }
+
+    const marker = new window.google.maps.marker.AdvancedMarkerElement({
+      map, position, title, content: contentEl,
+    });
+
+    const listener = marker.addListener('gmp-click', () => {
+      if (onClickRef.current) onClickRef.current();
+    });
+
+    return () => {
+      window.google.maps.event.removeListener(listener);
+      marker.map = null;
+    };
+  }, [map, position.lat, position.lng, title, iconSrc, isCenter, isRealLocation]);
+
+  return null;
+};
+// =========================================================================
+
+
+function MapPanel({ filteredToilets, currentLocation, realLocation }) {
+  const [selectedToiletId, setSelectedToiletId] = useState(null);
+  const [directionsResponse, setDirectionsResponse] = useState(null);
+  const [routeInfo, setRouteInfo] = useState("");
+  const [travelMode, setTravelMode] = useState("WALKING");
+  const [originMode, setOriginMode] = useState(realLocation ? 'GPS' : 'CENTER');
+
+  const [map, setMap] = useState(null);
+
+  useEffect(() => { if(realLocation) setOriginMode('GPS'); }, [realLocation]);
+
+  useEffect(() => {
+    setSelectedToiletId(null);
+    setDirectionsResponse(null);
+    setRouteInfo("");
+    setTravelMode("WALKING");
+  }, [currentLocation]);
+
+  const center = useMemo(() => {
+    return currentLocation ? { lat: currentLocation.lat, lng: currentLocation.lng } : DEFAULT_CENTER;
+  }, [currentLocation]);
+
+  const onMapLoad = useCallback((mapInstance) => { setMap(mapInstance); }, []);
+
+  useEffect(() => {
+    if (map && currentLocation) {
+      map.panTo({ lat: currentLocation.lat, lng: currentLocation.lng });
+    }
+  }, [currentLocation, map]);
+
+  const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
+
+  // ★フリーズ対策：トイレのピン生成数を制限
+  const MARKER_LIMIT = 50;  
+
+  const markerToilets = useMemo(() => {
+    if (!Array.isArray(filteredToilets)) return [];
+    return filteredToilets.slice(0, MARKER_LIMIT);
+  }, [filteredToilets]);
+
+
+  // --- ルート検索ロジック (既存通り維持) ---
+  useEffect(() => {
+    const startPoint = (originMode === 'GPS' && realLocation) ? realLocation : currentLocation;
+
+    if (selectedToilet && startPoint && window.google) {
+      const directionsService = new window.google.maps.DirectionsService();
+      const origin = { lat: startPoint.lat, lng: startPoint.lng };
+      const destination = { lat: selectedToilet.lat, lng: selectedToilet.lng };
+
+      const request = { origin, destination, travelMode: window.google.maps.TravelMode[travelMode] };
+
+      directionsService.route(request, (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          setDirectionsResponse(result);
+          const leg = result.routes[0].legs[0];
+          setRouteInfo(`${leg.duration.text} (${leg.distance.text})`);
+        } else {
+          if (travelMode === "WALKING") {
+            directionsService.route({ ...request, travelMode: window.google.maps.TravelMode.DRIVING }, (resCar, statusCar) => {
+              if (statusCar === window.google.maps.DirectionsStatus.OK) {
+                setDirectionsResponse(resCar);
+                const leg = resCar.routes[0].legs[0];
+                setRouteInfo(`(車) ${leg.duration.text} (${leg.distance.text})`);
+              } else {
+                setDirectionsResponse(null);
+                setRouteInfo("ルートが見つかりません");
+              }
+            });
+          } else {
+            setDirectionsResponse(null);
+            setRouteInfo("ルートが見つかりません");
+          }
+        }
+      });
+    } else {
+      setDirectionsResponse(null);
+      setRouteInfo("");
+    }
+  }, [selectedToiletId, realLocation, selectedToilet, travelMode, originMode]); 
+
+  return (
+    <section className="panel panel--map">
+      <header className="panel-head">
+        <h2 className="panel-title">地図</h2>
+      </header>
+      
+      <div className="map-area" style={{ position: 'relative' }}>
+        
+        {selectedToilet && (
+          <div className="map-controls-overlay">
+            <div className="map-controls-row">
+              <button className={`map-ctrl-btn ${travelMode === "WALKING" ? 'active-walk' : ''}`} onClick={() => setTravelMode("WALKING")}>
+                <DirectionsWalkIcon fontSize="small" /> 徒歩
+              </button>
+              <button className={`map-ctrl-btn ${travelMode === "DRIVING" ? 'active-drive' : ''}`} onClick={() => setTravelMode("DRIVING")}>
+                <DirectionsCarIcon fontSize="small" /> 車
+              </button>
+            </div>
+            <div className="map-controls-row">
+              <button className={`map-ctrl-btn ${originMode === "GPS" ? 'active-gps' : ''}`} disabled={!realLocation} onClick={() => setOriginMode("GPS")}>
+                <MyLocationIcon fontSize="small" /> 現在地から
+              </button>
+              <button className={`map-ctrl-btn ${originMode === "CENTER" ? 'active-center' : ''}`} onClick={() => setOriginMode("CENTER")}>
+                <MapIcon fontSize="small" /> 地図中心から
+              </button>
+            </div>
+          </div>
+        )}
+
+        <SafeGoogleMap center={center} zoom={14} style={CONTAINER_STYLE} onLoad={onMapLoad}>
+          
+          {/* ★修正: 検索中心のピン */}
+          {currentLocation && (
+            <AdvancedMarker
+              map={map}
+              position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+              title={`地図の中心: ${currentLocation.address || ''}`}
+              isCenter={true}
+            />
+          )}
+
+          {/* ★修正: 現在地のピン */}
+          {realLocation && (
+            <AdvancedMarker
+              map={map}
+              position={{ lat: realLocation.lat, lng: realLocation.lng }}
+              title="あなたの現在地"
+              isRealLocation={true}
+            />
+          )}
+
+          {/* ルート表示 */}
+          {directionsResponse && (
+            <DirectionsRenderer
+              options={{
+                directions: directionsResponse,
+                suppressMarkers: true,
+                polylineOptions: {
+                  strokeColor: travelMode === 'WALKING' ? "#4285F4" : "#FF5252",
+                  strokeWeight: 5,
+                  strokeOpacity: 0.7
+                }
+              }}
+            />
+          )}
+
+          {/* ★修正: トイレのピン */}
+          {markerToilets.map((t) => (
+            <AdvancedMarker
+              key={t.id}
+              map={map}
+              position={{ lat: t.lat, lng: t.lng }}
+              title={t.name}
+              iconSrc={getPinIcon(t)}
+              onClick={() => setSelectedToiletId(t.id)}
+            />
+          ))}
+
+          {/* InfoWindow は既存のまま */}
+          {selectedToilet && (
+            <InfoWindow
+              position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
+              onCloseClick={() => setSelectedToiletId(null)}
+              options={{ pixelOffset: new window.google.maps.Size(0, -52) }}
+            >
+              <div style={{ padding: '4px', maxWidth: '220px' }}>
+                <b style={{ fontSize: '1rem', display:'block', marginBottom:'4px' }}>{selectedToilet.name}</b>
+                
+                {routeInfo && (
+                  <div style={{ 
+                    background: travelMode === 'WALKING' ? '#e3f2fd' : '#ffebee', 
+                    color: travelMode === 'WALKING' ? '#0d47a1' : '#c62828', 
+                    padding:'4px 8px', borderRadius:'4px', fontSize:'0.85rem', fontWeight:'bold', 
+                    marginBottom:'8px', display:'flex', alignItems:'center', gap:'4px'
+                  }}>
+                    {travelMode === 'WALKING' ? <DirectionsWalkIcon fontSize="small"/> : <DirectionsCarIcon fontSize="small"/>}
+                    {routeInfo}
+                  </div>
+                )}
+                
+                <div style={{ margin: '6px 0', fontSize: '0.85rem', color: '#444' }}>
+                   {'⭐'.repeat(selectedToilet.cleanliness || 3)}
+                </div>
+
+                <div style={{ marginBottom: '8px' }}>
+                  {selectedToilet.wheelchair && <span title="車椅子" style={{ marginRight:4 }}>♿</span>}
+                  {selectedToilet.diaper && <span title="オムツ" style={{ marginRight:4 }}>👶</span>}
+                  {selectedToilet.open24h && <span title="24時間">🕒</span>}
+                </div>
+
+                <Link 
+                  to={`/detail/${selectedToilet.id}`}
+                  style={{ 
+                    display: 'block', textAlign: 'center', background: '#1e88e5', 
+                    color: 'white', padding: '8px', borderRadius: '6px', 
+                    textDecoration: 'none', fontSize: '0.9rem', fontWeight:'bold'
+                  }}
+                >
+                  詳細を見る
+                </Link>
+                
+                <a href={`https://maps.google.com/?q=${selectedToilet.lat},${selectedToilet.lng}`}
+                   target="_blank" rel="noreferrer"
+                   style={{ 
+                     display: 'block', textAlign: 'center', marginTop: '8px',
+                     fontSize: '0.75rem', color: '#666', textDecoration: 'underline'
+                   }}
+                >
+                  Googleマップアプリで開く
+                </a>
+              </div>
+            </InfoWindow>
+          )}
+        </SafeGoogleMap>
+      </div>
+    </section>
+  );
+}
+
+export default MapPanel;
+</file>
+
 <file path="toilet-frontend/src/pages/Detail.jsx">
 import '../base.css';
 import '../components.css';
@@ -7352,7 +7407,7 @@ function Detail() {
   if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
   if (!toilet) return <div className="container" style={{padding:'20px'}}>データが見つかりませんでした。<br /><Link to="/search">検索に戻る</Link></div>;
 
-  const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${toilet.lat},${toilet.lng}`;
+  const googleMapUrl = `https://maps.google.com/?q=${toilet.lat},${toilet.lng}`;
 
   const categoryMap = {
     station: '駅・交通',
