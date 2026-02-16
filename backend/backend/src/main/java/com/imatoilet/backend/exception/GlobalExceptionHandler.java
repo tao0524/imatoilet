@@ -1,5 +1,7 @@
 package com.imatoilet.backend.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,7 +16,10 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 1) リソースが見つからない (404)
+    // ロガーの定義
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // 1. リソースが見つからない場合 (404)
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
             ResourceNotFoundException ex, WebRequest request) {
@@ -22,20 +27,18 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
-                LocalDateTime.now(),
-                request.getDescription(false),
-                null
+                LocalDateTime.now(),           // 現在時刻 (LocalDateTime)
+                request.getDescription(false), // パス情報
+                null                           // バリデーションエラー詳細 (null)
         );
-
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    // 2) バリデーションエラー (400)
+    // 2. 入力チェックエラー (400)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex, WebRequest request) {
 
-        // FieldErrorだけを安全に取り出す
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(fe ->
                 errors.put(fe.getField(), fe.getDefaultMessage())
@@ -52,22 +55,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
-    // 3) その他の予期せぬ例外 (500)
+    // 3. その他の予期せぬエラー (500)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(
-            Exception ex, WebRequest request) {
-
-        // 開発中はスタックトレースを出力
-        ex.printStackTrace();
+    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
+        
+        // スタックトレースの代わりにロガー出力を使用
+        logger.error("予期せぬエラーが発生しました:Path={}, Message={}", request.getDescription(false), ex.getMessage(), ex);
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "サーバー内部エラーが発生しました。しばらく経ってから再度お試しください。",
+                "予期せぬエラーが発生しました",
                 LocalDateTime.now(),
                 request.getDescription(false),
                 null
         );
-
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

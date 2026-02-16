@@ -55,12 +55,17 @@ public class Toilet {
     private String locationCategory;
     
     // 修正4: バリデーション追加
+    /**
+     * フロントエンド互換用のCSV文字列（例: "wheelchair,diaper,open_24h"）。
+     * 正規化された設備データは equipmentList（equipment テーブル）を参照すること。
+     * TODO: 将来的にこのフィールドを廃止し、equipmentList に一本化する。
+     */
     @Size(max = 500, message = "設備情報は500文字以内で入力してください")
     @Pattern(
         regexp = "^([a-z_0-9]+(,[a-z_0-9]+)*)?$",
         message = "設備情報の形式が不正です"
     )
-    private String equipment; // ※これはCSV用として残します
+    private String equipment;
     
     private String usageConditions;
     private String atmosphere;

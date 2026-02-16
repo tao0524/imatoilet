@@ -1,7 +1,6 @@
 package com.imatoilet.backend;
 
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,8 +10,13 @@ import java.util.List;
 @RequestMapping("/api/toilets")
 public class ToiletApiController {
 
-    @Autowired
-    private ToiletService toiletService;
+    // 1. final を付ける
+    private final ToiletService toiletService;
+
+    // 2. コンストラクタで初期化する
+    public ToiletApiController(ToiletService toiletService) {
+        this.toiletService = toiletService;
+    }
 
     // 検索・一覧取得
     @GetMapping

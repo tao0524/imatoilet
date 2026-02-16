@@ -87,19 +87,6 @@ function Detail() {
     fetchToilet();
   }, [id]);
 
-  // ★キーボード操作でライトボックスを閉じる/移動する
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (lightboxIndex === null) return;
-      
-      if (e.key === 'Escape') setLightboxIndex(null);
-      if (e.key === 'ArrowRight') nextImage(e);
-      if (e.key === 'ArrowLeft') prevImage(e);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex]); // lightboxIndexが変わるたびにイベントリスナーを更新
-
   const toggleFavorite = () => {
     let favs = JSON.parse(localStorage.getItem(FAV_KEY)) || [];
     if (isFavorite) {
