@@ -124,9 +124,40 @@ function Detail() {
     }
   };
 
+  // --- ライトボックス用の計算とHook（早期リターンの前に配置が必須）---
+  // ★修正: toilet が null でも安全に計算できるようにオプショナルチェーンを使用
+  const images = toilet?.image ? toilet.image.split(',').filter(url => url.trim() !== "") : [];
+
+  const openLightbox = (index) => setLightboxIndex(index);
+
+  const nextImage = useCallback((e) => {
+    e && e.stopPropagation();
+    setLightboxIndex((prev) => (prev + 1) % Math.max(images.length, 1));
+  }, [images.length]);
+
+  const prevImage = useCallback((e) => {
+    e && e.stopPropagation();
+    setLightboxIndex((prev) => (prev - 1 + Math.max(images.length, 1)) % Math.max(images.length, 1));
+  }, [images.length]);
+
+  // ★キーボード操作でライトボックスを閉じる/移動する
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxIndex === null) return;
+
+      if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowRight') nextImage(e);
+      if (e.key === 'ArrowLeft') prevImage(e);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, nextImage, prevImage]);
+
+  // --- 早期リターン（すべてのHookの後に配置）---
   if (loading) return <div className="container" style={{padding:'20px'}}>読み込み中...</div>;
   if (!toilet) return <div className="container" style={{padding:'20px'}}>データが見つかりませんでした。<br /><Link to="/search">検索に戻る</Link></div>;
 
+  // --- ここから下は toilet が確実に存在する ---
   const googleMapUrl = `https://www.google.com/maps?q=${toilet.lat},${toilet.lng}`;
   
   const categoryMap = {
@@ -142,33 +173,6 @@ function Detail() {
 
   const eqList = toilet.equipment ? toilet.equipment.split(',').filter(Boolean) : [];
   const hasAnyEquipment = toilet.wheelchair || toilet.diaper || toilet.open24h || eqList.length > 0;
-  const images = toilet.image ? toilet.image.split(',').filter(url => url.trim() !== "") : [];
-
-  // --- ライトボックス操作関数 ---
-  const openLightbox = (index) => setLightboxIndex(index);
-  
-  const nextImage = useCallback((e) => {
-    e && e.stopPropagation();
-    setLightboxIndex((prev) => (prev + 1) % images.length);
-  }, [images.length]);
-
-  const prevImage = useCallback((e) => {
-    e && e.stopPropagation();
-    setLightboxIndex((prev) => (prev - 1 + images.length) % images.length);
-  }, [images.length]);
-
-  // ★キーボード操作でライトボックスを閉じる/移動する
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (lightboxIndex === null) return;
-      
-      if (e.key === 'Escape') setLightboxIndex(null);
-      if (e.key === 'ArrowRight') nextImage(e);
-      if (e.key === 'ArrowLeft') prevImage(e);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, nextImage, prevImage]);
 
   return (
     <main className="detail-main">
