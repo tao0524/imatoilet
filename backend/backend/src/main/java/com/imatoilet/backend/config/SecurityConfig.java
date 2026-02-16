@@ -3,17 +3,9 @@ package com.imatoilet.backend.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -26,17 +18,19 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${app.admin.username}")
-    private String adminUsername;
-
-    @Value("${app.admin.password}")
-    private String adminPassword;
-
+    // CORS設定で使用するため、これらはコメントアウトせずに残します
     @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
     private String allowedOrigins;
 
     @Value("${app.cors.allow-credentials:false}")
     private boolean allowCredentials;
+
+    // 将来の認証用（現在は使用しないためコメントアウト）
+    // @Value("${app.admin.username}")
+    // private String adminUsername;
+
+    // @Value("${app.admin.password}")
+    // private String adminPassword;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -49,21 +43,17 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // アクセス制御
             .authorizeHttpRequests(auth -> auth
-                // API: 参照系は許可
-                .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
-                // API: 更新系は認証必須
-                .requestMatchers(HttpMethod.POST, "/api/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/**").authenticated()
-                // その他 (Web画面等) は許可
-                .anyRequest().permitAll()
-            )
-            // Basic認証を有効化
-            .httpBasic(Customizer.withDefaults());
+                // 開発用：全APIを開放
+                .requestMatchers("/api/**").permitAll()
+                .requestMatchers("/error").permitAll()
+                // それ以外は拒否
+                .anyRequest().denyAll()
+            );
 
         return http.build();
     }
 
+    /* 将来の認証用（現在は使用しないためコメントアウト）
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails admin = User.builder()
@@ -78,8 +68,8 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+    */
 
-    // CORS設定 Bean定義 (WebConfigから移行)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
