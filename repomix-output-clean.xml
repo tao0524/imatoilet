@@ -126,113 +126,6 @@ toilet-frontend/vitest.config.js
 <files>
 This section contains the contents of the repository's files.
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/config/SecurityConfig.java">
-package com.imatoilet.backend.config;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
-import java.util.List;
-
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-
-    @Value("${app.admin.username}")
-    private String adminUsername;
-
-    @Value("${app.admin.password}")
-    private String adminPassword;
-
-    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
-    private String allowedOrigins;
-
-    @Value("${app.cors.allow-credentials:false}")
-    private boolean allowCredentials;
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            // CORS設定を適用
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            // CSRF無効化 (REST APIのため)
-            .csrf(csrf -> csrf.disable())
-            // セッション管理をステートレスに
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // アクセス制御
-            .authorizeHttpRequests(auth -> auth
-                // API: 参照系は許可
-                .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
-                // API: 更新系は認証必須
-                .requestMatchers(HttpMethod.POST, "/api/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/**").authenticated()
-                // その他 (Web画面等) は許可
-                .anyRequest().permitAll()
-            )
-            // Basic認証を有効化
-            .httpBasic(Customizer.withDefaults());
-
-        return http.build();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails admin = User.builder()
-                .username(adminUsername)
-                .password(passwordEncoder().encode(adminPassword))
-                .roles("ADMIN")
-                .build();
-        return new InMemoryUserDetailsManager(admin);
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    // CORS設定 Bean定義 (WebConfigから移行)
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Origins設定
-        String[] origins = Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
-        configuration.setAllowedOrigins(List.of(origins));
-        
-        // メソッド・ヘッダー設定
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(allowCredentials);
-        configuration.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
-        return source;
-    }
-}
-</file>
-
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
 *.cmd text eol=crlf
@@ -786,6 +679,113 @@ public class BackendApplication {
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/config/SecurityConfig.java">
+package com.imatoilet.backend.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Value("${app.admin.username}")
+    private String adminUsername;
+
+    @Value("${app.admin.password}")
+    private String adminPassword;
+
+    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
+    private String allowedOrigins;
+
+    @Value("${app.cors.allow-credentials:false}")
+    private boolean allowCredentials;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            // CORS設定を適用
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // CSRF無効化 (REST APIのため)
+            .csrf(csrf -> csrf.disable())
+            // セッション管理をステートレスに
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // アクセス制御
+            .authorizeHttpRequests(auth -> auth
+                // API: 参照系は許可
+                .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
+                // API: 更新系は認証必須
+                .requestMatchers(HttpMethod.POST, "/api/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/**").authenticated()
+                // その他 (Web画面等) は許可
+                .anyRequest().permitAll()
+            )
+            // Basic認証を有効化
+            .httpBasic(Customizer.withDefaults());
+
+        return http.build();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        UserDetails admin = User.builder()
+                .username(adminUsername)
+                .password(passwordEncoder().encode(adminPassword))
+                .roles("ADMIN")
+                .build();
+        return new InMemoryUserDetailsManager(admin);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    // CORS設定 Bean定義 (WebConfigから移行)
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // Origins設定
+        String[] origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+        configuration.setAllowedOrigins(List.of(origins));
+        
+        // メソッド・ヘッダー設定
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(allowCredentials);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
+    }
+}
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/DataLoader.java">
 package com.imatoilet.backend;
 
@@ -1190,24 +1190,6 @@ ALTER TABLE toilet ADD COLUMN IF NOT EXISTS image TEXT;
     <a href="/">一覧に戻る</a>
 </body>
 </html>
-</file>
-
-<file path="backend/backend/src/test/java/com/imatoilet/backend/BackendApplicationTests.java">
-package com.imatoilet.backend;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
-
-@SpringBootTest
-class BackendApplicationTests {
-
-	@Test
-	@WithMockUser
-	void contextLoads() {
-	}
-
-}
 </file>
 
 <file path="toilet-frontend/.env.example">
@@ -2101,31 +2083,6 @@ describe('utils.js (便利関数)', () => {
 });
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/config/WebConfig.java">
-package com.imatoilet.backend.config;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-@Configuration
-public class WebConfig implements WebMvcConfigurer {
-
-    // application.properties の app.cors.allowed-origins を参照
-    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
-    private String allowedOrigins;
-
-    // Cookie/認証情報を送る必要がある場合だけ true
-    @Value("${app.cors.allow-credentials:false}")
-    private boolean allowCredentials;
-
-    // 修正3: SecurityConfigにCORS設定を移管したため、
-    // ここでの addCorsMappings 設定は削除（無効化）しました。
-    // SecurityConfig.java 側でCORS設定が一括管理されます。
-
-}
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Equipment.java">
 package com.imatoilet.backend;
 
@@ -2227,175 +2184,6 @@ public class HelloController {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java">
-package com.imatoilet.backend;
-
-import com.imatoilet.backend.exception.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors; // ★追加
-
-@Service
-@Transactional
-public class ToiletService {
-
-    @Autowired
-    private ToiletRepository toiletRepository;
-
-    // --- 検索ロジック ---
-    public List<Toilet> searchToilets(
-            Double lat, Double lng, Double radius,
-            String facilityCategory, Integer minCleanliness,
-            String keyword, List<String> equipment
-    ) {
-        // 1. まずベースとなるリストを取得
-        List<Toilet> results;
-
-        if (lat != null && lng != null) {
-            // 位置情報がある場合：半径検索を実行
-            double r = (radius != null) ? radius : 5.0;
-            results = toiletRepository.findWithinRadius(lat, lng, r);
-        } else {
-            // 位置情報がない場合：条件検索または全件取得
-            // EquipmentTypeへの変換
-            List<EquipmentType> types = null;
-            if (equipment != null && !equipment.isEmpty()) {
-                types = new ArrayList<>();
-                for (String eq : equipment) {
-                    try {
-                        types.add(EquipmentType.valueOf(eq));
-                    } catch (IllegalArgumentException e) {
-                        // 無効な値は無視
-                    }
-                }
-                if (types.isEmpty()) types = null;
-            }
-
-            // 条件が一つでもあれば検索、なければ全件
-            if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
-                return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types);
-            } else {
-                return toiletRepository.findAll();
-            }
-        }
-
-        // 2. 位置情報検索の結果に対して、さらに条件でフィルタリング (Java側で実行)
-        // ※ searchBySpecs相当のロジックをストリームで適用
-        return results.stream()
-            .filter(t -> {
-                // (A) カテゴリ判定
-                if (facilityCategory != null && !facilityCategory.isEmpty()) {
-                    if (!facilityCategory.equals(t.getFacilityCategory())) return false;
-                }
-                
-                // (B) 清潔度判定
-                if (minCleanliness != null) {
-                    if (t.getCleanliness() == null || t.getCleanliness() < minCleanliness) return false;
-                }
-                
-                // (C) キーワード判定 (名前、住所、説明、設備文字列)
-                if (keyword != null && !keyword.isEmpty()) {
-                    String k = keyword.toLowerCase();
-                    boolean matchName = t.getName() != null && t.getName().toLowerCase().contains(k);
-                    boolean matchAddr = t.getAddress() != null && t.getAddress().toLowerCase().contains(k);
-                    boolean matchDesc = t.getDescription() != null && t.getDescription().toLowerCase().contains(k);
-                    boolean matchEq   = t.getEquipment() != null && t.getEquipment().toLowerCase().contains(k);
-                    
-                    if (!matchName && !matchAddr && !matchDesc && !matchEq) return false;
-                }
-                
-                // (D) 設備判定 (AND条件: 指定された設備すべてを持っているか)
-                if (equipment != null && !equipment.isEmpty()) {
-                    // トイレ側の equipment 文字列 (CSV) を取得
-                    String tEq = (t.getEquipment() != null) ? t.getEquipment() : "";
-                    
-                    for (String req : equipment) {
-                        // CSV文字列の中に、指定された設備キーが含まれているか確認
-                        // 例: req="WHEELCHAIR" -> tEq="wheelchair,diaper" (大文字小文字の違いを吸収するか要検討だが、
-                        // 現状のデータは小文字、リクエストは大文字の可能性があるため、toLowerCaseで合わせるのが安全)
-                        
-                        // ※ EquipmentType enum名とDB内の文字列が一致している前提であればそのままでOKですが、
-                        // DBが小文字(wheelchair)、リクエストが大文字(WHEELCHAIR)の場合は変換が必要。
-                        // ここでは安全のため、両方小文字にしてチェックします。
-                        if (!tEq.toLowerCase().contains(req.toLowerCase())) {
-                            return false; 
-                        }
-                    }
-                }
-                
-                return true;
-            })
-            .collect(Collectors.toList());
-    }
-
-    // --- ID検索 ---
-    public Toilet getToilet(Long id) {
-        Long safeId = Objects.requireNonNull(id, "ID must not be null");
-        return toiletRepository.findById(safeId)
-                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
-    }
-
-    // --- 新規登録 ---
-    public Toilet createToilet(Toilet toilet) {
-        if (toilet.getCleanliness() == null) {
-            toilet.setCleanliness(3);
-        }
-        return toiletRepository.save(toilet);
-    }
-
-    // --- 更新ロジック ---
-    public Toilet updateToilet(Long id, Toilet details) {
-        Toilet toilet = getToilet(id);
-
-        Optional.ofNullable(details.getName())
-                .filter(s -> !s.isBlank())
-                .ifPresent(toilet::setName);
-
-        Optional.ofNullable(details.getAddress())
-                .filter(s -> !s.isBlank())
-                .ifPresent(toilet::setAddress);
-
-        Optional.ofNullable(details.getDescription())
-                .ifPresent(toilet::setDescription);
-
-        Optional.ofNullable(details.getImage())
-                .ifPresent(toilet::setImage);
-        
-        Optional.ofNullable(details.getFacilityCategory())
-                .ifPresent(toilet::setFacilityCategory);
-
-        Optional.ofNullable(details.getEquipment())
-                .ifPresent(toilet::setEquipment);
-
-        Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
-        Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
-        Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
-
-        Optional.ofNullable(details.getWheelchair()).ifPresent(toilet::setWheelchair);
-        Optional.ofNullable(details.getDiaper()).ifPresent(toilet::setDiaper);
-        Optional.ofNullable(details.getOpen24h()).ifPresent(toilet::setOpen24h);
-
-        return toiletRepository.save(toilet);
-    }
-
-    // --- 削除 ---
-    public void deleteToilet(Long id) {
-        Long safeId = Objects.requireNonNull(id, "ID must not be null");
-
-        if (!toiletRepository.existsById(safeId)) {
-            throw new ResourceNotFoundException("トイレ", "id", safeId);
-        }
-        toiletRepository.deleteById(safeId);
-    }
-}
-</file>
-
 <file path="backend/backend/src/main/resources/templates/toilet-list.html">
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
@@ -2442,42 +2230,21 @@ public class ToiletService {
 </html>
 </file>
 
-<file path="backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java">
+<file path="backend/backend/src/test/java/com/imatoilet/backend/BackendApplicationTests.java">
 package com.imatoilet.backend;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser; // ★追加
-import org.springframework.test.web.servlet.MockMvc;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
-@AutoConfigureMockMvc
-@SuppressWarnings("null")
-class ToiletApiControllerTest {
+class BackendApplicationTests {
 
-    @Autowired
-    private MockMvc mockMvc;
+	@Test
+	@WithMockUser
+	void contextLoads() {
+	}
 
-    @Test
-    @WithMockUser // ★追加: これで「認証済みユーザー」としてテストが実行されます
-    void shouldReturnListOfToilets() throws Exception {
-        // APIを叩いて検証
-        mockMvc.perform(get("/api/toilets"))
-               // 1. ステータスコードが 200 (OK) であること
-               .andExpect(status().isOk())
-               // 2. コンテンツタイプが JSON であること
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               // 3. 返ってきたデータが「配列（リスト）」形式であること
-               .andExpect(jsonPath("$").isArray()); 
-    }
 }
 </file>
 
@@ -2798,182 +2565,236 @@ export default defineConfig({
 });
 </file>
 
-<file path="backend/backend/pom.xml">
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.9</version>
-    <relativePath/> </parent>
-  <groupId>com.imatoilet</groupId>
-  <artifactId>backend</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>backend</name>
-  <description>Imatoilet Backend API</description>
+<file path="backend/backend/src/main/java/com/imatoilet/backend/config/WebConfig.java">
+package com.imatoilet.backend.config;
 
-  <properties>
-    <java.version>21</java.version>
-  </properties>
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-  <dependencies>
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
 
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
+    // application.properties の app.cors.allowed-origins を参照
+    @Value("${app.cors.allowed-origins:http://localhost:4173,http://localhost:5173}")
+    private String allowedOrigins;
 
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
+    // Cookie/認証情報を送る必要がある場合だけ true
+    @Value("${app.cors.allow-credentials:false}")
+    private boolean allowCredentials;
 
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+    // 修正3: SecurityConfigにCORS設定を移管したため、
+    // ここでの addCorsMappings 設定は削除（無効化）しました。
+    // SecurityConfig.java 側でCORS設定が一括管理されます。
 
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-thymeleaf</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-validation</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-core</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-database-postgresql</artifactId>
-    </dependency>
-
-    <dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-database-postgresql</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
-
-    <dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-    
-  </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-            </exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
-</project>
+}
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java">
 package com.imatoilet.backend;
 
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.lang.NonNull;
+import com.imatoilet.backend.exception.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-public interface ToiletRepository extends JpaRepository<Toilet, Long> {
+@Service
+@Transactional
+public class ToiletService {
 
-    // N+1対策済みの全件取得
-    @Override
-    @EntityGraph(attributePaths = {"equipmentList"})
-    @NonNull
-    List<Toilet> findAll();
+    @Autowired
+    private ToiletRepository toiletRepository;
 
-    // 1. 位置情報検索 (PostgreSQLネイティブクエリ / 半径km指定)
-    @Query(value = "SELECT * FROM toilet t WHERE " +
-           "(6371 * acos(least(1.0, greatest(-1.0, " +
-           "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
-           "  cos(radians(t.lng) - radians(:lng)) + " +
-           "  sin(radians(:lat)) * sin(radians(t.lat))" +
-           ")))) <= :radius", nativeQuery = true)
-    List<Toilet> findWithinRadius(
-        @Param("lat") Double lat,
-        @Param("lng") Double lng,
-        @Param("radius") Double radius
-    );
+    // --- 検索ロジック ---
+    public List<Toilet> searchToilets(
+            Double lat, Double lng, Double radius,
+            String facilityCategory, Integer minCleanliness,
+            String keyword, List<String> equipment
+    ) {
+        // 1. まずベースとなるリストを取得
+        List<Toilet> results;
 
-    // 2. 条件検索 (JPQL / 正規化されたEquipmentテーブルとのJOIN)
-    // S0フェーズ: EquipmentTypeのリストに含まれる設備を持つトイレを検索
-    // キーワードは name, address, description, equipment(CSV) を対象にする
-    @Query("SELECT DISTINCT t FROM Toilet t " +
-           "LEFT JOIN t.equipmentList e " +
-           "WHERE " +
-           "(:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) AND " +
-           "(:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) AND " +
-           "(:keyword IS NULL OR " +
-           "  t.name LIKE %:keyword% OR " +
-           "  t.address LIKE %:keyword% OR " +
-           "  t.description LIKE %:keyword% OR " +
-           "  t.equipment LIKE %:keyword%) AND " +
-           "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes)")
-    List<Toilet> searchBySpecs(
-        @Param("facilityCategory") String facilityCategory,
-        @Param("minCleanliness") Integer minCleanliness,
-        @Param("keyword") String keyword,
-        @Param("equipmentTypes") List<EquipmentType> equipmentTypes
-    );
+        if (lat != null && lng != null) {
+            // 位置情報がある場合：半径検索を実行
+            double r = (radius != null) ? radius : 5.0;
+            results = toiletRepository.findWithinRadius(lat, lng, r);
+        } else {
+            // 位置情報がない場合：条件検索または全件取得
+            // EquipmentTypeへの変換
+            List<EquipmentType> types = null;
+            if (equipment != null && !equipment.isEmpty()) {
+                types = new ArrayList<>();
+                for (String eq : equipment) {
+                    try {
+                        types.add(EquipmentType.valueOf(eq));
+                    } catch (IllegalArgumentException e) {
+                        // 無効な値は無視
+                    }
+                }
+                if (types.isEmpty()) types = null;
+            }
+
+            // 修正7: typesのサイズをカウントして渡す (AND検索用)
+            Long typeCount = (types != null) ? (long) types.size() : null;
+
+            // 条件が一つでもあれば検索、なければ全件
+            if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
+                // 修正7: 引数に typeCount を追加して呼び出す
+                return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types, typeCount);
+            } else {
+                return toiletRepository.findAll();
+            }
+        }
+
+        // 2. 位置情報検索の結果に対して、さらに条件でフィルタリング (Java側で実行)
+        // ※ searchBySpecs相当のロジックをストリームで適用
+        return results.stream()
+            .filter(t -> {
+                // (A) カテゴリ判定
+                if (facilityCategory != null && !facilityCategory.isEmpty()) {
+                    if (!facilityCategory.equals(t.getFacilityCategory())) return false;
+                }
+                
+                // (B) 清潔度判定
+                if (minCleanliness != null) {
+                    if (t.getCleanliness() == null || t.getCleanliness() < minCleanliness) return false;
+                }
+                
+                // (C) キーワード判定 (名前、住所、説明、設備文字列)
+                if (keyword != null && !keyword.isEmpty()) {
+                    String k = keyword.toLowerCase();
+                    boolean matchName = t.getName() != null && t.getName().toLowerCase().contains(k);
+                    boolean matchAddr = t.getAddress() != null && t.getAddress().toLowerCase().contains(k);
+                    boolean matchDesc = t.getDescription() != null && t.getDescription().toLowerCase().contains(k);
+                    boolean matchEq   = t.getEquipment() != null && t.getEquipment().toLowerCase().contains(k);
+                    
+                    if (!matchName && !matchAddr && !matchDesc && !matchEq) return false;
+                }
+                
+                // (D) 設備判定 (AND条件: 指定された設備すべてを持っているか)
+                if (equipment != null && !equipment.isEmpty()) {
+                    // トイレ側の equipment 文字列 (CSV) を取得
+                    String tEq = (t.getEquipment() != null) ? t.getEquipment() : "";
+                    
+                    for (String req : equipment) {
+                        // CSV文字列の中に、指定された設備キーが含まれているか確認
+                        // 例: req="WHEELCHAIR" -> tEq="wheelchair,diaper" (大文字小文字の違いを吸収するか要検討だが、
+                        // 現状のデータは小文字、リクエストは大文字の可能性があるため、toLowerCaseで合わせるのが安全)
+                        if (!tEq.toLowerCase().contains(req.toLowerCase())) {
+                            return false; 
+                        }
+                    }
+                }
+                
+                return true;
+            })
+            .collect(Collectors.toList());
+    }
+
+    // --- ID検索 ---
+    public Toilet getToilet(Long id) {
+        Long safeId = Objects.requireNonNull(id, "ID must not be null");
+        return toiletRepository.findById(safeId)
+                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
+    }
+
+    // --- 新規登録 ---
+    public Toilet createToilet(Toilet toilet) {
+        if (toilet.getCleanliness() == null) {
+            toilet.setCleanliness(3);
+        }
+        return toiletRepository.save(toilet);
+    }
+
+    // --- 更新ロジック ---
+    public Toilet updateToilet(Long id, Toilet details) {
+        Toilet toilet = getToilet(id);
+
+        Optional.ofNullable(details.getName())
+                .filter(s -> !s.isBlank())
+                .ifPresent(toilet::setName);
+
+        Optional.ofNullable(details.getAddress())
+                .filter(s -> !s.isBlank())
+                .ifPresent(toilet::setAddress);
+
+        Optional.ofNullable(details.getDescription())
+                .ifPresent(toilet::setDescription);
+
+        Optional.ofNullable(details.getImage())
+                .ifPresent(toilet::setImage);
+        
+        Optional.ofNullable(details.getFacilityCategory())
+                .ifPresent(toilet::setFacilityCategory);
+
+        Optional.ofNullable(details.getEquipment())
+                .ifPresent(toilet::setEquipment);
+
+        Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
+        Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
+        Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
+
+        Optional.ofNullable(details.getWheelchair()).ifPresent(toilet::setWheelchair);
+        Optional.ofNullable(details.getDiaper()).ifPresent(toilet::setDiaper);
+        Optional.ofNullable(details.getOpen24h()).ifPresent(toilet::setOpen24h);
+
+        return toiletRepository.save(toilet);
+    }
+
+    // --- 削除 ---
+    public void deleteToilet(Long id) {
+        Long safeId = Objects.requireNonNull(id, "ID must not be null");
+
+        if (!toiletRepository.existsById(safeId)) {
+            throw new ResourceNotFoundException("トイレ", "id", safeId);
+        }
+        toiletRepository.deleteById(safeId);
+    }
+}
+</file>
+
+<file path="backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java">
+package com.imatoilet.backend;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser; // ★追加
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@SuppressWarnings("null")
+class ToiletApiControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @WithMockUser // ★追加: これで「認証済みユーザー」としてテストが実行されます
+    void shouldReturnListOfToilets() throws Exception {
+        // APIを叩いて検証
+        mockMvc.perform(get("/api/toilets"))
+               // 1. ステータスコードが 200 (OK) であること
+               .andExpect(status().isOk())
+               // 2. コンテンツタイプが JSON であること
+               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+               // 3. 返ってきたデータが「配列（リスト）」形式であること
+               .andExpect(jsonPath("$").isArray()); 
+    }
 }
 </file>
 
@@ -4119,134 +3940,56 @@ export async function uploadToCloudinary(file) {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
 package com.imatoilet.backend;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import java.util.ArrayList;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNull;
 import java.util.List;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
-@Entity
-@Table(name = "toilet")
-@Data
-public class Toilet {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 
-    // --- 既存フィールド ---
-    
-    @NotBlank(message = "名前は必須です")
-    @Size(max = 100, message = "名前は100文字以内で入力してください")
-    private String name;
+    @Override
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @NonNull
+    List<Toilet> findAll();
 
-    @NotNull(message = "緯度は必須です")
-    private Double lat;
+    @Query(value = "SELECT * FROM toilet t WHERE " +
+           "(6371 * acos(least(1.0, greatest(-1.0, " +
+           "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
+           "  cos(radians(t.lng) - radians(:lng)) + " +
+           "  sin(radians(:lat)) * sin(radians(t.lat))" +
+           ")))) <= :radius", nativeQuery = true)
+    List<Toilet> findWithinRadius(
+        @Param("lat") Double lat,
+        @Param("lng") Double lng,
+        @Param("radius") Double radius
+    );
 
-    @NotNull(message = "経度は必須です")
-    private Double lng;
-
-    // 修正4: バリデーション追加
-    @Size(max = 200, message = "住所は200文字以内で入力してください")
-    private String address;
-
-    private Boolean publicUse;
-    private Boolean diaper;
-    private Boolean wheelchair;
-    private Boolean typePark;
-    private Boolean typeStation;
-    private Boolean typeMall;
-
-    @Size(max = 500, message = "説明は500文字以内で入力してください")
-    private String description;
-    
-    private Boolean open24h;
-
-    // --- 新設計フィールド ---
-    // 修正4: バリデーション追加
-    @Pattern(
-        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
-        message = "施設カテゴリの値が不正です"
-    )
-    private String facilityCategory;
-    
-    private String locationCategory;
-    
-    // 修正4: バリデーション追加
-    @Size(max = 500, message = "設備情報は500文字以内で入力してください")
-    @Pattern(
-        regexp = "^([a-z_0-9]+(,[a-z_0-9]+)*)?$",
-        message = "設備情報の形式が不正です"
-    )
-    private String equipment; // ※これはCSV用として残します
-    
-    private String usageConditions;
-    private String atmosphere;
-
-    @Min(value = 1, message = "清潔度は1以上である必要があります")
-    @Max(value = 5, message = "清潔度は5以下である必要があります")
-    private Integer cleanliness;
-
-    // 修正4: バリデーション追加 (XSS対策)
-    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
-    @Pattern(regexp = "^(https?://.*)?$", message = "画像URLの形式が不正です")
-    private String image;
-
-    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Equipment> equipmentList = new ArrayList<>();
-
-    // --- 互換性メソッド ---
-    @PrePersist
-    @PreUpdate
-    public void syncCompatibility() {
-        syncOldToNew();
-        syncNewToOld();
-    }
-
-    private void syncOldToNew() {
-        if (this.facilityCategory == null || this.facilityCategory.isEmpty()) {
-            if (Boolean.TRUE.equals(typeStation)) this.facilityCategory = "station";
-            else if (Boolean.TRUE.equals(typePark)) this.facilityCategory = "park";
-            else if (Boolean.TRUE.equals(typeMall)) this.facilityCategory = "commercial";
-        }
-        String currentEq = (this.equipment == null) ? "" : this.equipment;
-        if (Boolean.TRUE.equals(wheelchair) && !currentEq.contains("wheelchair")) {
-            currentEq = addTag(currentEq, "wheelchair");
-        }
-        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper_table")) {
-            currentEq = addTag(currentEq, "diaper_table");
-        }
-        if (Boolean.TRUE.equals(open24h) && !currentEq.contains("open_24h")) {
-            currentEq = addTag(currentEq, "open_24h");
-        }
-        this.equipment = currentEq;
-    }
-
-    private void syncNewToOld() {
-        if (this.facilityCategory != null) {
-            if (this.facilityCategory.equals("station")) this.typeStation = true;
-            else if (this.facilityCategory.equals("park")) this.typePark = true;
-            else if (this.facilityCategory.equals("commercial")) this.typeMall = true;
-        }
-        if (this.equipment != null) {
-            if (this.equipment.contains("wheelchair")) this.wheelchair = true;
-            if (this.equipment.contains("diaper_table")) this.diaper = true;
-            if (this.equipment.contains("open_24h")) this.open24h = true;
-        }
-    }
-
-    private String addTag(String current, String tag) {
-        if (current == null || current.isEmpty()) {
-            return tag;
-        }
-        return current + "," + tag;
-    }
+    // 修正7: HAVING COUNT を使用して AND条件にする
+    @Query("SELECT t FROM Toilet t " +
+           "LEFT JOIN t.equipmentList e " +
+           "WHERE " +
+           "(:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) AND " +
+           "(:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) AND " +
+           "(:keyword IS NULL OR " +
+           "  t.name LIKE %:keyword% OR " +
+           "  t.address LIKE %:keyword% OR " +
+           "  t.description LIKE %:keyword% OR " +
+           "  t.equipment LIKE %:keyword%) AND " +
+           "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes) " +
+           "GROUP BY t " +
+           "HAVING (:equipmentTypes IS NULL OR COUNT(DISTINCT e.type) = :typeCount)")
+    List<Toilet> searchBySpecs(
+        @Param("facilityCategory") String facilityCategory,
+        @Param("minCleanliness") Integer minCleanliness,
+        @Param("keyword") String keyword,
+        @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
+        @Param("typeCount") Long typeCount // 追加
+    );
 }
 </file>
 
@@ -4815,6 +4558,132 @@ function Search() {
 export default Search;
 </file>
 
+<file path="backend/backend/pom.xml">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.9</version>
+    <relativePath/> </parent>
+  <groupId>com.imatoilet</groupId>
+  <artifactId>backend</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>backend</name>
+  <description>Imatoilet Backend API</description>
+
+  <properties>
+    <java.version>21</java.version>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+
+    <dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+    <dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+    
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+</file>
+
 <file path="toilet-frontend/src/pages/Edit.jsx">
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
@@ -5276,6 +5145,137 @@ function Edit() {
 }
 
 export default Edit;
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
+package com.imatoilet.backend;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+@Entity
+@Table(name = "toilet")
+@Data
+public class Toilet {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // --- 既存フィールド ---
+    
+    @NotBlank(message = "名前は必須です")
+    @Size(max = 100, message = "名前は100文字以内で入力してください")
+    private String name;
+
+    @NotNull(message = "緯度は必須です")
+    private Double lat;
+
+    @NotNull(message = "経度は必須です")
+    private Double lng;
+
+    // 修正4: バリデーション追加
+    @Size(max = 200, message = "住所は200文字以内で入力してください")
+    private String address;
+
+    private Boolean publicUse;
+    private Boolean diaper;
+    private Boolean wheelchair;
+    private Boolean typePark;
+    private Boolean typeStation;
+    private Boolean typeMall;
+
+    @Size(max = 500, message = "説明は500文字以内で入力してください")
+    private String description;
+    
+    private Boolean open24h;
+
+    // --- 新設計フィールド ---
+    // 修正4: バリデーション追加
+    @Pattern(
+        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
+        message = "施設カテゴリの値が不正です"
+    )
+    private String facilityCategory;
+    
+    private String locationCategory;
+    
+    // 修正4: バリデーション追加
+    @Size(max = 500, message = "設備情報は500文字以内で入力してください")
+    @Pattern(
+        regexp = "^([a-z_0-9]+(,[a-z_0-9]+)*)?$",
+        message = "設備情報の形式が不正です"
+    )
+    private String equipment; // ※これはCSV用として残します
+    
+    private String usageConditions;
+    private String atmosphere;
+
+    @Min(value = 1, message = "清潔度は1以上である必要があります")
+    @Max(value = 5, message = "清潔度は5以下である必要があります")
+    private Integer cleanliness;
+
+    // 修正4: バリデーション追加 (XSS対策)
+    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    @Pattern(regexp = "^(https?://.*)?$", message = "画像URLの形式が不正です")
+    private String image;
+
+    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Equipment> equipmentList = new ArrayList<>();
+
+    // --- 互換性メソッド ---
+    @PrePersist
+    @PreUpdate
+    public void syncCompatibility() {
+        syncOldToNew();
+        syncNewToOld();
+    }
+
+    private void syncOldToNew() {
+        if (this.facilityCategory == null || this.facilityCategory.isEmpty()) {
+            if (Boolean.TRUE.equals(typeStation)) this.facilityCategory = "station";
+            else if (Boolean.TRUE.equals(typePark)) this.facilityCategory = "park";
+            else if (Boolean.TRUE.equals(typeMall)) this.facilityCategory = "commercial";
+        }
+        String currentEq = (this.equipment == null) ? "" : this.equipment;
+        if (Boolean.TRUE.equals(wheelchair) && !currentEq.contains("wheelchair")) {
+            currentEq = addTag(currentEq, "wheelchair");
+        }
+        if (Boolean.TRUE.equals(diaper) && !currentEq.contains("diaper")) {
+            currentEq = addTag(currentEq, "diaper");
+        }
+        if (Boolean.TRUE.equals(open24h) && !currentEq.contains("open_24h")) {
+            currentEq = addTag(currentEq, "open_24h");
+        }
+        this.equipment = currentEq;
+    }
+
+    private void syncNewToOld() {
+        if (this.facilityCategory != null) {
+            if (this.facilityCategory.equals("station")) this.typeStation = true;
+            else if (this.facilityCategory.equals("park")) this.typePark = true;
+            else if (this.facilityCategory.equals("commercial")) this.typeMall = true;
+        }
+        if (this.equipment != null) {
+            if (this.equipment.contains("wheelchair")) this.wheelchair = true;
+            if (this.equipment.contains("diaper")) this.diaper = true;
+            if (this.equipment.contains("open_24h")) this.open24h = true;
+        }
+    }
+
+    private String addTag(String current, String tag) {
+        if (current == null || current.isEmpty()) {
+            return tag;
+        }
+        return current + "," + tag;
+    }
+}
 </file>
 
 <file path="toilet-frontend/package.json">
@@ -6757,38 +6757,6 @@ function Register() {
 export default Register;
 </file>
 
-<file path="backend/backend/src/main/resources/application.properties">
-# PostgreSQL への接続設定
-# ★重要: 環境変数 DB_URL, DB_USER, DB_PASSWORD の設定が必須です（デフォルト値廃止）
-spring.datasource.url=${DB_URL}
-spring.datasource.username=${DB_USER}
-spring.datasource.password=${DB_PASSWORD}
-spring.datasource.driver-class-name=org.postgresql.Driver
-
-# JPA/Hibernate の設定
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-
-# --- CORS / Server Config ---
-# WebConfig.java の @Value("${app.cors.allowed-origins}") と一致させています
-app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:4173,http://localhost:5173}
-app.cors.allow-credentials=${CORS_ALLOW_CREDENTIALS:false}
-
-# ポート設定
-server.port=${PORT:8080}
-
-# --- Flyway Config ---
-spring.flyway.baseline-on-migrate=true
-
-# --- Flyway Config ---
-spring.flyway.baseline-on-migrate=true
-
-# 修正3: 管理者認証情報 (環境変数で設定すること)
-app.admin.username=${ADMIN_USERNAME}
-app.admin.password=${ADMIN_PASSWORD}
-</file>
-
 <file path="toilet-frontend/src/hooks/useToiletSearch.js">
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -7152,6 +7120,38 @@ export const useToiletSearch = () => {
 };
 </file>
 
+<file path="backend/backend/src/main/resources/application.properties">
+# PostgreSQL への接続設定
+# ★重要: 環境変数 DB_URL, DB_USER, DB_PASSWORD の設定が必須です（デフォルト値廃止）
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USER}
+spring.datasource.password=${DB_PASSWORD}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA/Hibernate の設定
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# --- CORS / Server Config ---
+# WebConfig.java の @Value("${app.cors.allowed-origins}") と一致させています
+app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:4173,http://localhost:5173}
+app.cors.allow-credentials=${CORS_ALLOW_CREDENTIALS:false}
+
+# ポート設定
+server.port=${PORT:8080}
+
+# --- Flyway Config ---
+spring.flyway.baseline-on-migrate=true
+
+# --- Flyway Config ---
+spring.flyway.baseline-on-migrate=true
+
+# 修正3: 管理者認証情報 (環境変数で設定すること)
+app.admin.username=${ADMIN_USERNAME}
+app.admin.password=${ADMIN_PASSWORD}
+</file>
+
 <file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 // ★修正: Marker のインポートを削除（独自の AdvancedMarker に置き換えるため）
@@ -7476,7 +7476,7 @@ export default MapPanel;
 <file path="toilet-frontend/src/pages/Detail.jsx">
 import '../base.css';
 import '../components.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { loadUserToilets, saveUserToilets } from '../utils';
 import { API_BASE_URL } from '../config/api';
@@ -7636,15 +7636,28 @@ function Detail() {
   // --- ライトボックス操作関数 ---
   const openLightbox = (index) => setLightboxIndex(index);
   
-  const nextImage = (e) => {
+  const nextImage = useCallback((e) => {
     e && e.stopPropagation();
     setLightboxIndex((prev) => (prev + 1) % images.length);
-  };
+  }, [images.length]);
 
-  const prevImage = (e) => {
+  const prevImage = useCallback((e) => {
     e && e.stopPropagation();
     setLightboxIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  }, [images.length]);
+
+  // ★キーボード操作でライトボックスを閉じる/移動する
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxIndex === null) return;
+      
+      if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowRight') nextImage(e);
+      if (e.key === 'ArrowLeft') prevImage(e);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, nextImage, prevImage]);
 
   return (
     <main className="detail-main">

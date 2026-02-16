@@ -1,7 +1,6 @@
 package com.imatoilet.backend;
 
 import com.imatoilet.backend.exception.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,8 +14,13 @@ import java.util.stream.Collectors;
 @Transactional
 public class ToiletService {
 
-    @Autowired
-    private ToiletRepository toiletRepository;
+    // 1. final を付ける
+    private final ToiletRepository toiletRepository;
+
+    // 2. コンストラクタで初期化する
+    public ToiletService(ToiletRepository toiletRepository) {
+        this.toiletRepository = toiletRepository;
+    }
 
     // --- 検索ロジック ---
     public List<Toilet> searchToilets(
@@ -47,12 +51,11 @@ public class ToiletService {
                 if (types.isEmpty()) types = null;
             }
 
-            // 修正7: typesのサイズをカウントして渡す (AND検索用)
+            // typesのサイズをカウントして渡す (AND検索用)
             Long typeCount = (types != null) ? (long) types.size() : null;
 
             // 条件が一つでもあれば検索、なければ全件
             if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
-                // 修正7: 引数に typeCount を追加して呼び出す
                 return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types, typeCount);
             } else {
                 return toiletRepository.findAll();
@@ -60,7 +63,6 @@ public class ToiletService {
         }
 
         // 2. 位置情報検索の結果に対して、さらに条件でフィルタリング (Java側で実行)
-        // ※ searchBySpecs相当のロジックをストリームで適用
         return results.stream()
             .filter(t -> {
                 // (A) カテゴリ判定
@@ -73,7 +75,7 @@ public class ToiletService {
                     if (t.getCleanliness() == null || t.getCleanliness() < minCleanliness) return false;
                 }
                 
-                // (C) キーワード判定 (名前、住所、説明、設備文字列)
+                // (C) キーワード判定
                 if (keyword != null && !keyword.isEmpty()) {
                     String k = keyword.toLowerCase();
                     boolean matchName = t.getName() != null && t.getName().toLowerCase().contains(k);
@@ -84,15 +86,10 @@ public class ToiletService {
                     if (!matchName && !matchAddr && !matchDesc && !matchEq) return false;
                 }
                 
-                // (D) 設備判定 (AND条件: 指定された設備すべてを持っているか)
+                // (D) 設備判定 (AND条件)
                 if (equipment != null && !equipment.isEmpty()) {
-                    // トイレ側の equipment 文字列 (CSV) を取得
                     String tEq = (t.getEquipment() != null) ? t.getEquipment() : "";
-                    
                     for (String req : equipment) {
-                        // CSV文字列の中に、指定された設備キーが含まれているか確認
-                        // 例: req="WHEELCHAIR" -> tEq="wheelchair,diaper" (大文字小文字の違いを吸収するか要検討だが、
-                        // 現状のデータは小文字、リクエストは大文字の可能性があるため、toLowerCaseで合わせるのが安全)
                         if (!tEq.toLowerCase().contains(req.toLowerCase())) {
                             return false; 
                         }
