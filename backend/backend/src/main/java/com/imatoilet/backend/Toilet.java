@@ -74,9 +74,8 @@ public class Toilet {
     @Max(value = 5, message = "清潔度は5以下である必要があります")
     private Integer cleanliness;
 
-    // 修正4: バリデーション追加 (XSS対策)
     @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
-    @Pattern(regexp = "^(https?://.*)?$", message = "画像URLの形式が不正です")
+    @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
     private String image;
 
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)

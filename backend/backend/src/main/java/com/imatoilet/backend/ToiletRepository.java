@@ -14,17 +14,23 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @NonNull
     List<Toilet> findAll();
 
-    @Query(value = "SELECT * FROM toilet t WHERE " +
+    // ★修正: IDのみ返すことで、@EntityGraph付きの2段階取得を可能にする（N+1解消）
+    @Query(value = "SELECT t.id FROM toilet t WHERE " +
            "(6371 * acos(least(1.0, greatest(-1.0, " +
            "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
            "  cos(radians(t.lng) - radians(:lng)) + " +
            "  sin(radians(:lat)) * sin(radians(t.lat))" +
            ")))) <= :radius", nativeQuery = true)
-    List<Toilet> findWithinRadius(
+    List<Long> findIdsWithinRadius(
         @Param("lat") Double lat,
         @Param("lng") Double lng,
         @Param("radius") Double radius
     );
+
+    // ★追加: IDリストからequipmentListを含めて一括取得（N+1解消）
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
+    List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
 
     // 修正7: HAVING COUNT を使用して AND条件にする
     @Query("SELECT t FROM Toilet t " +
@@ -45,6 +51,6 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
         @Param("minCleanliness") Integer minCleanliness,
         @Param("keyword") String keyword,
         @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
-        @Param("typeCount") Long typeCount // 追加
+        @Param("typeCount") Long typeCount
     );
 }

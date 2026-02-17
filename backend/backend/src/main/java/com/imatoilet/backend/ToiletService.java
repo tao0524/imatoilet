@@ -14,10 +14,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class ToiletService {
 
-    // 1. final を付ける
     private final ToiletRepository toiletRepository;
 
-    // 2. コンストラクタで初期化する
     public ToiletService(ToiletRepository toiletRepository) {
         this.toiletRepository = toiletRepository;
     }
@@ -32,9 +30,17 @@ public class ToiletService {
         List<Toilet> results;
 
         if (lat != null && lng != null) {
-            // 位置情報がある場合：半径検索を実行
+            // ★修正: 2ステップ方式でN+1を解消
+            // Step 1: ネイティブクエリでIDのみ取得（距離計算はDB側で実行）
             double r = (radius != null) ? radius : 5.0;
-            results = toiletRepository.findWithinRadius(lat, lng, r);
+            List<Long> ids = toiletRepository.findIdsWithinRadius(lat, lng, r);
+
+            if (ids.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            // Step 2: IDリストからequipmentList込みで一括取得（SQLは2回だけ）
+            results = toiletRepository.findAllByIdWithEquipment(ids);
         } else {
             // 位置情報がない場合：条件検索または全件取得
             // EquipmentTypeへの変換
