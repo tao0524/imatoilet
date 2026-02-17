@@ -13,6 +13,9 @@ export const useToiletSearch = () => {
   // 二重実行防止用のガード
   const hasInitialized = useRef(false);
 
+  // ★修正: placeQueryの最新値をrefで保持（useEffect内でクロージャの古い値を参照するのを防ぐ）
+  const placeQueryRef = useRef("");
+
   const [currentLocation, setCurrentLocation] = useState(() => {
     const urlLat = searchParams.get('lat');
     const urlLng = searchParams.get('lng');
@@ -43,6 +46,11 @@ export const useToiletSearch = () => {
 
   const [searchHistory, setSearchHistory] = useState([]);
   const [searchTrigger, setSearchTrigger] = useState(0);
+
+  // ★修正: placeQueryが変わるたびにrefを同期
+  useEffect(() => {
+    placeQueryRef.current = placeQuery;
+  }, [placeQuery]);
 
   // --- セッション保存 ---
   useEffect(() => {
@@ -212,10 +220,13 @@ export const useToiletSearch = () => {
     handlePlaceSearch(query);
   };
 
-  // --- データ取得 (fetchDataはasync/awaitを使ってOK) ---
+  // --- データ取得 ---
   useEffect(() => {
     async function fetchData() {
-      if (!currentLocation && !placeQuery && searchTrigger === 0) return;
+      // ★修正: placeQueryはrefから取得（依存配列に含めなくても最新値を参照できる）
+      const currentPlaceQuery = placeQueryRef.current;
+
+      if (!currentLocation && !currentPlaceQuery && searchTrigger === 0) return;
 
       let apiData = [];
       let isKeywordSearch = !currentLocation; 
@@ -228,39 +239,39 @@ export const useToiletSearch = () => {
           params.append('lng', currentLocation.lng);
           params.append('radius', '5.0');
         } else {
-          if (placeQuery) params.append('keyword', placeQuery);
-          
-          // フィルタパラメータ
-           const filters = {
-             facilityCategory: searchParams.get('facilityCategory'),
-             wheelchair: searchParams.get('wheelchair') === 'true',
-             diaper: searchParams.get('diaper') === 'true',
-             open24h: searchParams.get('open24h') === 'true',
-             ostomate: searchParams.get('ostomate') === 'true',
-             nursing_room: searchParams.get('nursing_room') === 'true',
-             washlet: searchParams.get('washlet') === 'true',
-             visual_support: searchParams.get('visual_support') === 'true',
-             gender_separated: searchParams.get('gender_separated') === 'true',
-             unisex: searchParams.get('unisex') === 'true',
-             free: searchParams.get('free') === 'true',
-             paid: searchParams.get('paid') === 'true',
-             parking: searchParams.get('parking') === 'true'
-          };
-          
-          if (filters.facilityCategory) params.append('facilityCategory', filters.facilityCategory);
-          if (filters.wheelchair) params.append('equipment', 'WHEELCHAIR');
-          if (filters.diaper) params.append('equipment', 'DIAPER');
-          if (filters.open24h) params.append('equipment', 'OPEN_24H');
-          if (filters.ostomate) params.append('equipment', 'OSTOMATE');
-          if (filters.nursing_room) params.append('equipment', 'NURSING_ROOM');
-          if (filters.washlet) params.append('equipment', 'WASHLET');
-          if (filters.visual_support) params.append('equipment', 'VISUAL_SUPPORT');
-          if (filters.gender_separated) params.append('equipment', 'GENDER_SEPARATED');
-          if (filters.unisex) params.append('equipment', 'UNISEX');
-          if (filters.free) params.append('equipment', 'FREE');
-          if (filters.paid) params.append('equipment', 'PAID');
-          if (filters.parking) params.append('equipment', 'PARKING');
+          if (currentPlaceQuery) params.append('keyword', currentPlaceQuery);
         }
+
+        // フィルタパラメータを位置情報の有無にかかわらず共通で付与
+        const apiFilters = {
+          facilityCategory: searchParams.get('facilityCategory'),
+          wheelchair: searchParams.get('wheelchair') === 'true',
+          diaper: searchParams.get('diaper') === 'true',
+          open24h: searchParams.get('open24h') === 'true',
+          ostomate: searchParams.get('ostomate') === 'true',
+          nursing_room: searchParams.get('nursing_room') === 'true',
+          washlet: searchParams.get('washlet') === 'true',
+          visual_support: searchParams.get('visual_support') === 'true',
+          gender_separated: searchParams.get('gender_separated') === 'true',
+          unisex: searchParams.get('unisex') === 'true',
+          free: searchParams.get('free') === 'true',
+          paid: searchParams.get('paid') === 'true',
+          parking: searchParams.get('parking') === 'true'
+        };
+
+        if (apiFilters.facilityCategory) params.append('facilityCategory', apiFilters.facilityCategory);
+        if (apiFilters.wheelchair) params.append('equipment', 'WHEELCHAIR');
+        if (apiFilters.diaper) params.append('equipment', 'DIAPER');
+        if (apiFilters.open24h) params.append('equipment', 'OPEN_24H');
+        if (apiFilters.ostomate) params.append('equipment', 'OSTOMATE');
+        if (apiFilters.nursing_room) params.append('equipment', 'NURSING_ROOM');
+        if (apiFilters.washlet) params.append('equipment', 'WASHLET');
+        if (apiFilters.visual_support) params.append('equipment', 'VISUAL_SUPPORT');
+        if (apiFilters.gender_separated) params.append('equipment', 'GENDER_SEPARATED');
+        if (apiFilters.unisex) params.append('equipment', 'UNISEX');
+        if (apiFilters.free) params.append('equipment', 'FREE');
+        if (apiFilters.paid) params.append('equipment', 'PAID');
+        if (apiFilters.parking) params.append('equipment', 'PARKING');
 
         const queryString = params.toString();
         const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
@@ -276,6 +287,7 @@ export const useToiletSearch = () => {
       const localData = loadUserToilets();
       const merged = [...apiData, ...localData];
       
+      // ローカルデータに対してのフィルタリング（APIデータはサーバー側でフィルタ済み）
       const filters = {
         wheelchair: searchParams.get('wheelchair') === 'true',
         diaper: searchParams.get('diaper') === 'true',
@@ -313,8 +325,8 @@ export const useToiletSearch = () => {
           return true;
       });
 
-      if (isKeywordSearch && placeQuery) {
-        const lowerQ = placeQuery.toLowerCase(); 
+      if (isKeywordSearch && currentPlaceQuery) {
+        const lowerQ = currentPlaceQuery.toLowerCase(); 
         result = result.filter(t => {
           const n = (t.name || "").toLowerCase();
           const a = (t.address || "").toLowerCase();
@@ -335,9 +347,13 @@ export const useToiletSearch = () => {
       if (result.length > 0) {
         setSearchStatus(prev => prev.includes('検索中') || prev.includes('読み込み中') ? `${result.length}件のトイレが見つかりました` : prev);
       } else {
-         if(!searchStatus.includes('付近')) {
-            setSearchStatus("条件に一致するトイレは見つかりませんでした");
-         }
+        // ★修正: searchStatusをコールバック形式で参照（依存配列に含めなくても最新値を使える）
+        setSearchStatus(prev => {
+          if (!prev.includes('付近')) {
+            return "条件に一致するトイレは見つかりませんでした";
+          }
+          return prev;
+        });
       }
     }
 
