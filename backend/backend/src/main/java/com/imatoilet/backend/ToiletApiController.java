@@ -10,10 +10,8 @@ import java.util.List;
 @RequestMapping("/api/toilets")
 public class ToiletApiController {
 
-    // 1. final を付ける
     private final ToiletService toiletService;
 
-    // 2. コンストラクタで初期化する
     public ToiletApiController(ToiletService toiletService) {
         this.toiletService = toiletService;
     }
@@ -38,9 +36,6 @@ public class ToiletApiController {
     // ID検索
     @GetMapping("/{id}")
     public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
-        if (id == null) {
-             throw new IllegalArgumentException("ID must not be null");
-        }
         return ResponseEntity.ok(toiletService.getToilet(id));
     }
 
@@ -54,9 +49,6 @@ public class ToiletApiController {
     // 更新
     @PutMapping("/{id}")
     public ResponseEntity<Toilet> updateToilet(@PathVariable Long id, @RequestBody @Valid Toilet toiletDetails) {
-        if (id == null) {
-             throw new IllegalArgumentException("ID must not be null");
-        }
         Toilet updated = toiletService.updateToilet(id, toiletDetails);
         return ResponseEntity.ok(updated);
     }
@@ -64,9 +56,6 @@ public class ToiletApiController {
     // 削除
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
-        if (id == null) {
-             throw new IllegalArgumentException("ID must not be null");
-        }
         toiletService.deleteToilet(id);
         return ResponseEntity.noContent().build();
     }
