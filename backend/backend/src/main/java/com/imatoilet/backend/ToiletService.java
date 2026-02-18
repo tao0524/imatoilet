@@ -62,7 +62,12 @@ public class ToiletService {
 
             // 条件が一つでもあれば検索、なければ全件
             if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
-                return toiletRepository.searchBySpecs(facilityCategory, minCleanliness, keyword, types, typeCount);
+                // ★2ステップ方式: IDのみ取得 → EntityGraph付きで一括取得（N+1解消）
+                List<Long> ids = toiletRepository.searchIdsBySpecs(facilityCategory, minCleanliness, keyword, types, typeCount);
+                if (ids.isEmpty()) {
+                    return new ArrayList<>();
+                }
+                return toiletRepository.findAllByIdWithEquipment(ids);
             } else {
                 return toiletRepository.findAll();
             }
@@ -126,25 +131,31 @@ public class ToiletService {
     public Toilet updateToilet(Long id, Toilet details) {
         Toilet toilet = getToilet(id);
 
+        // name は空白不可（@NotBlank と同じ制約を維持）
         Optional.ofNullable(details.getName())
                 .filter(s -> !s.isBlank())
                 .ifPresent(toilet::setName);
 
-        Optional.ofNullable(details.getAddress())
-                .filter(s -> !s.isBlank())
-                .ifPresent(toilet::setAddress);
+        // address は空文字での上書きを許可（住所クリア対応）
+        if (details.getAddress() != null) {
+            toilet.setAddress(details.getAddress());
+        }
 
-        Optional.ofNullable(details.getDescription())
-                .ifPresent(toilet::setDescription);
+        if (details.getDescription() != null) {
+            toilet.setDescription(details.getDescription());
+        }
 
-        Optional.ofNullable(details.getImage())
-                .ifPresent(toilet::setImage);
-        
-        Optional.ofNullable(details.getFacilityCategory())
-                .ifPresent(toilet::setFacilityCategory);
+        if (details.getImage() != null) {
+            toilet.setImage(details.getImage());
+        }
 
-        Optional.ofNullable(details.getEquipment())
-                .ifPresent(toilet::setEquipment);
+        if (details.getFacilityCategory() != null) {
+            toilet.setFacilityCategory(details.getFacilityCategory());
+        }
+
+        if (details.getEquipment() != null) {
+            toilet.setEquipment(details.getEquipment());
+        }
 
         Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
         Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
@@ -153,6 +164,10 @@ public class ToiletService {
         Optional.ofNullable(details.getWheelchair()).ifPresent(toilet::setWheelchair);
         Optional.ofNullable(details.getDiaper()).ifPresent(toilet::setDiaper);
         Optional.ofNullable(details.getOpen24h()).ifPresent(toilet::setOpen24h);
+        Optional.ofNullable(details.getPublicUse()).ifPresent(toilet::setPublicUse);
+        Optional.ofNullable(details.getTypePark()).ifPresent(toilet::setTypePark);
+        Optional.ofNullable(details.getTypeStation()).ifPresent(toilet::setTypeStation);
+        Optional.ofNullable(details.getTypeMall()).ifPresent(toilet::setTypeMall);
 
         return toiletRepository.save(toilet);
     }
