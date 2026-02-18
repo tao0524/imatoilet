@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Register.css';
 import { API_BASE_URL } from '../config/api';
+import { buildEquipmentCsv } from '../utils';
 import ToiletForm from '../components/ToiletForm';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
 
@@ -45,7 +46,6 @@ function Register() {
 
     setSubmitting(true);
 
-    const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const payload = {
       name: formData.name,
       address: formData.address,
@@ -55,7 +55,7 @@ function Register() {
       cleanliness: formData.cleanliness,
       image: formData.images.join(','),
       facilityCategory: formData.facilityCategory,
-      equipment: equipmentList.join(','),
+      equipment: buildEquipmentCsv(formData.conditions),
       wheelchair: formData.conditions.wheelchair,
       diaper: formData.conditions.diaper,
       open24h: formData.conditions.open24h
@@ -71,6 +71,16 @@ function Register() {
       if (res.ok) {
         alert("登録しました！");
         navigate('/search');
+      } else if (res.status === 400) {
+        try {
+          const errData = await res.json();
+          const msgs = errData.errors
+            ? Object.values(errData.errors).join('\n')
+            : errData.message || '入力内容に誤りがあります';
+          alert("入力エラー:\n" + msgs);
+        } catch {
+          alert("入力内容に誤りがあります。");
+        }
       } else {
         alert("登録に失敗しました。サーバーエラーです。");
       }

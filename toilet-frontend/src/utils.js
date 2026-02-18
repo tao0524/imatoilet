@@ -68,3 +68,26 @@ export async function uploadToCloudinary(file) {
   const data = await res.json();
   return data.secure_url; // httpsから始まるURLを返す
 }
+
+/**
+ * conditions オブジェクトから equipment CSV 文字列を生成する
+ * フロントのキー名とバックエンドのCSV値の不一致を吸収する
+ */
+const CONDITION_TO_CSV = {
+  wheelchair: 'wheelchair',
+  diaper: 'diaper',
+  open24h: 'open_24h',       // ★ フロント open24h → バックエンド open_24h
+  ostomate: 'ostomate',
+  nursing_room: 'nursing_room',
+  washlet: 'washlet',
+  gender_separated: 'gender_separated',
+  free: 'free',
+  parking: 'parking',
+};
+
+export function buildEquipmentCsv(conditions) {
+  return Object.keys(conditions)
+    .filter(key => conditions[key])
+    .map(key => CONDITION_TO_CSV[key] || key)
+    .join(',');
+}

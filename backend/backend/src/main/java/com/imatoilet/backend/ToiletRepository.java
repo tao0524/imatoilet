@@ -32,8 +32,8 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
     List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
 
-    // 修正7: HAVING COUNT を使用して AND条件にする
-    @Query("SELECT t FROM Toilet t " +
+    // ★修正: IDのみ返す（2ステップ方式でN+1解消。findAllByIdWithEquipmentと組み合わせて使う）
+    @Query("SELECT t.id FROM Toilet t " +
            "LEFT JOIN t.equipmentList e " +
            "WHERE " +
            "(:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) AND " +
@@ -44,9 +44,9 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
            "  t.description LIKE %:keyword% OR " +
            "  t.equipment LIKE %:keyword%) AND " +
            "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes) " +
-           "GROUP BY t " +
+           "GROUP BY t.id " +
            "HAVING (:equipmentTypes IS NULL OR COUNT(DISTINCT e.type) = :typeCount)")
-    List<Toilet> searchBySpecs(
+    List<Long> searchIdsBySpecs(
         @Param("facilityCategory") String facilityCategory,
         @Param("minCleanliness") Integer minCleanliness,
         @Param("keyword") String keyword,

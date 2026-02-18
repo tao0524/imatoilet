@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { loadUserToilets, saveUserToilets } from '../utils';
+import { loadUserToilets, saveUserToilets, buildEquipmentCsv } from '../utils';
 import { API_BASE_URL } from '../config/api';
 import './Register.css';
 import ToiletForm from '../components/ToiletForm';
@@ -102,7 +102,6 @@ function Edit() {
     if (!confirm("この内容で更新しますか？")) return;
     setSubmitting(true);
 
-    const equipmentList = Object.keys(formData.conditions).filter(key => formData.conditions[key]);
     const payload = {
       name: formData.name,
       address: formData.address,
@@ -112,7 +111,7 @@ function Edit() {
       cleanliness: formData.cleanliness,
       image: formData.images.join(','),
       facilityCategory: formData.facilityCategory,
-      equipment: equipmentList.join(','),
+      equipment: buildEquipmentCsv(formData.conditions),
       wheelchair: formData.conditions.wheelchair,
       diaper: formData.conditions.diaper,
       open24h: formData.conditions.open24h
@@ -138,6 +137,16 @@ function Edit() {
         if (res.ok) {
           alert("更新しました！");
           navigate(`/detail/${id}`);
+        } else if (res.status === 400) {
+          try {
+            const errData = await res.json();
+            const msgs = errData.errors
+              ? Object.values(errData.errors).join('\n')
+              : errData.message || '入力内容に誤りがあります';
+            alert("入力エラー:\n" + msgs);
+          } catch {
+            alert("入力内容に誤りがあります。");
+          }
         } else {
           alert("更新に失敗しました。");
         }

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -23,9 +24,13 @@ public class Toilet {
     private String name;
 
     @NotNull(message = "緯度は必須です")
+    @DecimalMin(value = "-90.0", message = "緯度は-90以上である必要があります")
+    @DecimalMax(value = "90.0", message = "緯度は90以下である必要があります")
     private Double lat;
 
     @NotNull(message = "経度は必須です")
+    @DecimalMin(value = "-180.0", message = "経度は-180以上である必要があります")
+    @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
     private Double lng;
 
     // 修正4: バリデーション追加
@@ -79,6 +84,7 @@ public class Toilet {
     private String image;
 
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY)
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Equipment> equipmentList = new ArrayList<>();
