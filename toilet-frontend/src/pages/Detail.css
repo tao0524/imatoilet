@@ -1,0 +1,131 @@
+/* toilet-frontend/src/pages/Detail.css */
+
+.detail-main {
+  padding-bottom: 40px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.detail-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-top: 10px;
+}
+
+.detail-header-image {
+  position: relative;
+  background-color: #eee;
+}
+
+.detail-content {
+  padding: 20px;
+}
+
+.detail-title {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.detail-address {
+  margin: 0 0 16px 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.nav-btn, .edit-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.nav-btn {
+  background-color: #2196f3;
+  color: white;
+}
+
+.nav-btn:hover {
+  background-color: #1976d2;
+}
+
+.edit-btn {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.edit-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.info-section {
+  margin-bottom: 24px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.info-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #555;
+  border-left: 4px solid #2196f3;
+  padding-left: 8px;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background-color: #f5f5f5;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #ddd;
+}
+
+.tag-ok {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-color: #c8e6c9;
+}
+
+.cleanliness-display {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fbc02d;
+  letter-spacing: 2px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: #666;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}

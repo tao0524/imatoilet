@@ -30,80 +30,59 @@ public class ToiletService {
         List<Toilet> results;
 
         if (lat != null && lng != null) {
-            // ★修正: 2ステップ方式でN+1を解消
-            // Step 1: ネイティブクエリでIDのみ取得（距離計算はDB側で実行）
+            // 位置情報あり
             double r = (radius != null) ? radius : 5.0;
             List<Long> ids = toiletRepository.findIdsWithinRadius(lat, lng, r);
 
-            if (ids.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            // Step 2: IDリストからequipmentList込みで一括取得（SQLは2回だけ）
+            if (ids.isEmpty()) return new ArrayList<>();
             results = toiletRepository.findAllByIdWithEquipment(ids);
         } else {
-            // 位置情報がない場合：条件検索または全件取得
-            // EquipmentTypeへの変換
-            List<EquipmentType> types = null;
-            if (equipment != null && !equipment.isEmpty()) {
-                types = new ArrayList<>();
-                for (String eq : equipment) {
-                    try {
-                        types.add(EquipmentType.valueOf(eq));
-                    } catch (IllegalArgumentException e) {
-                        // 無効な値は無視
-                    }
-                }
-                if (types.isEmpty()) types = null;
-            }
-
-            // typesのサイズをカウントして渡す (AND検索用)
+            // 位置情報なし（条件検索）
+            List<EquipmentType> types = convertToEnumList(equipment);
             Long typeCount = (types != null) ? (long) types.size() : null;
 
-            // 条件が一つでもあれば検索、なければ全件
             if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
-                // ★2ステップ方式: IDのみ取得 → EntityGraph付きで一括取得（N+1解消）
                 List<Long> ids = toiletRepository.searchIdsBySpecs(facilityCategory, minCleanliness, keyword, types, typeCount);
-                if (ids.isEmpty()) {
-                    return new ArrayList<>();
-                }
+                if (ids.isEmpty()) return new ArrayList<>();
                 return toiletRepository.findAllByIdWithEquipment(ids);
             } else {
                 return toiletRepository.findAll();
             }
         }
 
-        // 2. 位置情報検索の結果に対して、さらに条件でフィルタリング (Java側で実行)
+        // 2. Java側フィルタリング (Entityリストを使用)
         return results.stream()
             .filter(t -> {
-                // (A) カテゴリ判定
+                // (A) カテゴリ
                 if (facilityCategory != null && !facilityCategory.isEmpty()) {
                     if (!facilityCategory.equals(t.getFacilityCategory())) return false;
                 }
                 
-                // (B) 清潔度判定
+                // (B) 清潔度
                 if (minCleanliness != null) {
                     if (t.getCleanliness() == null || t.getCleanliness() < minCleanliness) return false;
                 }
                 
-                // (C) キーワード判定
+                // (C) キーワード (名前、住所、説明、設備リストから検索)
                 if (keyword != null && !keyword.isEmpty()) {
                     String k = keyword.toLowerCase();
                     boolean matchName = t.getName() != null && t.getName().toLowerCase().contains(k);
                     boolean matchAddr = t.getAddress() != null && t.getAddress().toLowerCase().contains(k);
                     boolean matchDesc = t.getDescription() != null && t.getDescription().toLowerCase().contains(k);
-                    boolean matchEq   = t.getEquipment() != null && t.getEquipment().toLowerCase().contains(k);
+                    // 設備リスト内の文字列も検索対象にする
+                    boolean matchEq = t.getEquipmentNames().stream()
+                            .anyMatch(eqName -> eqName.toLowerCase().contains(k));
                     
                     if (!matchName && !matchAddr && !matchDesc && !matchEq) return false;
                 }
                 
-                // (D) 設備判定 (AND条件)
+                // (D) 設備 (AND条件)
                 if (equipment != null && !equipment.isEmpty()) {
-                    String tEq = (t.getEquipment() != null) ? t.getEquipment() : "";
+                    // トイレが持っている設備名のリスト
+                    List<String> holding = t.getEquipmentNames(); 
                     for (String req : equipment) {
-                        if (!tEq.toLowerCase().contains(req.toLowerCase())) {
-                            return false; 
-                        }
+                        boolean hasIt = holding.stream().anyMatch(h -> h.equalsIgnoreCase(req));
+                        if (!hasIt) return false;
                     }
                 }
                 
@@ -113,9 +92,12 @@ public class ToiletService {
     }
 
     // --- ID検索 ---
+    // ★修正: findByIdではなくfindWithEquipmentByIdを使用する。
+    // findById()は@EntityGraphなしのLazyロードのため、トランザクション外の
+    // JSON直列化時にequipmentList(equipment配列)が空になるバグを修正。
     public Toilet getToilet(Long id) {
         Long safeId = Objects.requireNonNull(id, "ID must not be null");
-        return toiletRepository.findById(safeId)
+        return toiletRepository.findWithEquipmentById(safeId)
                 .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
     }
 
@@ -124,46 +106,40 @@ public class ToiletService {
         if (toilet.getCleanliness() == null) {
             toilet.setCleanliness(3);
         }
-        return toiletRepository.save(toilet);
+        
+        // 一旦トイレを保存してIDを発行
+        Toilet savedToilet = toiletRepository.save(toilet);
+
+        // inputリストからEquipmentエンティティを生成して保存
+        updateEquipmentList(savedToilet, toilet.getEquipmentInput());
+        
+        // フラグ同期（互換性のため）
+        syncFlagsFromEquipment(savedToilet);
+
+        return toiletRepository.save(savedToilet);
     }
 
-    // --- 更新ロジック ---
+    // --- 更新 ---
     public Toilet updateToilet(Long id, Toilet details) {
         Toilet toilet = getToilet(id);
 
-        // name は空白不可（@NotBlank と同じ制約を維持）
-        Optional.ofNullable(details.getName())
-                .filter(s -> !s.isBlank())
-                .ifPresent(toilet::setName);
-
-        // address は空文字での上書きを許可（住所クリア対応）
-        if (details.getAddress() != null) {
-            toilet.setAddress(details.getAddress());
-        }
-
-        if (details.getDescription() != null) {
-            toilet.setDescription(details.getDescription());
-        }
-
-        if (details.getImage() != null) {
-            toilet.setImage(details.getImage());
-        }
-
-        if (details.getFacilityCategory() != null) {
-            toilet.setFacilityCategory(details.getFacilityCategory());
-        }
-
-        if (details.getEquipment() != null) {
-            toilet.setEquipment(details.getEquipment());
-        }
+        Optional.ofNullable(details.getName()).filter(s -> !s.isBlank()).ifPresent(toilet::setName);
+        if (details.getAddress() != null) toilet.setAddress(details.getAddress());
+        if (details.getDescription() != null) toilet.setDescription(details.getDescription());
+        if (details.getImage() != null) toilet.setImage(details.getImage());
+        if (details.getFacilityCategory() != null) toilet.setFacilityCategory(details.getFacilityCategory());
 
         Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
         Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
         Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
 
-        Optional.ofNullable(details.getWheelchair()).ifPresent(toilet::setWheelchair);
-        Optional.ofNullable(details.getDiaper()).ifPresent(toilet::setDiaper);
-        Optional.ofNullable(details.getOpen24h()).ifPresent(toilet::setOpen24h);
+        // 設備リストの更新
+        if (details.getEquipmentInput() != null) {
+            updateEquipmentList(toilet, details.getEquipmentInput());
+            syncFlagsFromEquipment(toilet);
+        }
+
+        // 個別フラグが明示的に送られてきた場合の上書き（後方互換）
         Optional.ofNullable(details.getPublicUse()).ifPresent(toilet::setPublicUse);
         Optional.ofNullable(details.getTypePark()).ifPresent(toilet::setTypePark);
         Optional.ofNullable(details.getTypeStation()).ifPresent(toilet::setTypeStation);
@@ -175,10 +151,47 @@ public class ToiletService {
     // --- 削除 ---
     public void deleteToilet(Long id) {
         Long safeId = Objects.requireNonNull(id, "ID must not be null");
-
         if (!toiletRepository.existsById(safeId)) {
             throw new ResourceNotFoundException("トイレ", "id", safeId);
         }
         toiletRepository.deleteById(safeId);
+    }
+
+    // --- ヘルパー: EquipmentListの更新 ---
+    private void updateEquipmentList(Toilet toilet, List<String> inputs) {
+        if (inputs == null) return;
+
+        // 既存の設備をクリア (orphanRemoval=true によりDBからも削除される)
+        toilet.getEquipmentList().clear();
+
+        // 新しい設備を追加
+        for (String typeStr : inputs) {
+            try {
+                EquipmentType type = EquipmentType.valueOf(typeStr);
+                toilet.addEquipment(type);
+            } catch (IllegalArgumentException e) {
+                // 無効なタイプは無視
+            }
+        }
+    }
+
+    // --- ヘルパー: フラグ同期 (Equipment -> Boolean fields) ---
+    private void syncFlagsFromEquipment(Toilet toilet) {
+        List<String> names = toilet.getEquipmentNames();
+        toilet.setWheelchair(names.contains("WHEELCHAIR"));
+        toilet.setDiaper(names.contains("DIAPER"));
+        toilet.setOpen24h(names.contains("OPEN_24H"));
+    }
+
+    // --- ヘルパー: 文字列リストをEnumリストへ ---
+    private List<EquipmentType> convertToEnumList(List<String> inputs) {
+        if (inputs == null || inputs.isEmpty()) return null;
+        List<EquipmentType> list = new ArrayList<>();
+        for (String s : inputs) {
+            try {
+                list.add(EquipmentType.valueOf(s));
+            } catch (IllegalArgumentException e) { /* ignore */ }
+        }
+        return list.isEmpty() ? null : list;
     }
 }

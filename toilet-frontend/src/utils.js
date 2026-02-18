@@ -1,3 +1,4 @@
+// toilet-frontend/src/utils.js
 export const STORAGE_KEY = "imatoilet_user_toilets_v1";
 
 // ユーザー登録データを読み込む
@@ -41,7 +42,7 @@ export function calcDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ★追加: Cloudinaryへの画像アップロード関数
+// Cloudinaryへの画像アップロード関数
 export async function uploadToCloudinary(file) {
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -54,7 +55,6 @@ export async function uploadToCloudinary(file) {
   formData.append("file", file);
   formData.append("upload_preset", uploadPreset);
 
-  // Cloudinaryへ送信
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
     method: "POST",
     body: formData
@@ -66,28 +66,62 @@ export async function uploadToCloudinary(file) {
   }
 
   const data = await res.json();
-  return data.secure_url; // httpsから始まるURLを返す
+  return data.secure_url;
 }
 
 /**
- * conditions オブジェクトから equipment CSV 文字列を生成する
- * フロントのキー名とバックエンドのCSV値の不一致を吸収する
+ * フロントエンドのconditionsキー → バックエンドのEnum名 マッピング
+ * ★追加: baby_chair → BABY_CHAIR
+ *
+ * 新しい設備を追加するときはここだけ編集すればよい。
  */
-const CONDITION_TO_CSV = {
-  wheelchair: 'wheelchair',
-  diaper: 'diaper',
-  open24h: 'open_24h',       // ★ フロント open24h → バックエンド open_24h
-  ostomate: 'ostomate',
-  nursing_room: 'nursing_room',
-  washlet: 'washlet',
-  gender_separated: 'gender_separated',
-  free: 'free',
-  parking: 'parking',
+const CONDITION_MAP = {
+  wheelchair:       'WHEELCHAIR',
+  diaper:           'DIAPER',
+  open24h:          'OPEN_24H',
+  ostomate:         'OSTOMATE',
+  nursing_room:     'NURSING_ROOM',
+  baby_chair:       'BABY_CHAIR',       // ★追加
+  washlet:          'WASHLET',
+  gender_separated: 'GENDER_SEPARATED',
+  free:             'FREE',
+  parking:          'PARKING',
 };
 
-export function buildEquipmentCsv(conditions) {
+// conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
+export function buildEquipmentArray(conditions) {
   return Object.keys(conditions)
     .filter(key => conditions[key])
-    .map(key => CONDITION_TO_CSV[key] || key)
-    .join(',');
+    .map(key => CONDITION_MAP[key] || key.toUpperCase());
+}
+
+/**
+ * トイレオブジェクトから設備情報の Set を生成する (正規化)
+ *
+ * 以下の3パターンを統一して扱う:
+ *   1. 新形式: equipment が文字列配列  ["WHEELCHAIR", "OPEN_24H"]
+ *   2. 旧形式: equipment が CSV文字列  "wheelchair,open_24h"
+ *   3. 互換フラグ: toilet.wheelchair / toilet.diaper / toilet.open24h (boolean)
+ *
+ * @param {Object} toilet - APIレスポンスまたはローカルストレージのトイレオブジェクト
+ * @returns {Set<string>} 大文字の設備名セット (例: Set{"WHEELCHAIR", "OPEN_24H"})
+ */
+export function normalizeEquipment(toilet) {
+  const eqSet = new Set();
+
+  // 1. 配列形式 (新形式)
+  if (Array.isArray(toilet.equipment)) {
+    toilet.equipment.forEach(e => eqSet.add(e.toUpperCase()));
+  // 2. CSV文字列形式 (旧形式)
+  } else if (typeof toilet.equipment === 'string' && toilet.equipment.length > 0) {
+    toilet.equipment.split(',').forEach(e => eqSet.add(e.trim().toUpperCase()));
+  }
+
+  // 3. 個別フラグ (互換性維持 — 旧データのフォールバック)
+  if (toilet.wheelchair) eqSet.add('WHEELCHAIR');
+  if (toilet.diaper)     eqSet.add('DIAPER');
+  if (toilet.open24h)    eqSet.add('OPEN_24H');
+  if (toilet.parking)    eqSet.add('PARKING');
+
+  return eqSet;
 }

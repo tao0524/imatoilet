@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-// ★修正: Marker のインポートを削除（独自の AdvancedMarker に置き換えるため）
 import { InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import { SafeGoogleMap } from '../../components/SafeGoogleMap';
 import { Link } from 'react-router-dom';
+import { normalizeEquipment } from '../../utils'; // ★追加
 
 // アイコン
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
@@ -13,20 +13,27 @@ import MapIcon from '@mui/icons-material/Map';
 const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
 const CONTAINER_STYLE = { width: '100%', height: '100%' };
 
-// --- 既存のSVGピンアイコン生成関数 ---
+// =========================================================================
+// SVGピンアイコン生成関数
+// ★修正: utils.normalizeEquipment() を使用し、配列・CSV・旧フラグを一括処理
+// =========================================================================
 const getPinIcon = (toilet) => {
-  let color = '#757575'; 
+  let color = '#757575';
   let text = '🚽';
   switch (toilet.facilityCategory) {
-    case 'station': color = '#ef5350'; text = '🚉'; break;
-    case 'park': color = '#43a047'; text = '🌳'; break;
+    case 'station':                        color = '#ef5350'; text = '🚉'; break;
+    case 'park':                           color = '#43a047'; text = '🌳'; break;
     case 'commercial': case 'convenience': color = '#fb8c00'; text = '🛍️'; break;
-    case 'public': color = '#3949ab'; text = '🏢'; break;
-    case 'medical': color = '#e91e63'; text = '🏥'; break;
-    case 'hotel_tourism': color = '#8e24aa'; text = '🏨'; break;
+    case 'public':                         color = '#3949ab'; text = '🏢'; break;
+    case 'medical':                        color = '#e91e63'; text = '🏥'; break;
+    case 'hotel_tourism':                  color = '#8e24aa'; text = '🏨'; break;
     default: break;
   }
-  const wheelchairBadge = toilet.wheelchair ? `
+
+  // ★修正: normalizeEquipment() で配列・CSV文字列・旧フラグを一括正規化
+  const eqSet = normalizeEquipment(toilet);
+
+  const wheelchairBadge = eqSet.has('WHEELCHAIR') ? `
     <circle cx="32" cy="10" r="9" fill="#1976d2" stroke="white" stroke-width="1.5" />
     <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
   ` : '';
@@ -43,20 +50,18 @@ const getPinIcon = (toilet) => {
 };
 
 // =========================================================================
-// ★新規追加: AdvancedMarkerElement を安全に呼び出すカスタムコンポーネント
+// AdvancedMarkerElement を安全に呼び出すカスタムコンポーネント
 // =========================================================================
 const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
   const onClickRef = useRef(onClick);
-  
-  // onClick関数が再生成されてもピンが再描画されないようRefに保持
+
   useEffect(() => { onClickRef.current = onClick; }, [onClick]);
 
   useEffect(() => {
     if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
 
-    let contentEl = document.createElement('div');
-    
-    // 見た目の出し分け（トイレピン、中心ピン、現在地ピン）
+    const contentEl = document.createElement('div');
+
     if (iconSrc) {
       const img = document.createElement('img');
       img.src = iconSrc;
@@ -92,25 +97,26 @@ const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocatio
 
   return null;
 };
+
 // =========================================================================
-
-
-function MapPanel({ filteredToilets, currentLocation, realLocation }) {
+// MapPanel 本体
+// =========================================================================
+function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
   const [selectedToiletId, setSelectedToiletId] = useState(null);
   const [directionsResponse, setDirectionsResponse] = useState(null);
-  const [routeInfo, setRouteInfo] = useState("");
-  const [travelMode, setTravelMode] = useState("WALKING");
+  const [routeInfo, setRouteInfo] = useState('');
+  const [travelMode, setTravelMode] = useState('WALKING');
   const [originMode, setOriginMode] = useState(realLocation ? 'GPS' : 'CENTER');
 
   const [map, setMap] = useState(null);
 
-  useEffect(() => { if(realLocation) setOriginMode('GPS'); }, [realLocation]);
+  useEffect(() => { if (realLocation) setOriginMode('GPS'); }, [realLocation]);
 
   useEffect(() => {
     setSelectedToiletId(null);
     setDirectionsResponse(null);
-    setRouteInfo("");
-    setTravelMode("WALKING");
+    setRouteInfo('');
+    setTravelMode('WALKING');
   }, [currentLocation]);
 
   const center = useMemo(() => {
@@ -127,16 +133,20 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
 
   const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
 
-  // ★フリーズ対策：トイレのピン生成数を制限
-  const MARKER_LIMIT = 50;  
-
+  // フリーズ対策：トイレのピン生成数を制限
+  const MARKER_LIMIT = 50;
   const markerToilets = useMemo(() => {
     if (!Array.isArray(filteredToilets)) return [];
     return filteredToilets.slice(0, MARKER_LIMIT);
   }, [filteredToilets]);
 
+  // ★InfoWindow用: 選択中トイレのequipmentを正規化 (selectedToilet変化時のみ再計算)
+  const selectedEqSet = useMemo(() => {
+    if (!selectedToilet) return new Set();
+    return normalizeEquipment(selectedToilet);
+  }, [selectedToilet]);
 
-  // --- ルート検索ロジック (既存通り維持) ---
+  // --- ルート検索ロジック ---
   useEffect(() => {
     const startPoint = (originMode === 'GPS' && realLocation) ? realLocation : currentLocation;
 
@@ -144,7 +154,6 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
       const directionsService = new window.google.maps.DirectionsService();
       const origin = { lat: startPoint.lat, lng: startPoint.lng };
       const destination = { lat: selectedToilet.lat, lng: selectedToilet.lng };
-
       const request = { origin, destination, travelMode: window.google.maps.TravelMode[travelMode] };
 
       directionsService.route(request, (result, status) => {
@@ -153,52 +162,68 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
           const leg = result.routes[0].legs[0];
           setRouteInfo(`${leg.duration.text} (${leg.distance.text})`);
         } else {
-          if (travelMode === "WALKING") {
-            directionsService.route({ ...request, travelMode: window.google.maps.TravelMode.DRIVING }, (resCar, statusCar) => {
-              if (statusCar === window.google.maps.DirectionsStatus.OK) {
-                setDirectionsResponse(resCar);
-                const leg = resCar.routes[0].legs[0];
-                setRouteInfo(`(車) ${leg.duration.text} (${leg.distance.text})`);
-              } else {
-                setDirectionsResponse(null);
-                setRouteInfo("ルートが見つかりません");
+          if (travelMode === 'WALKING') {
+            directionsService.route(
+              { ...request, travelMode: window.google.maps.TravelMode.DRIVING },
+              (resCar, statusCar) => {
+                if (statusCar === window.google.maps.DirectionsStatus.OK) {
+                  setDirectionsResponse(resCar);
+                  const leg = resCar.routes[0].legs[0];
+                  setRouteInfo(`(車) ${leg.duration.text} (${leg.distance.text})`);
+                } else {
+                  setDirectionsResponse(null);
+                  setRouteInfo('ルートが見つかりません');
+                }
               }
-            });
+            );
           } else {
             setDirectionsResponse(null);
-            setRouteInfo("ルートが見つかりません");
+            setRouteInfo('ルートが見つかりません');
           }
         }
       });
     } else {
       setDirectionsResponse(null);
-      setRouteInfo("");
+      setRouteInfo('');
     }
-  }, [selectedToiletId, realLocation, selectedToilet, travelMode, originMode]); 
+  }, [selectedToiletId, realLocation, selectedToilet, travelMode, originMode]);
 
   return (
     <section className="panel panel--map">
       <header className="panel-head">
         <h2 className="panel-title">地図</h2>
       </header>
-      
+
       <div className="map-area" style={{ position: 'relative' }}>
-        
+
         {selectedToilet && (
           <div className="map-controls-overlay">
             <div className="map-controls-row">
-              <button className={`map-ctrl-btn ${travelMode === "WALKING" ? 'active-walk' : ''}`} onClick={() => setTravelMode("WALKING")}>
+              <button
+                className={`map-ctrl-btn ${travelMode === 'WALKING' ? 'active-walk' : ''}`}
+                onClick={() => setTravelMode('WALKING')}
+              >
                 <DirectionsWalkIcon fontSize="small" /> 徒歩
               </button>
-              <button className={`map-ctrl-btn ${travelMode === "DRIVING" ? 'active-drive' : ''}`} onClick={() => setTravelMode("DRIVING")}>
+              <button
+                className={`map-ctrl-btn ${travelMode === 'DRIVING' ? 'active-drive' : ''}`}
+                onClick={() => setTravelMode('DRIVING')}
+              >
                 <DirectionsCarIcon fontSize="small" /> 車
               </button>
             </div>
             <div className="map-controls-row">
-              <button className={`map-ctrl-btn ${originMode === "GPS" ? 'active-gps' : ''}`} disabled={!realLocation} onClick={() => setOriginMode("GPS")}>
+              <button
+                className={`map-ctrl-btn ${originMode === 'GPS' ? 'active-gps' : ''}`}
+                disabled={!realLocation}
+                onClick={() => setOriginMode('GPS')}
+              >
                 <MyLocationIcon fontSize="small" /> 現在地から
               </button>
-              <button className={`map-ctrl-btn ${originMode === "CENTER" ? 'active-center' : ''}`} onClick={() => setOriginMode("CENTER")}>
+              <button
+                className={`map-ctrl-btn ${originMode === 'CENTER' ? 'active-center' : ''}`}
+                onClick={() => setOriginMode('CENTER')}
+              >
                 <MapIcon fontSize="small" /> 地図中心から
               </button>
             </div>
@@ -206,8 +231,8 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
         )}
 
         <SafeGoogleMap center={center} zoom={14} style={CONTAINER_STYLE} onLoad={onMapLoad}>
-          
-          {/* ★修正: 検索中心のピン */}
+
+          {/* 検索中心のピン */}
           {currentLocation && (
             <AdvancedMarker
               map={map}
@@ -217,7 +242,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
             />
           )}
 
-          {/* ★修正: 現在地のピン */}
+          {/* 現在地のピン */}
           {realLocation && (
             <AdvancedMarker
               map={map}
@@ -234,7 +259,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
                 directions: directionsResponse,
                 suppressMarkers: true,
                 polylineOptions: {
-                  strokeColor: travelMode === 'WALKING' ? "#4285F4" : "#FF5252",
+                  strokeColor: travelMode === 'WALKING' ? '#4285F4' : '#FF5252',
                   strokeWeight: 5,
                   strokeOpacity: 0.7
                 }
@@ -242,7 +267,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
             />
           )}
 
-          {/* ★修正: トイレのピン */}
+          {/* トイレのピン */}
           {markerToilets.map((t) => (
             <AdvancedMarker
               key={t.id}
@@ -254,7 +279,7 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
             />
           ))}
 
-          {/* InfoWindow は既存のまま */}
+          {/* InfoWindow */}
           {selectedToilet && (
             <InfoWindow
               position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
@@ -262,47 +287,61 @@ function MapPanel({ filteredToilets, currentLocation, realLocation }) {
               options={{ pixelOffset: new window.google.maps.Size(0, -52) }}
             >
               <div style={{ padding: '4px', maxWidth: '220px' }}>
-                <b style={{ fontSize: '1rem', display:'block', marginBottom:'4px' }}>{selectedToilet.name}</b>
-                
+                <b style={{ fontSize: '1rem', display: 'block', marginBottom: '4px' }}>
+                  {selectedToilet.name}
+                </b>
+
                 {routeInfo && (
-                  <div style={{ 
-                    background: travelMode === 'WALKING' ? '#e3f2fd' : '#ffebee', 
-                    color: travelMode === 'WALKING' ? '#0d47a1' : '#c62828', 
-                    padding:'4px 8px', borderRadius:'4px', fontSize:'0.85rem', fontWeight:'bold', 
-                    marginBottom:'8px', display:'flex', alignItems:'center', gap:'4px'
+                  <div style={{
+                    background: travelMode === 'WALKING' ? '#e3f2fd' : '#ffebee',
+                    color: travelMode === 'WALKING' ? '#0d47a1' : '#c62828',
+                    padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem',
+                    fontWeight: 'bold', marginBottom: '8px',
+                    display: 'flex', alignItems: 'center', gap: '4px'
                   }}>
-                    {travelMode === 'WALKING' ? <DirectionsWalkIcon fontSize="small"/> : <DirectionsCarIcon fontSize="small"/>}
+                    {travelMode === 'WALKING'
+                      ? <DirectionsWalkIcon fontSize="small" />
+                      : <DirectionsCarIcon fontSize="small" />
+                    }
                     {routeInfo}
                   </div>
                 )}
-                
+
                 <div style={{ margin: '6px 0', fontSize: '0.85rem', color: '#444' }}>
-                   {'⭐'.repeat(selectedToilet.cleanliness || 3)}
+                  {'⭐'.repeat(selectedToilet.cleanliness || 3)}
                 </div>
 
+                {/* ★修正: selectedEqSet (utils.normalizeEquipment) で全設備を統合表示 */}
                 <div style={{ marginBottom: '8px' }}>
-                  {selectedToilet.wheelchair && <span title="車椅子" style={{ marginRight:4 }}>♿</span>}
-                  {selectedToilet.diaper && <span title="オムツ" style={{ marginRight:4 }}>👶</span>}
-                  {selectedToilet.open24h && <span title="24時間">🕒</span>}
+                  {selectedEqSet.has('WHEELCHAIR')       && <span title="車椅子"        style={{ marginRight: 4 }}>♿</span>}
+                  {selectedEqSet.has('DIAPER')           && <span title="オムツ"        style={{ marginRight: 4 }}>👶</span>}
+                  {selectedEqSet.has('OPEN_24H')         && <span title="24時間"        style={{ marginRight: 4 }}>🕒</span>}
+                  {selectedEqSet.has('PARKING')          && <span title="駐車場"        style={{ marginRight: 4 }}>🚗</span>}
+                  {selectedEqSet.has('OSTOMATE')         && <span title="オストメイト"  style={{ marginRight: 4 }}>➕</span>}
+                  {selectedEqSet.has('WASHLET')          && <span title="ウォシュレット" style={{ marginRight: 4 }}>🚽</span>}
+                  {selectedEqSet.has('NURSING_ROOM')     && <span title="授乳室"        style={{ marginRight: 4 }}>🍼</span>}
+                  {selectedEqSet.has('GENDER_SEPARATED') && <span title="男女別"        style={{ marginRight: 4 }}>🚻</span>}
+                  {selectedEqSet.has('FREE')             && <span title="無料">💰</span>}
                 </div>
 
-                <Link 
+                <Link
                   to={`/detail/${selectedToilet.id}`}
-                  style={{ 
-                    display: 'block', textAlign: 'center', background: '#1e88e5', 
-                    color: 'white', padding: '8px', borderRadius: '6px', 
-                    textDecoration: 'none', fontSize: '0.9rem', fontWeight:'bold'
+                  style={{
+                    display: 'block', textAlign: 'center', background: '#1e88e5',
+                    color: 'white', padding: '8px', borderRadius: '6px',
+                    textDecoration: 'none', fontSize: '0.9rem', fontWeight: 'bold'
                   }}
                 >
                   詳細を見る
                 </Link>
-                
-                <a href={`https://www.google.com/maps?q=${selectedToilet.lat},${selectedToilet.lng}`}
-                   target="_blank" rel="noreferrer"
-                   style={{ 
-                     display: 'block', textAlign: 'center', marginTop: '8px',
-                     fontSize: '0.75rem', color: '#666', textDecoration: 'underline'
-                   }}
+
+                <a
+                  href={`https://www.google.com/maps?q=${selectedToilet.lat},${selectedToilet.lng}`}
+                  target="_blank" rel="noreferrer"
+                  style={{
+                    display: 'block', textAlign: 'center', marginTop: '8px',
+                    fontSize: '0.75rem', color: '#666', textDecoration: 'underline'
+                  }}
                 >
                   Googleマップアプリで開く
                 </a>
