@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 import java.util.List;
+import java.util.Optional;
 
 public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 
@@ -14,7 +15,13 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @NonNull
     List<Toilet> findAll();
 
-    // ★修正: IDのみ返すことで、@EntityGraph付きの2段階取得を可能にする（N+1解消）
+    // ★追加: ID単体取得時にequipmentListをEagerロードする
+    // getToilet()で使用。@EntityGraphなしのfindById()はLazy読み込みで
+    // トランザクション外のJSON直列化時に空配列になるバグを修正。
+    @EntityGraph(attributePaths = {"equipmentList"})
+    Optional<Toilet> findWithEquipmentById(Long id);
+
+    // 位置検索（ネイティブクエリ）
     @Query(value = "SELECT t.id FROM toilet t WHERE " +
            "(6371 * acos(least(1.0, greatest(-1.0, " +
            "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
@@ -27,12 +34,12 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
         @Param("radius") Double radius
     );
 
-    // ★追加: IDリストからequipmentListを含めて一括取得（N+1解消）
+    // ID指定取得（複数）
     @EntityGraph(attributePaths = {"equipmentList"})
     @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
     List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
 
-    // ★修正: IDのみ返す（2ステップ方式でN+1解消。findAllByIdWithEquipmentと組み合わせて使う）
+    // ★修正: t.equipment への参照を削除しました（エンティティから削除済みのため）
     @Query("SELECT t.id FROM Toilet t " +
            "LEFT JOIN t.equipmentList e " +
            "WHERE " +
@@ -41,8 +48,7 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
            "(:keyword IS NULL OR " +
            "  t.name LIKE %:keyword% OR " +
            "  t.address LIKE %:keyword% OR " +
-           "  t.description LIKE %:keyword% OR " +
-           "  t.equipment LIKE %:keyword%) AND " +
+           "  t.description LIKE %:keyword%) AND " +
            "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes) " +
            "GROUP BY t.id " +
            "HAVING (:equipmentTypes IS NULL OR COUNT(DISTINCT e.type) = :typeCount)")

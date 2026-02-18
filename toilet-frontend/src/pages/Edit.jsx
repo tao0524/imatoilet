@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { loadUserToilets, saveUserToilets, buildEquipmentCsv } from '../utils';
+import { loadUserToilets, saveUserToilets, buildEquipmentArray, normalizeEquipment } from '../utils';
 import { API_BASE_URL } from '../config/api';
 import './Register.css';
 import ToiletForm from '../components/ToiletForm';
@@ -24,15 +24,16 @@ function Edit() {
     cleanliness: 3,
     facilityCategory: '',
     conditions: {
-      wheelchair: false,
-      diaper: false,
-      open24h: false,
-      ostomate: false,
-      nursing_room: false,
-      washlet: false,
+      wheelchair:       false,
+      diaper:           false,
+      open24h:          false,
+      ostomate:         false,
+      nursing_room:     false,
+      baby_chair:       false, // ★追加
+      washlet:          false,
       gender_separated: false,
-      free: false,
-      parking: false
+      free:             false,
+      parking:          false,
     }
   });
 
@@ -43,23 +44,15 @@ function Edit() {
         const userToilets = loadUserToilets();
         const found = userToilets.find(t => t.id === id);
         if (found) applyDataToForm(found);
-        else {
-          alert("データが見つかりません");
-          setLoading(false);
-        }
+        else { alert('データが見つかりません'); setLoading(false); }
       } else {
         try {
           const res = await fetch(`${API_BASE_URL}/${id}`);
-          if (res.ok) {
-            const data = await res.json();
-            applyDataToForm(data);
-          } else {
-            alert("データの取得に失敗しました");
-            navigate('/search');
-          }
+          if (res.ok) applyDataToForm(await res.json());
+          else { alert('データの取得に失敗しました'); navigate('/search'); }
         } catch (err) {
           console.error(err);
-          alert("通信エラーが発生しました");
+          alert('通信エラーが発生しました');
         }
       }
     }
@@ -68,28 +61,32 @@ function Edit() {
   }, [id]);
 
   const applyDataToForm = (data) => {
-    const eqList = data.equipment ? data.equipment.split(',') : [];
-    const imageList = data.image ? data.image.split(',').filter(url => url.trim() !== "") : [];
+    const eqSet = normalizeEquipment(data);
+
+    const imageList = data.image
+      ? data.image.split(',').filter(url => url.trim() !== '')
+      : [];
 
     setFormData({
-      name: data.name || '',
-      address: data.address || '',
-      description: data.description || '',
-      lat: data.lat,
-      lng: data.lng,
-      images: imageList,
-      cleanliness: data.cleanliness || 3,
+      name:             data.name || '',
+      address:          data.address || '',
+      description:      data.description || '',
+      lat:              data.lat,
+      lng:              data.lng,
+      images:           imageList,
+      cleanliness:      data.cleanliness || 3,
       facilityCategory: data.facilityCategory || '',
       conditions: {
-        wheelchair: data.wheelchair || eqList.includes('wheelchair') || eqList.includes('WHEELCHAIR'),
-        diaper: data.diaper || eqList.includes('diaper') || eqList.includes('DIAPER'),
-        open24h: data.open24h || eqList.includes('open_24h') || eqList.includes('OPEN_24H'),
-        ostomate: eqList.includes('ostomate') || eqList.includes('OSTOMATE'),
-        nursing_room: eqList.includes('nursing_room') || eqList.includes('NURSING_ROOM'),
-        washlet: eqList.includes('washlet') || eqList.includes('WASHLET'),
-        gender_separated: eqList.includes('gender_separated') || eqList.includes('GENDER_SEPARATED'),
-        free: eqList.includes('free') || eqList.includes('FREE'),
-        parking: eqList.includes('parking') || eqList.includes('PARKING'),
+        wheelchair:       eqSet.has('WHEELCHAIR'),
+        diaper:           eqSet.has('DIAPER'),
+        open24h:          eqSet.has('OPEN_24H'),
+        ostomate:         eqSet.has('OSTOMATE'),
+        nursing_room:     eqSet.has('NURSING_ROOM'),
+        baby_chair:       eqSet.has('BABY_CHAIR'),     // ★追加
+        washlet:          eqSet.has('WASHLET'),
+        gender_separated: eqSet.has('GENDER_SEPARATED'),
+        free:             eqSet.has('FREE'),
+        parking:          eqSet.has('PARKING'),
       }
     });
 
@@ -99,22 +96,23 @@ function Edit() {
   // --- 送信処理 ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!confirm("この内容で更新しますか？")) return;
+    if (!confirm('この内容で更新しますか？')) return;
     setSubmitting(true);
 
     const payload = {
-      name: formData.name,
-      address: formData.address,
-      description: formData.description,
-      lat: formData.lat,
-      lng: formData.lng,
-      cleanliness: formData.cleanliness,
-      image: formData.images.join(','),
+      name:             formData.name,
+      address:          formData.address,
+      description:      formData.description,
+      lat:              Number(formData.lat),
+      lng:              Number(formData.lng),
+      cleanliness:      Number(formData.cleanliness),
+      image:            formData.images.join(','),
       facilityCategory: formData.facilityCategory,
-      equipment: buildEquipmentCsv(formData.conditions),
-      wheelchair: formData.conditions.wheelchair,
-      diaper: formData.conditions.diaper,
-      open24h: formData.conditions.open24h
+      equipment:        buildEquipmentArray(formData.conditions),
+      // 後方互換フラグ
+      wheelchair:       formData.conditions.wheelchair,
+      diaper:           formData.conditions.diaper,
+      open24h:          formData.conditions.open24h,
     };
 
     try {
@@ -124,7 +122,7 @@ function Edit() {
         if (index !== -1) {
           userToilets[index] = { ...userToilets[index], ...payload, updatedAt: new Date().toISOString() };
           saveUserToilets(userToilets);
-          alert("更新しました（ローカル）");
+          alert('更新しました（ローカル）');
           navigate(`/detail/${id}`);
         }
       } else {
@@ -135,7 +133,7 @@ function Edit() {
         });
 
         if (res.ok) {
-          alert("更新しました！");
+          alert('更新しました！');
           navigate(`/detail/${id}`);
         } else if (res.status === 400) {
           try {
@@ -143,23 +141,23 @@ function Edit() {
             const msgs = errData.errors
               ? Object.values(errData.errors).join('\n')
               : errData.message || '入力内容に誤りがあります';
-            alert("入力エラー:\n" + msgs);
+            alert('入力エラー:\n' + msgs);
           } catch {
-            alert("入力内容に誤りがあります。");
+            alert('入力内容に誤りがあります。');
           }
         } else {
-          alert("更新に失敗しました。");
+          alert('更新に失敗しました。');
         }
       }
     } catch (err) {
       console.error(err);
-      alert("エラーが発生しました。");
+      alert('エラーが発生しました。');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="container" style={{padding:'20px'}}>データを読み込んでいます...</div>;
+  if (loading) return <div className="container" style={{ padding: '20px' }}>データを読み込んでいます...</div>;
 
   return (
     <ToiletForm
