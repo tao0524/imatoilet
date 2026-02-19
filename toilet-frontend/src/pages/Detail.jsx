@@ -82,7 +82,12 @@ function Detail() {
         alert('削除しました（ブラウザ保存データ）');
         navigate('/search');
       } else {
-        const res = await fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE_URL}/${id}`, { 
+          method: 'DELETE',
+          headers: {
+            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN
+          }
+        });
         if (res.ok) { alert('削除しました'); navigate('/search'); }
         else alert('削除に失敗しました');
       }

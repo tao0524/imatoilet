@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias; // ★追加
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -94,8 +95,9 @@ public class Toilet {
     }
 
     // 2. APIリクエスト受信用
+    // ★修正: @JsonPropertyによる二重定義を回避し、@JsonAliasで入力のみ受け付けるように変更
     @Transient
-    @JsonProperty("equipment")
+    @JsonAlias("equipment")
     private List<String> equipmentInput;
 
     // --- ヘルパーメソッド ---

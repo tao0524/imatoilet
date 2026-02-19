@@ -128,7 +128,10 @@ function Edit() {
       } else {
         const res = await fetch(`${API_BASE_URL}/${id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN 
+          },
           body: JSON.stringify(payload),
         });
 
