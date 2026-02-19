@@ -15,11 +15,12 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @NonNull
     List<Toilet> findAll();
 
-    // ★追加: ID単体取得時にequipmentListをEagerロードする
-    // getToilet()で使用。@EntityGraphなしのfindById()はLazy読み込みで
-    // トランザクション外のJSON直列化時に空配列になるバグを修正。
+    // ★修正: 独自メソッドを廃止し、標準のfindByIdをオーバーライドしてEagerロード化
+    // これによりメソッド名解析やJPQLのミスによる500エラーを確実に防ぎます
+    @Override
     @EntityGraph(attributePaths = {"equipmentList"})
-    Optional<Toilet> findWithEquipmentById(Long id);
+    @NonNull
+    Optional<Toilet> findById(@NonNull Long id);
 
     // 位置検索（ネイティブクエリ）
     @Query(value = "SELECT t.id FROM toilet t WHERE " +
@@ -39,7 +40,7 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
     List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
 
-    // ★修正: t.equipment への参照を削除しました（エンティティから削除済みのため）
+    // 検索機能
     @Query("SELECT t.id FROM Toilet t " +
            "LEFT JOIN t.equipmentList e " +
            "WHERE " +

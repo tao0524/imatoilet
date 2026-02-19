@@ -231,7 +231,7 @@ export const useToiletSearch = () => {
 
         const queryString = params.toString();
         const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: 'no-store' });
         if (res.ok) apiData = await res.json();
         else console.error('API Error');
       } catch (e) {

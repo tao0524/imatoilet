@@ -31,20 +31,9 @@ const DraggableMarker = ({ map, position, onDragEnd }) => {
   useEffect(() => {
     if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
 
-    const pinElement = document.createElement('div');
-    Object.assign(pinElement.style, {
-      width: '24px', height: '24px',
-      backgroundColor: '#2196F3',
-      border: '3px solid white',
-      borderRadius: '50%',
-      boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-      cursor: 'grab'
-    });
-
     const marker = new window.google.maps.marker.AdvancedMarkerElement({
       map,
       position,
-      content: pinElement,
       gmpDraggable: true,
       title: 'ドラッグして位置を調整'
     });
