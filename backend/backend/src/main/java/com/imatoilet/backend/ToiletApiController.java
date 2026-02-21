@@ -21,7 +21,6 @@ public class ToiletApiController {
         this.toiletService = toiletService;
     }
 
-    // 検索・一覧取得（ページネーション対応）
     @GetMapping
     public ResponseEntity<Page<Toilet>> getToilets(
             @RequestParam(required = false) Double lat,
@@ -30,9 +29,9 @@ public class ToiletApiController {
             @RequestParam(required = false) String facilityCategory,
             @RequestParam(required = false) Integer minCleanliness,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Boolean publicUse, // 互換性のため追加
+            @RequestParam(required = false) Boolean publicUse,
             @RequestParam(required = false) List<String> equipment,
-            @PageableDefault(size = 50) Pageable pageable // デフォルト50件取得
+            @PageableDefault(size = 50) Pageable pageable
     ) {
         Page<Toilet> results = toiletService.searchToilets(
                 lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
@@ -40,28 +39,22 @@ public class ToiletApiController {
         return ResponseEntity.ok(results);
     }
 
-    // ID検索
     @GetMapping("/{id}")
     public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
         return ResponseEntity.ok(toiletService.getToilet(id));
     }
 
-    // 新規登録
     @PostMapping
     public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
         Toilet saved = toiletService.createToilet(toilet);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
     
-    // 更新
     @PutMapping("/{id}")
     public ResponseEntity<Toilet> updateToilet(
             @PathVariable Long id, 
             @RequestBody @Valid ToiletUpdateDto dto) {
         
-        // DTO -> Entity への詰め替え
-        // (Serviceの updateToilet は null のフィールドを無視する仕様になっているため、
-        //  ここで null のまま渡せば部分更新として機能します)
         Toilet toiletDetails = new Toilet();
         toiletDetails.setName(dto.getName());
         toiletDetails.setLat(dto.getLat());
@@ -71,15 +64,9 @@ public class ToiletApiController {
         toiletDetails.setCleanliness(dto.getCleanliness());
         toiletDetails.setImage(dto.getImage());
         toiletDetails.setFacilityCategory(dto.getFacilityCategory());
-        
-        // 設備リストの受け渡し
         toiletDetails.setEquipmentInput(dto.getEquipment());
 
-        // 互換フラグの受け渡し
         toiletDetails.setPublicUse(dto.getPublicUse());
-        toiletDetails.setDiaper(dto.getDiaper());
-        toiletDetails.setWheelchair(dto.getWheelchair());
-        toiletDetails.setOpen24h(dto.getOpen24h());
         toiletDetails.setTypePark(dto.getTypePark());
         toiletDetails.setTypeStation(dto.getTypeStation());
         toiletDetails.setTypeMall(dto.getTypeMall());
@@ -88,7 +75,6 @@ public class ToiletApiController {
         return ResponseEntity.ok(updated);
     }
 
-    // 削除
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
         toiletService.deleteToilet(id);

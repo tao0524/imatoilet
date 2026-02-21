@@ -786,16 +786,11 @@ public class ToiletUpdateDto {
     private String facilityCategory;
 
     // --- 設備情報 (JSONの "equipment" キーを受け取る) ---
-    // Toilet.javaと同様の問題を避けるため、念のためJsonAliasを使用しますが
-    // フィールド名が equipment であれば標準マッピングでも動作します
     @JsonAlias("equipment")
     private List<String> equipment;
 
-    // --- 互換性フラグ (将来的に廃止推奨だが、現状のAPI互換性維持のため残す) ---
+    // --- その他の互換性フラグ ---
     private Boolean publicUse;
-    private Boolean diaper;
-    private Boolean wheelchair;
-    private Boolean open24h;
     private Boolean typePark;
     private Boolean typeStation;
     private Boolean typeMall;
@@ -1992,76 +1987,6 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 </file>
 
-<file path="toilet-frontend/src/utils.test.js">
-import { describe, it, expect, beforeEach } from 'vitest';
-import { calcDistance, makeId, loadUserToilets, saveUserToilets } from './utils';
-
-describe('utils.js (便利関数)', () => {
-
-  // 1. 距離計算のテスト
-  describe('calcDistance', () => {
-    it('同じ場所なら距離は0kmになること', () => {
-      const dist = calcDistance(36.0, 140.0, 36.0, 140.0);
-      expect(dist).toBe(0);
-    });
-
-    it('つくば駅と秋葉原駅の距離が妥当であること（約40~60km）', () => {
-      // つくば駅: 36.083, 140.112
-      // 秋葉原駅: 35.698, 139.774
-      const dist = calcDistance(36.083, 140.112, 35.698, 139.774);
-      
-      // 結果が 40km以上、60km未満なら計算式は合っているとみなす
-      expect(dist).toBeGreaterThan(40);
-      expect(dist).toBeLessThan(60);
-    });
-  });
-
-  // 2. ID生成のテスト
-  describe('makeId', () => {
-    it('IDが "u_" で始まっていること', () => {
-      const id = makeId();
-      expect(id.startsWith('u_')).toBe(true);
-    });
-
-    it('連続で呼んでも違うIDが生成されること（ユニーク性）', () => {
-      const id1 = makeId();
-      const id2 = makeId();
-      expect(id1).not.toBe(id2);
-    });
-  });
-
-  // 3. LocalStorage保存・読み込みのテスト
-  describe('LocalStorage Helpers', () => {
-    // 各テストの前に、ブラウザの記憶領域(mock)を空っぽにする
-    beforeEach(() => {
-      localStorage.clear();
-    });
-
-    it('データがない場合は空配列 [] を返すこと', () => {
-      const data = loadUserToilets();
-      expect(data).toEqual([]);
-    });
-
-    it('データを保存して、それを正しく読み込めること', () => {
-      const dummyData = [
-        { id: 'test1', name: 'トイレA' },
-        { id: 'test2', name: 'トイレB' }
-      ];
-
-      // 保存を実行
-      saveUserToilets(dummyData);
-
-      // 読み込みを実行
-      const loaded = loadUserToilets();
-
-      // 検証
-      expect(loaded).toHaveLength(2);
-      expect(loaded[0].name).toBe('トイレA');
-    });
-  });
-});
-</file>
-
 <file path="update.json">
 {
   "name": "つくば駅 多目的トイレ（更新テスト済）"
@@ -2363,6 +2288,122 @@ function PlaceSearch({
 }
 
 export default PlaceSearch;
+</file>
+
+<file path="toilet-frontend/src/utils.test.js">
+import { calcDistance, makeId, loadUserToilets, saveUserToilets, buildEquipmentArray, normalizeEquipment } from './utils';
+import { vi } from 'vitest';
+
+describe('utils.js (便利関数)', () => {
+
+  // 1. 距離計算のテスト
+  describe('calcDistance', () => {
+    it('同じ場所なら距離は0kmになること', () => {
+      const dist = calcDistance(36.0, 140.0, 36.0, 140.0);
+      expect(dist).toBe(0);
+    });
+
+    it('つくば駅と秋葉原駅の距離が妥当であること（約40~60km）', () => {
+      const dist = calcDistance(36.083, 140.112, 35.698, 139.774);
+      expect(dist).toBeGreaterThan(40);
+      expect(dist).toBeLessThan(60);
+    });
+  });
+
+  // 2. ID生成のテスト
+  describe('makeId', () => {
+    it('IDが "u_" で始まっていること', () => {
+      const id = makeId();
+      expect(id.startsWith('u_')).toBe(true);
+    });
+
+    it('連続で呼んでも違うIDが生成されること（ユニーク性）', () => {
+      const id1 = makeId();
+      const id2 = makeId();
+      expect(id1).not.toBe(id2);
+    });
+  });
+
+  // 3. LocalStorage保存・読み込みのテスト
+  describe('LocalStorage Helpers', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('データがない場合は空配列 [] を返すこと', () => {
+      const data = loadUserToilets();
+      expect(data).toEqual([]);
+    });
+
+    it('データを保存して、それを正しく読み込めること', () => {
+      const dummyData = [
+        { id: 'test1', name: 'トイレA' },
+        { id: 'test2', name: 'トイレB' }
+      ];
+
+      saveUserToilets(dummyData);
+      const loaded = loadUserToilets();
+
+      expect(loaded).toHaveLength(2);
+      expect(loaded[0].name).toBe('トイレA');
+    });
+  });
+  
+  // 4. buildEquipmentArray のテスト
+  describe('buildEquipmentArray', () => {
+    it('登録されたキーが正しくEnum名に変換されること', () => {
+      const conditions = {
+        wheelchair: true,
+        open24h: true, 
+        diaper: false
+      };
+      const result = buildEquipmentArray(conditions);
+      expect(result).toEqual(['WHEELCHAIR', 'OPEN_24H']);
+    });
+
+    it('CONDITION_MAPに未登録のキーは安全に除外されること', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const conditions = {
+        wheelchair: true,
+        unknown_key: true 
+      };
+      const result = buildEquipmentArray(conditions);
+      
+      expect(result).toEqual(['WHEELCHAIR']); 
+
+      consoleWarnSpy.mockRestore(); 
+    });
+  });
+
+  // 5. normalizeEquipment のテスト
+  describe('normalizeEquipment', () => {
+    it('新形式 (配列) を正しくSetに変換すること', () => {
+      const toilet = { equipment: ['WHEELCHAIR', 'OPEN_24H'] };
+      const result = normalizeEquipment(toilet);
+      expect(result.has('WHEELCHAIR')).toBe(true);
+      expect(result.has('OPEN_24H')).toBe(true);
+      expect(result.size).toBe(2);
+    });
+
+    it('旧形式 (CSV文字列) を正しくSetに変換すること', () => {
+      const toilet = { equipment: 'wheelchair, open_24h' }; 
+      const result = normalizeEquipment(toilet);
+      expect(result.has('WHEELCHAIR')).toBe(true);
+      expect(result.has('OPEN_24H')).toBe(true);
+      expect(result.size).toBe(2);
+    });
+
+    it('equipmentがnullや空の場合は空のSetを返すこと', () => {
+      const toilet1 = { equipment: null };
+      const toilet2 = { equipment: [] };
+      const toilet3 = { equipment: '' };
+      expect(normalizeEquipment(toilet1).size).toBe(0);
+      expect(normalizeEquipment(toilet2).size).toBe(0);
+      expect(normalizeEquipment(toilet3).size).toBe(0);
+    });
+  });
+});
 </file>
 
 <file path="toilet-frontend/vite.config.js">
@@ -4668,136 +4709,6 @@ function Search() {
 export default Search;
 </file>
 
-<file path="toilet-frontend/src/utils.js">
-// toilet-frontend/src/utils.js
-export const STORAGE_KEY = "imatoilet_user_toilets_v1";
-
-// ユーザー登録データを読み込む
-export function loadUserToilets() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-// ユーザー登録データを保存する
-export function saveUserToilets(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-}
-
-// ID生成
-export function makeId() {
-  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
-}
-
-// 現在日付 (YYYY-MM-DD)
-export function nowISO() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-// 2点間の距離計算 (Haversine formula)
-export function calcDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// Cloudinaryへの画像アップロード関数
-export async function uploadToCloudinary(file) {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
-
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: formData
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
-  }
-
-  const data = await res.json();
-  return data.secure_url;
-}
-
-/**
- * フロントエンドのconditionsキー → バックエンドのEnum名 マッピング
- * ★追加: baby_chair → BABY_CHAIR
- *
- * 新しい設備を追加するときはここだけ編集すればよい。
- */
-const CONDITION_MAP = {
-  wheelchair:       'WHEELCHAIR',
-  diaper:           'DIAPER',
-  open24h:          'OPEN_24H',
-  ostomate:         'OSTOMATE',
-  nursing_room:     'NURSING_ROOM',
-  baby_chair:       'BABY_CHAIR',       // ★追加
-  washlet:          'WASHLET',
-  gender_separated: 'GENDER_SEPARATED',
-  free:             'FREE',
-  parking:          'PARKING',
-};
-
-// conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
-export function buildEquipmentArray(conditions) {
-  return Object.keys(conditions)
-    .filter(key => conditions[key])
-    .map(key => CONDITION_MAP[key] || key.toUpperCase());
-}
-
-/**
- * トイレオブジェクトから設備情報の Set を生成する (正規化)
- *
- * 以下の3パターンを統一して扱う:
- *   1. 新形式: equipment が文字列配列  ["WHEELCHAIR", "OPEN_24H"]
- *   2. 旧形式: equipment が CSV文字列  "wheelchair,open_24h"
- *   3. 互換フラグ: toilet.wheelchair / toilet.diaper / toilet.open24h (boolean)
- *
- * @param {Object} toilet - APIレスポンスまたはローカルストレージのトイレオブジェクト
- * @returns {Set<string>} 大文字の設備名セット (例: Set{"WHEELCHAIR", "OPEN_24H"})
- */
-export function normalizeEquipment(toilet) {
-  const eqSet = new Set();
-
-  // 1. 配列形式 (新形式)
-  if (Array.isArray(toilet.equipment)) {
-    toilet.equipment.forEach(e => eqSet.add(e.toUpperCase()));
-  // 2. CSV文字列形式 (旧形式)
-  } else if (typeof toilet.equipment === 'string' && toilet.equipment.length > 0) {
-    toilet.equipment.split(',').forEach(e => eqSet.add(e.trim().toUpperCase()));
-  }
-
-  // 3. 個別フラグ (互換性維持 — 旧データのフォールバック)
-  if (toilet.wheelchair) eqSet.add('WHEELCHAIR');
-  if (toilet.diaper)     eqSet.add('DIAPER');
-  if (toilet.open24h)    eqSet.add('OPEN_24H');
-  if (toilet.parking)    eqSet.add('PARKING');
-
-  return eqSet;
-}
-</file>
-
 <file path="toilet-frontend/package.json">
 {
   "name": "toilet-frontend",
@@ -4961,6 +4872,139 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
 };
 </file>
 
+<file path="toilet-frontend/src/utils.js">
+// toilet-frontend/src/utils.js
+export const STORAGE_KEY = "imatoilet_user_toilets_v1";
+
+// ユーザー登録データを読み込む
+export function loadUserToilets() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// ユーザー登録データを保存する
+export function saveUserToilets(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+// ID生成
+export function makeId() {
+  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
+}
+
+// 現在日付 (YYYY-MM-DD)
+export function nowISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// 2点間の距離計算 (Haversine formula)
+export function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Cloudinaryへの画像アップロード関数
+export async function uploadToCloudinary(file) {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
+  }
+
+  const data = await res.json();
+  return data.secure_url;
+}
+
+/**
+ * フロントエンドのconditionsキー → バックエンドのEnum名 マッピング
+ * ★追加: baby_chair → BABY_CHAIR
+ *
+ * 新しい設備を追加するときはここだけ編集すればよい。
+ */
+const CONDITION_MAP = {
+  wheelchair:       'WHEELCHAIR',
+  diaper:           'DIAPER',
+  open24h:          'OPEN_24H',
+  ostomate:         'OSTOMATE',
+  nursing_room:     'NURSING_ROOM',
+  baby_chair:       'BABY_CHAIR',
+  washlet:          'WASHLET',
+  gender_separated: 'GENDER_SEPARATED',
+  free:             'FREE',
+  parking:          'PARKING',
+};
+
+// conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
+export function buildEquipmentArray(conditions) {
+  return Object.keys(conditions)
+    .filter(key => conditions[key])
+    .map(key => {
+      const enumName = CONDITION_MAP[key];
+      if (!enumName) {
+        console.warn(`[buildEquipmentArray] CONDITION_MAPに未登録のキー: "${key}"`);
+        return null;
+      }
+      return enumName;
+    })
+    .filter(Boolean);
+}
+
+/**
+ * トイレオブジェクトから設備情報の Set を生成する (正規化)
+ *
+ * 以下の2パターンを統一して扱う:
+ *   1. 新形式: equipment が文字列配列  ["WHEELCHAIR", "OPEN_24H"]
+ *   2. 旧形式: equipment が CSV文字列  "wheelchair,open_24h"
+ *
+ * ※ パターン3（toilet.wheelchair 等のbooleanフラグ）はV7マイグレーション適用後に廃止済み
+ *
+ * @param {Object} toilet - APIレスポンスまたはローカルストレージのトイレオブジェクト
+ * @returns {Set<string>} 大文字の設備名セット (例: Set{"WHEELCHAIR", "OPEN_24H"})
+ */
+export function normalizeEquipment(toilet) {
+  const eqSet = new Set();
+
+  // 1. 配列形式 (新形式)
+  if (Array.isArray(toilet.equipment)) {
+    toilet.equipment.forEach(e => eqSet.add(e.toUpperCase()));
+  // 2. CSV文字列形式 (旧形式)
+  } else if (typeof toilet.equipment === 'string' && toilet.equipment.length > 0) {
+    toilet.equipment.split(',').forEach(e => eqSet.add(e.trim().toUpperCase()));
+  }
+
+  return eqSet;
+}
+</file>
+
 <file path="backend/backend/pom.xml">
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -5094,7 +5138,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 public class ToiletApiControllerTest {
 
-    // ★追加: test/resources/application.properties の app.admin.token と一致させる
     private static final String VALID_TOKEN   = "test-admin-token";
     private static final String INVALID_TOKEN = "wrong-token";
 
@@ -5109,7 +5152,7 @@ public class ToiletApiControllerTest {
         toiletRepository.deleteAll();
     }
 
-    // --- GET: 一覧取得 (変更なし) ---
+    // --- GET: 一覧取得 ---
     @Test
     void shouldReturnListOfToilets() throws Exception {
         Toilet toilet = new Toilet();
@@ -5125,15 +5168,16 @@ public class ToiletApiControllerTest {
         
         toiletRepository.save(toilet);
 
+        // ★修正: ページネーション対応のため、$.content の中身を検証するように変更
         mockMvc.perform(get("/api/toilets"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name", is("Test Toilet")))
-                .andExpect(jsonPath("$[0].equipment", hasItem("WHEELCHAIR")))
-                .andExpect(jsonPath("$[0].equipment", hasItem("DIAPER")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("Test Toilet")))
+                .andExpect(jsonPath("$.content[0].equipment", hasItem("WHEELCHAIR")))
+                .andExpect(jsonPath("$.content[0].equipment", hasItem("DIAPER")));
     }
 
-    // --- GET: ID指定取得 (変更なし) ---
+    // --- GET: ID指定取得 ---
     @Test
     void shouldReturnToiletById() throws Exception {
         Toilet toilet = new Toilet();
@@ -5150,7 +5194,7 @@ public class ToiletApiControllerTest {
                 .andExpect(jsonPath("$.equipment", hasItem("OPEN_24H")));
     }
 
-    // --- POST: 新規登録 (変更なし: 認証不要のまま) ---
+    // --- POST: 新規登録 ---
     @Test
     void shouldCreateToilet() throws Exception {
         String toiletJson = """
@@ -5175,7 +5219,7 @@ public class ToiletApiControllerTest {
                 .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OPEN_24H")));
     }
 
-    // --- PUT: 更新 (★ヘッダー追加) ---
+    // --- PUT: 更新 ---
     @Test
     void shouldUpdateToilet() throws Exception {
         Toilet toilet = new Toilet();
@@ -5197,14 +5241,14 @@ public class ToiletApiControllerTest {
         mockMvc.perform(put("/api/toilets/" + saved.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(updateJson)
-                .header("X-Admin-Token", VALID_TOKEN))   // ★追加
+                .header("X-Admin-Token", VALID_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name", is("Updated Name")))
                 .andExpect(jsonPath("$.equipment", hasSize(2)))
                 .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OSTOMATE")));
     }
 
-    // --- DELETE: 削除 (★ヘッダー追加) ---
+    // --- DELETE: 削除 ---
     @Test
     void shouldDeleteToilet() throws Exception {
         Toilet toilet = new Toilet();
@@ -5213,17 +5257,15 @@ public class ToiletApiControllerTest {
         toilet.setLng(0.0);
         Toilet saved = toiletRepository.save(toilet);
 
-        // 削除実行
         mockMvc.perform(delete("/api/toilets/" + saved.getId())
-                .header("X-Admin-Token", VALID_TOKEN))   // ★追加
+                .header("X-Admin-Token", VALID_TOKEN))
                 .andExpect(status().isNoContent());
 
-        // 削除後に取得して 404 になるか確認
         mockMvc.perform(get("/api/toilets/" + saved.getId()))
                 .andExpect(status().isNotFound());
     }
 
-    // ★新規追加: PUT に認証なし → 401 ---
+    // --- PUT に認証なし → 401 ---
     @Test
     void shouldReturn401WhenUpdatingWithoutToken() throws Exception {
         Toilet toilet = new Toilet();
@@ -5238,11 +5280,11 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(put("/api/toilets/" + saved.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(updateJson))              // ヘッダーなし
+                .content(updateJson))
                 .andExpect(status().isUnauthorized());
     }
 
-    // ★新規追加: DELETE に不正トークン → 401 ---
+    // --- DELETE に不正トークン → 401 ---
     @Test
     void shouldReturn401WhenDeletingWithInvalidToken() throws Exception {
         Toilet toilet = new Toilet();
@@ -5252,11 +5294,10 @@ public class ToiletApiControllerTest {
         Toilet saved = toiletRepository.save(toilet);
 
         mockMvc.perform(delete("/api/toilets/" + saved.getId())
-                .header("X-Admin-Token", INVALID_TOKEN))  // 不正トークン
+                .header("X-Admin-Token", INVALID_TOKEN))
                 .andExpect(status().isUnauthorized());
     }
 
-    // --- 以下は変更なし ---
     @Test
     void shouldReturn404ForNonExistentId() throws Exception {
         mockMvc.perform(get("/api/toilets/9999"))
@@ -5308,7 +5349,7 @@ public class ToiletApiControllerTest {
     @Test
     void shouldReturn404WhenDeletingNonExistent() throws Exception {
         mockMvc.perform(delete("/api/toilets/9999")
-                .header("X-Admin-Token", VALID_TOKEN))   // ★追加
+                .header("X-Admin-Token", VALID_TOKEN))
                 .andExpect(status().isNotFound());
     }
 }
@@ -6154,8 +6195,11 @@ public class ToiletApiControllerTest {
 </file>
 
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
+// backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java
 package com.imatoilet.backend;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -6171,51 +6215,65 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @NonNull
     List<Toilet> findAll();
 
-    // ★修正: 独自メソッドを廃止し、標準のfindByIdをオーバーライドしてEagerロード化
-    // これによりメソッド名解析やJPQLのミスによる500エラーを確実に防ぎます
     @Override
     @EntityGraph(attributePaths = {"equipmentList"})
     @NonNull
     Optional<Toilet> findById(@NonNull Long id);
 
-    // 位置検索（ネイティブクエリ）
+    // ★修正: 位置検索 + フィルタリングのネイティブクエリ（ページネーション対応）
     @Query(value = "SELECT t.id FROM toilet t WHERE " +
            "(6371 * acos(least(1.0, greatest(-1.0, " +
            "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
            "  cos(radians(t.lng) - radians(:lng)) + " +
            "  sin(radians(:lat)) * sin(radians(t.lat))" +
-           ")))) <= :radius", nativeQuery = true)
-    List<Long> findIdsWithinRadius(
+           ")))) <= :radius " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
+           "(6371 * acos(least(1.0, greatest(-1.0, cos(radians(:lat)) * cos(radians(t.lat)) * cos(radians(t.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(t.lat)))))) <= :radius " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           nativeQuery = true)
+    Page<Long> findIdsWithinRadiusWithSpecs(
         @Param("lat") Double lat,
         @Param("lng") Double lng,
-        @Param("radius") Double radius
-    );
-
-    // ID指定取得（複数）
-    @EntityGraph(attributePaths = {"equipmentList"})
-    @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
-    List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
-
-    // 検索機能
-    @Query("SELECT t.id FROM Toilet t " +
-           "LEFT JOIN t.equipmentList e " +
-           "WHERE " +
-           "(:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) AND " +
-           "(:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) AND " +
-           "(:keyword IS NULL OR " +
-           "  t.name LIKE %:keyword% OR " +
-           "  t.address LIKE %:keyword% OR " +
-           "  t.description LIKE %:keyword%) AND " +
-           "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes) " +
-           "GROUP BY t.id " +
-           "HAVING (:equipmentTypes IS NULL OR COUNT(DISTINCT e.type) = :typeCount)")
-    List<Long> searchIdsBySpecs(
+        @Param("radius") Double radius,
         @Param("facilityCategory") String facilityCategory,
         @Param("minCleanliness") Integer minCleanliness,
         @Param("keyword") String keyword,
-        @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
-        @Param("typeCount") Long typeCount
+        @Param("publicUse") Boolean publicUse,
+        @Param("equipmentTypes") List<String> equipmentTypes,
+        @Param("typeCount") Integer typeCount,
+        Pageable pageable
     );
+
+    // ★修正: 条件検索のJPQL（サブクエリでCOUNTすることで安全にページネーション対応）
+    @Query("SELECT t.id FROM Toilet t " +
+           "WHERE (:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.publicUse = :publicUse) " +
+           "AND (:typeCount = 0L OR (SELECT COUNT(DISTINCT e.type) FROM Equipment e WHERE e.toilet.id = t.id AND e.type IN :equipmentTypes) = :typeCount)")
+    Page<Long> searchIdsBySpecs(
+        @Param("facilityCategory") String facilityCategory,
+        @Param("minCleanliness") Integer minCleanliness,
+        @Param("keyword") String keyword,
+        @Param("publicUse") Boolean publicUse,
+        @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
+        @Param("typeCount") Long typeCount,
+        Pageable pageable
+    );
+
+    // 2段階フェッチ用（N+1回避）
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
+    List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
 }
 </file>
 
@@ -6223,14 +6281,18 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 package com.imatoilet.backend;
 
 import com.imatoilet.backend.exception.ResourceNotFoundException;
-import com.imatoilet.backend.dto.ToiletUpdateDto; // 必要であればimport
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -6243,76 +6305,51 @@ public class ToiletService {
         this.toiletRepository = toiletRepository;
     }
 
-    // --- 検索ロジック ---
-    public List<Toilet> searchToilets(
+    public Page<Toilet> searchToilets(
             Double lat, Double lng, Double radius,
             String facilityCategory, Integer minCleanliness,
-            String keyword, List<String> equipment
+            String keyword, Boolean publicUse, List<String> equipment,
+            Pageable pageable
     ) {
-        // 1. まずベースとなるリストを取得
-        List<Toilet> results;
+        Page<Long> idPage;
+
+        List<EquipmentType> types = convertToEnumList(equipment);
+        Long typeCount = (types != null) ? (long) types.size() : 0L;
+        
+        List<String> typeStrs = (equipment != null && !equipment.isEmpty()) ? equipment : List.of("DUMMY_TYPE");
+        List<EquipmentType> safeTypes = (types != null && !types.isEmpty()) ? types : List.of(EquipmentType.WHEELCHAIR);
 
         if (lat != null && lng != null) {
-            // 位置情報あり
             double r = (radius != null) ? radius : 5.0;
-            List<Long> ids = toiletRepository.findIdsWithinRadius(lat, lng, r);
-
-            if (ids.isEmpty()) return new ArrayList<>();
-            results = toiletRepository.findAllByIdWithEquipment(ids);
+            idPage = toiletRepository.findIdsWithinRadiusWithSpecs(
+                    lat, lng, r, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
         } else {
-            // 位置情報なし（条件検索）
-            List<EquipmentType> types = convertToEnumList(equipment);
-            Long typeCount = (types != null) ? (long) types.size() : null;
-
-            if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
-                List<Long> ids = toiletRepository.searchIdsBySpecs(facilityCategory, minCleanliness, keyword, types, typeCount);
-                if (ids.isEmpty()) return new ArrayList<>();
-                return toiletRepository.findAllByIdWithEquipment(ids);
-            } else {
-                return toiletRepository.findAll();
-            }
+            idPage = toiletRepository.searchIdsBySpecs(
+                    facilityCategory, minCleanliness, keyword, publicUse, safeTypes, typeCount, pageable);
         }
 
-        // 2. Java側フィルタリング
-        return results.stream()
-            .filter(t -> {
-                if (facilityCategory != null && !facilityCategory.isEmpty()) {
-                    if (!facilityCategory.equals(t.getFacilityCategory())) return false;
-                }
-                if (minCleanliness != null) {
-                    if (t.getCleanliness() == null || t.getCleanliness() < minCleanliness) return false;
-                }
-                if (keyword != null && !keyword.isEmpty()) {
-                    String k = keyword.toLowerCase();
-                    boolean matchName = t.getName() != null && t.getName().toLowerCase().contains(k);
-                    boolean matchAddr = t.getAddress() != null && t.getAddress().toLowerCase().contains(k);
-                    boolean matchDesc = t.getDescription() != null && t.getDescription().toLowerCase().contains(k);
-                    boolean matchEq = t.getEquipmentNames().stream()
-                            .anyMatch(eqName -> eqName.toLowerCase().contains(k));
-                    if (!matchName && !matchAddr && !matchDesc && !matchEq) return false;
-                }
-                if (equipment != null && !equipment.isEmpty()) {
-                    List<String> holding = t.getEquipmentNames(); 
-                    for (String req : equipment) {
-                        boolean hasIt = holding.stream().anyMatch(h -> h.equalsIgnoreCase(req));
-                        if (!hasIt) return false;
-                    }
-                }
-                return true;
-            })
-            .limit(100)
-            .collect(Collectors.toList());
+        if (idPage.isEmpty()) {
+            return new PageImpl<>(new ArrayList<>(), pageable, idPage.getTotalElements());
+        }
+
+        List<Toilet> toilets = toiletRepository.findAllByIdWithEquipment(idPage.getContent());
+
+        Map<Long, Toilet> toiletMap = toilets.stream()
+                .collect(Collectors.toMap(Toilet::getId, Function.identity()));
+        List<Toilet> sortedToilets = idPage.getContent().stream()
+                .map(toiletMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(sortedToilets, pageable, idPage.getTotalElements());
     }
 
-    // --- ID検索 ---
     public Toilet getToilet(Long id) {
         Long safeId = Objects.requireNonNull(id, "ID must not be null");
-        // ★修正: 標準のfindByIdに戻す（Repository側でOverride済みのため安全）
         return toiletRepository.findById(safeId)
                 .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
     }
 
-    // --- 新規登録 ---
     public Toilet createToilet(Toilet toilet) {
         if (toilet.getCleanliness() == null) {
             toilet.setCleanliness(3);
@@ -6320,14 +6357,11 @@ public class ToiletService {
         
         Toilet savedToilet = toiletRepository.save(toilet);
         updateEquipmentList(savedToilet, toilet.getEquipmentInput());
-        syncFlagsFromEquipment(savedToilet);
-
         return toiletRepository.save(savedToilet);
     }
 
-    // --- 更新 ---
     public Toilet updateToilet(Long id, Toilet details) {
-        Toilet toilet = getToilet(id); // ここでfindByIdが呼ばれる
+        Toilet toilet = getToilet(id);
 
         Optional.ofNullable(details.getName()).filter(s -> !s.isBlank()).ifPresent(toilet::setName);
         if (details.getAddress() != null) toilet.setAddress(details.getAddress());
@@ -6341,7 +6375,6 @@ public class ToiletService {
 
         if (details.getEquipmentInput() != null) {
             updateEquipmentList(toilet, details.getEquipmentInput());
-            syncFlagsFromEquipment(toilet);
         }
 
         Optional.ofNullable(details.getPublicUse()).ifPresent(toilet::setPublicUse);
@@ -6352,7 +6385,6 @@ public class ToiletService {
         return toiletRepository.save(toilet);
     }
 
-    // --- 削除 ---
     public void deleteToilet(Long id) {
         Long safeId = Objects.requireNonNull(id, "ID must not be null");
         if (!toiletRepository.existsById(safeId)) {
@@ -6361,7 +6393,6 @@ public class ToiletService {
         toiletRepository.deleteById(safeId);
     }
 
-    // --- ヘルパーメソッド ---
     private void updateEquipmentList(Toilet toilet, List<String> inputs) {
         if (inputs == null) return;
         toilet.getEquipmentList().clear();
@@ -6369,15 +6400,9 @@ public class ToiletService {
             try {
                 EquipmentType type = EquipmentType.valueOf(typeStr);
                 toilet.addEquipment(type);
-            } catch (IllegalArgumentException e) { }
+            } catch (IllegalArgumentException ignored) { 
+            }
         }
-    }
-
-    private void syncFlagsFromEquipment(Toilet toilet) {
-        List<String> names = toilet.getEquipmentNames();
-        toilet.setWheelchair(names.contains("WHEELCHAIR"));
-        toilet.setDiaper(names.contains("DIAPER"));
-        toilet.setOpen24h(names.contains("OPEN_24H"));
     }
 
     private List<EquipmentType> convertToEnumList(List<String> inputs) {
@@ -6386,7 +6411,7 @@ public class ToiletService {
         for (String s : inputs) {
             try {
                 list.add(EquipmentType.valueOf(s));
-            } catch (IllegalArgumentException e) { }
+            } catch (IllegalArgumentException ignored) { }
         }
         return list.isEmpty() ? null : list;
     }
@@ -6425,7 +6450,7 @@ function Edit() {
       open24h:          false,
       ostomate:         false,
       nursing_room:     false,
-      baby_chair:       false, // ★追加
+      baby_chair:       false,
       washlet:          false,
       gender_separated: false,
       free:             false,
@@ -6478,7 +6503,7 @@ function Edit() {
         open24h:          eqSet.has('OPEN_24H'),
         ostomate:         eqSet.has('OSTOMATE'),
         nursing_room:     eqSet.has('NURSING_ROOM'),
-        baby_chair:       eqSet.has('BABY_CHAIR'),     // ★追加
+        baby_chair:       eqSet.has('BABY_CHAIR'),
         washlet:          eqSet.has('WASHLET'),
         gender_separated: eqSet.has('GENDER_SEPARATED'),
         free:             eqSet.has('FREE'),
@@ -6505,10 +6530,6 @@ function Edit() {
       image:            formData.images.join(','),
       facilityCategory: formData.facilityCategory,
       equipment:        buildEquipmentArray(formData.conditions),
-      // 後方互換フラグ
-      wheelchair:       formData.conditions.wheelchair,
-      diaper:           formData.conditions.diaper,
-      open24h:          formData.conditions.open24h,
     };
 
     try {
@@ -6524,9 +6545,9 @@ function Edit() {
       } else {
         const res = await fetch(`${API_BASE_URL}/${id}`, {
           method: 'PUT',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN 
+            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN
           },
           body: JSON.stringify(payload),
         });
@@ -6593,7 +6614,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonAlias; // ★追加
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -6605,8 +6626,6 @@ public class Toilet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // --- 基本フィールド ---
-    
     @NotBlank(message = "名前は必須です")
     @Size(max = 100, message = "名前は100文字以内で入力してください")
     private String name;
@@ -6624,10 +6643,8 @@ public class Toilet {
     @Size(max = 200, message = "住所は200文字以内で入力してください")
     private String address;
 
-    // --- フラグ（互換性のため維持するが、本来はequipmentList推奨） ---
+    // --- 旧フラグ完全廃止 ---
     private Boolean publicUse;
-    private Boolean diaper;
-    private Boolean wheelchair;
     private Boolean typePark;
     private Boolean typeStation;
     private Boolean typeMall;
@@ -6635,9 +6652,6 @@ public class Toilet {
     @Size(max = 500, message = "説明は500文字以内で入力してください")
     private String description;
     
-    private Boolean open24h;
-
-    // --- カテゴリ ---
     @Pattern(
         regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
         message = "施設カテゴリの値が不正です"
@@ -6645,9 +6659,6 @@ public class Toilet {
     private String facilityCategory;
     
     private String locationCategory;
-    
-    // --- 削除: CSV用 String equipment ---
-    
     private String usageConditions;
     private String atmosphere;
 
@@ -6659,33 +6670,24 @@ public class Toilet {
     @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
     private String image;
 
-    // --- Equipment リレーション ---
-    // DB上のリレーション管理用（JSONには直接出さない）
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Equipment> equipmentList = new ArrayList<>();
 
-    // --- JSON 入出力用 ---
-
-    // 1. APIレスポンス用 (JSON: "equipment": ["wheelchair", "open_24h"])
-    @JsonProperty("equipment")
+    @JsonProperty(value = "equipment", access = JsonProperty.Access.READ_ONLY)
     public List<String> getEquipmentNames() {
         if (equipmentList == null) return new ArrayList<>();
         return equipmentList.stream()
-                .map(e -> e.getType().name()) // Enum名を返す
+                .map(e -> e.getType().name())
                 .collect(Collectors.toList());
     }
 
-    // 2. APIリクエスト受信用
-    // ★修正: @JsonPropertyによる二重定義を回避し、@JsonAliasで入力のみ受け付けるように変更
     @Transient
-    @JsonAlias("equipment")
+    @JsonProperty(value = "equipment", access = JsonProperty.Access.WRITE_ONLY)
     private List<String> equipmentInput;
 
-    // --- ヘルパーメソッド ---
-    
     public void addEquipment(EquipmentType type) {
         Equipment equipment = new Equipment(this, type);
         equipmentList.add(equipment);
@@ -6696,11 +6698,15 @@ public class Toilet {
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
 package com.imatoilet.backend;
 
-import com.imatoilet.backend.dto.ToiletUpdateDto; // ★追加
+import com.imatoilet.backend.dto.ToiletUpdateDto;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -6713,46 +6719,40 @@ public class ToiletApiController {
         this.toiletService = toiletService;
     }
 
-    // 検索・一覧取得
     @GetMapping
-    public ResponseEntity<List<Toilet>> getToilets(
+    public ResponseEntity<Page<Toilet>> getToilets(
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
             @RequestParam(required = false, defaultValue = "5.0") Double radius,
             @RequestParam(required = false) String facilityCategory,
             @RequestParam(required = false) Integer minCleanliness,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) List<String> equipment
+            @RequestParam(required = false) Boolean publicUse,
+            @RequestParam(required = false) List<String> equipment,
+            @PageableDefault(size = 50) Pageable pageable
     ) {
-        List<Toilet> results = toiletService.searchToilets(
-                lat, lng, radius, facilityCategory, minCleanliness, keyword, equipment
+        Page<Toilet> results = toiletService.searchToilets(
+                lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
         );
         return ResponseEntity.ok(results);
     }
 
-    // ID検索
     @GetMapping("/{id}")
     public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
         return ResponseEntity.ok(toiletService.getToilet(id));
     }
 
-    // 新規登録
     @PostMapping
     public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
         Toilet saved = toiletService.createToilet(toilet);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
     
-    // 更新
-    // ★修正: 引数を ToiletUpdateDto に変更
     @PutMapping("/{id}")
     public ResponseEntity<Toilet> updateToilet(
             @PathVariable Long id, 
             @RequestBody @Valid ToiletUpdateDto dto) {
         
-        // DTO -> Entity への詰め替え
-        // (Serviceの updateToilet は null のフィールドを無視する仕様になっているため、
-        //  ここで null のまま渡せば部分更新として機能します)
         Toilet toiletDetails = new Toilet();
         toiletDetails.setName(dto.getName());
         toiletDetails.setLat(dto.getLat());
@@ -6762,15 +6762,9 @@ public class ToiletApiController {
         toiletDetails.setCleanliness(dto.getCleanliness());
         toiletDetails.setImage(dto.getImage());
         toiletDetails.setFacilityCategory(dto.getFacilityCategory());
-        
-        // 設備リストの受け渡し
         toiletDetails.setEquipmentInput(dto.getEquipment());
 
-        // 互換フラグの受け渡し
         toiletDetails.setPublicUse(dto.getPublicUse());
-        toiletDetails.setDiaper(dto.getDiaper());
-        toiletDetails.setWheelchair(dto.getWheelchair());
-        toiletDetails.setOpen24h(dto.getOpen24h());
         toiletDetails.setTypePark(dto.getTypePark());
         toiletDetails.setTypeStation(dto.getTypeStation());
         toiletDetails.setTypeMall(dto.getTypeMall());
@@ -6779,7 +6773,6 @@ public class ToiletApiController {
         return ResponseEntity.ok(updated);
     }
 
-    // 削除
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
         toiletService.deleteToilet(id);
@@ -6815,7 +6808,7 @@ function Register() {
       open24h:          false,
       ostomate:         false,
       nursing_room:     false,
-      baby_chair:       false, // ★追加
+      baby_chair:       false,
       washlet:          false,
       gender_separated: false,
       free:             false,
@@ -6848,10 +6841,6 @@ function Register() {
       image:            formData.images.join(','),
       facilityCategory: formData.facilityCategory,
       equipment:        buildEquipmentArray(formData.conditions),
-      // 後方互換フラグ
-      wheelchair:       formData.conditions.wheelchair,
-      diaper:           formData.conditions.diaper,
-      open24h:          formData.conditions.open24h,
     };
 
     try {
@@ -6906,364 +6895,6 @@ function Register() {
 }
 
 export default Register;
-</file>
-
-<file path="toilet-frontend/src/hooks/useToiletSearch.js">
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { loadUserToilets, calcDistance, normalizeEquipment } from '../utils'; // ★normalizeEquipment追加
-import { API_BASE_URL } from '../config/api';
-
-const HISTORY_KEY = 'imatoilet_search_history';
-
-export const useToiletSearch = () => {
-  const [searchParams] = useSearchParams();
-
-  const [filteredToilets, setFilteredToilets] = useState([]);
-
-  const hasInitialized = useRef(false);
-  const placeQueryRef = useRef('');
-
-  const [currentLocation, setCurrentLocation] = useState(() => {
-    const urlLat = searchParams.get('lat');
-    const urlLng = searchParams.get('lng');
-    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: '現在地' };
-    const saved = sessionStorage.getItem('imatoilet_loc');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [realLocation, setRealLocation] = useState(() => {
-    const urlLat = searchParams.get('lat');
-    const urlLng = searchParams.get('lng');
-    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: '現在地' };
-    const saved = sessionStorage.getItem('imatoilet_realLoc');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [placeQuery, setPlaceQuery] = useState(() => {
-    if (searchParams.has('lat')) return '';
-    return sessionStorage.getItem('imatoilet_query') || '';
-  });
-
-  const [searchStatus, setSearchStatus] = useState(() => {
-    if (searchParams.has('lat')) return '現在地周辺を表示中';
-    return sessionStorage.getItem('imatoilet_status') || '';
-  });
-
-  const [searchHistory, setSearchHistory] = useState([]);
-  const [searchTrigger, setSearchTrigger] = useState(0);
-
-  useEffect(() => { placeQueryRef.current = placeQuery; }, [placeQuery]);
-
-  useEffect(() => {
-    if (currentLocation) sessionStorage.setItem('imatoilet_loc', JSON.stringify(currentLocation));
-    else sessionStorage.removeItem('imatoilet_loc');
-  }, [currentLocation]);
-
-  useEffect(() => {
-    if (realLocation) sessionStorage.setItem('imatoilet_realLoc', JSON.stringify(realLocation));
-    else sessionStorage.removeItem('imatoilet_realLoc');
-  }, [realLocation]);
-
-  useEffect(() => { sessionStorage.setItem('imatoilet_query', placeQuery); }, [placeQuery]);
-  useEffect(() => { sessionStorage.setItem('imatoilet_status', searchStatus); }, [searchStatus]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(HISTORY_KEY);
-      if (raw) setSearchHistory(JSON.parse(raw));
-    } catch (e) { console.error(e); }
-  }, []);
-
-  useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-    if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
-      handleCurrentLocation();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const addToHistory = (query) => {
-    if (!query) return;
-    setSearchHistory(prev => {
-      const newHistory = [query, ...prev.filter(h => h !== query)].slice(0, 5);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
-      return newHistory;
-    });
-  };
-
-  const handlePlaceSearch = (overrideQuery) => {
-    const query = (typeof overrideQuery === 'string') ? overrideQuery : placeQuery;
-    if (!query) return;
-
-    if (!window.google?.maps?.places) {
-      setSearchStatus('地図データを読み込み中です。少し待ってから再試行してください');
-      return;
-    }
-
-    setSearchStatus('Googleマップで場所を解析中...');
-    addToHistory(query);
-
-    const service = new window.google.maps.places.PlacesService(document.createElement('div'));
-    service.textSearch(
-      { query, fields: ['name', 'geometry', 'formatted_address', 'rating'] },
-      (results, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && results?.length > 0) {
-          const hit = results[0];
-          const lat = hit.geometry.location.lat();
-          const lng = hit.geometry.location.lng();
-          setCurrentLocation({ lat, lng, address: hit.formatted_address || hit.name });
-          let statusMsg = `「${hit.name}」周辺`;
-          if (hit.rating) statusMsg += ` (★${hit.rating})`;
-          setSearchStatus(statusMsg + ' を表示中');
-        } else {
-          const geocoder = new window.google.maps.Geocoder();
-          geocoder.geocode({ address: query }, (geoResults, geoStatus) => {
-            if (geoStatus === 'OK' && geoResults[0]) {
-              const geoHit = geoResults[0];
-              setCurrentLocation({
-                lat: geoHit.geometry.location.lat(),
-                lng: geoHit.geometry.location.lng(),
-                address: geoHit.formatted_address
-              });
-              setSearchStatus(`住所「${geoHit.formatted_address}」周辺を表示`);
-            } else {
-              console.warn('Search failed:', status, geoStatus);
-              setSearchStatus('地図上に見つかりません。登録データから検索します...');
-              setCurrentLocation(null);
-              setSearchTrigger(prev => prev + 1);
-            }
-          });
-        }
-      }
-    );
-  };
-
-  const handleCurrentLocation = () => {
-    setSearchStatus('現在地を取得中...');
-    if (!navigator.geolocation) {
-      setSearchStatus('ブラウザが位置情報に対応していません');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-
-        if (window.google?.maps?.Geocoder) {
-          const geocoder = new window.google.maps.Geocoder();
-          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-            let addr = '現在地';
-            if (status === 'OK' && results[0]) {
-              addr = results[0].address_components
-                .filter(c => c.types.includes('locality') || c.types.includes('sublocality') || c.types.includes('neighborhood'))
-                .map(c => c.long_name).reverse().join('') || results[0].formatted_address;
-              setSearchStatus(`現在地: ${addr} 付近`);
-            } else {
-              setSearchStatus('現在地周辺を表示中');
-            }
-            const loc = { lat, lng, address: addr };
-            setCurrentLocation(loc);
-            setRealLocation(loc);
-          });
-        } else {
-          const loc = { lat, lng, address: '現在地' };
-          setCurrentLocation(loc);
-          setRealLocation(loc);
-          setSearchStatus('現在地周辺を表示中');
-        }
-      },
-      (err) => {
-        console.error(err);
-        setSearchStatus('現在地の取得に失敗しました');
-      }
-    );
-  };
-
-  const handleKeywordSearch = () => {
-    if (!placeQuery) return;
-    addToHistory(placeQuery);
-    setSearchStatus('キーワードで登録データを検索中...');
-    setCurrentLocation(null);
-    setSearchTrigger(prev => prev + 1);
-  };
-
-  const handleHistorySearch = (query) => {
-    setPlaceQuery(query);
-    handlePlaceSearch(query);
-  };
-
-  useEffect(() => {
-    async function fetchData() {
-      const currentPlaceQuery = placeQueryRef.current;
-      if (!currentLocation && !currentPlaceQuery && searchTrigger === 0) return;
-
-      let apiData = [];
-      const isLocationSearch = !!currentLocation;
-      const isKeywordSearch = !currentLocation;
-
-      try {
-        const params = new URLSearchParams();
-
-        if (currentLocation) {
-          params.append('lat', currentLocation.lat);
-          params.append('lng', currentLocation.lng);
-          params.append('radius', '5.0');
-        } else {
-          if (currentPlaceQuery) params.append('keyword', currentPlaceQuery);
-        }
-
-        const facilityCategory = searchParams.get('facilityCategory');
-        if (facilityCategory) params.append('facilityCategory', facilityCategory);
-
-        // ★修正: baby_chair を追加。open24h → OPEN_24H、nursing_room → NURSING_ROOM等の
-        //         変換ルールを明示的に定義し、暗黙の toUpperCase() に依存しない。
-        const EQ_KEY_MAP = {
-          wheelchair:       'WHEELCHAIR',
-          diaper:           'DIAPER',
-          open24h:          'OPEN_24H',       // アンダースコアあり
-          ostomate:         'OSTOMATE',
-          nursing_room:     'NURSING_ROOM',
-          baby_chair:       'BABY_CHAIR',     // ★追加
-          washlet:          'WASHLET',
-          visual_support:   'VISUAL_SUPPORT',
-          gender_separated: 'GENDER_SEPARATED',
-          unisex:           'UNISEX',
-          free:             'FREE',
-          paid:             'PAID',
-          parking:          'PARKING',
-        };
-        Object.entries(EQ_KEY_MAP).forEach(([key, apiName]) => {
-          if (searchParams.get(key) === 'true') {
-            params.append('equipment', apiName);
-          }
-        });
-
-        const queryString = params.toString();
-        const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (res.ok) apiData = await res.json();
-        else console.error('API Error');
-      } catch (e) {
-        console.error('Fetch Error', e);
-      }
-
-      // ローカルデータとのマージ
-      const localAll = loadUserToilets();
-      let localData = [];
-      if (isLocationSearch && currentLocation) {
-        const cLat = currentLocation.lat;
-        const cLng = currentLocation.lng;
-        localData = localAll.filter(t => calcDistance(cLat, cLng, t.lat, t.lng) <= 5.0);
-      } else {
-        localData = localAll;
-      }
-
-      const merged = [...apiData, ...localData];
-
-      // ★修正: facilityCategory の二重定義を解消 (|| '' を使う1行に統一)
-      const filters = {
-        facilityCategory:  searchParams.get('facilityCategory') || '',
-        minCleanliness:    searchParams.get('minCleanliness') ? parseInt(searchParams.get('minCleanliness'), 10) : 0,
-        keyword:           searchParams.get('keyword')?.toLowerCase() || '',
-        wheelchair:        searchParams.get('wheelchair')        === 'true',
-        diaper:            searchParams.get('diaper')            === 'true',
-        open24h:           searchParams.get('open24h')           === 'true',
-        public:            searchParams.get('public')            === 'true',
-        ostomate:          searchParams.get('ostomate')          === 'true',
-        nursing_room:      searchParams.get('nursing_room')      === 'true',
-        baby_chair:        searchParams.get('baby_chair')        === 'true', // ★追加
-        washlet:           searchParams.get('washlet')           === 'true',
-        visual_support:    searchParams.get('visual_support')    === 'true',
-        gender_separated:  searchParams.get('gender_separated')  === 'true',
-        unisex:            searchParams.get('unisex')            === 'true',
-        free:              searchParams.get('free')              === 'true',
-        paid:              searchParams.get('paid')              === 'true',
-        parking:           searchParams.get('parking')           === 'true',
-      };
-
-      let result = merged.filter(t => {
-        if (filters.minCleanliness > 0 && (t.cleanliness || 3) < filters.minCleanliness) return false;
-        if (filters.facilityCategory && t.facilityCategory !== filters.facilityCategory) return false;
-        if (filters.public && !t.publicUse) return false;
-        if (filters.keyword && !isKeywordSearch) {
-          if (!(t.name || '').toLowerCase().includes(filters.keyword)) return false;
-        }
-
-        // ★修正: インラインのeqList生成を廃止し normalizeEquipment() に統一
-        const eqSet = normalizeEquipment(t);
-
-        if (filters.wheelchair    && !eqSet.has('WHEELCHAIR'))       return false;
-        if (filters.diaper        && !eqSet.has('DIAPER'))           return false;
-        if (filters.open24h       && !eqSet.has('OPEN_24H'))         return false;
-        if (filters.ostomate      && !eqSet.has('OSTOMATE'))         return false;
-        if (filters.nursing_room  && !eqSet.has('NURSING_ROOM'))     return false;
-        if (filters.baby_chair    && !eqSet.has('BABY_CHAIR'))       return false; // ★追加
-        if (filters.washlet       && !eqSet.has('WASHLET'))          return false;
-        if (filters.visual_support && !eqSet.has('VISUAL_SUPPORT'))  return false;
-        if (filters.gender_separated && !eqSet.has('GENDER_SEPARATED')) return false;
-        if (filters.unisex        && !eqSet.has('UNISEX'))           return false;
-        if (filters.free          && !eqSet.has('FREE'))             return false;
-        if (filters.paid          && !eqSet.has('PAID'))             return false;
-        if (filters.parking       && !eqSet.has('PARKING'))          return false;
-
-        return true;
-      });
-
-      // キーワード絞り込み（ローカルデータ対象）
-      if (isKeywordSearch && currentPlaceQuery) {
-        const lowerQ = currentPlaceQuery.toLowerCase();
-        result = result.filter(t =>
-          (t.name        || '').toLowerCase().includes(lowerQ) ||
-          (t.address     || '').toLowerCase().includes(lowerQ) ||
-          (t.description || '').toLowerCase().includes(lowerQ)
-        );
-      }
-
-      // 距離順ソート
-      if (currentLocation) {
-        result = result
-          .map(t => ({ ...t, distance: calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng) }))
-          .sort((a, b) => a.distance - b.distance);
-      }
-
-      // 重複除去
-      const seenIds = new Set();
-      const uniqueResult = result.filter(item => {
-        if (seenIds.has(item.id)) return false;
-        seenIds.add(item.id);
-        return true;
-      });
-
-      setFilteredToilets(uniqueResult);
-      setSearchStatus(prev => {
-        if (uniqueResult.length > 0) {
-          return prev.includes('検索中') || prev.includes('読み込み中')
-            ? `${uniqueResult.length}件のトイレが見つかりました`
-            : prev;
-        }
-        return prev.includes('付近') ? prev : '条件に一致するトイレは見つかりませんでした';
-      });
-    }
-
-    fetchData();
-  }, [searchParams, currentLocation, searchTrigger]);
-
-  return {
-    filteredToilets,
-    currentLocation,
-    realLocation,
-    placeQuery,
-    setPlaceQuery,
-    searchStatus,
-    handlePlaceSearch,
-    handleCurrentLocation,
-    handleKeywordSearch,
-    searchHistory,
-    handleHistorySearch,
-  };
-};
 </file>
 
 <file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
@@ -7624,6 +7255,373 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
 }
 
 export default MapPanel;
+</file>
+
+<file path="toilet-frontend/src/hooks/useToiletSearch.js">
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { loadUserToilets, calcDistance, normalizeEquipment } from '../utils'; 
+import { API_BASE_URL } from '../config/api';
+
+const HISTORY_KEY = 'imatoilet_search_history';
+
+export const useToiletSearch = () => {
+  const [searchParams] = useSearchParams();
+
+  const [filteredToilets, setFilteredToilets] = useState([]);
+
+  const hasInitialized = useRef(false);
+  const placeQueryRef = useRef('');
+
+  const [currentLocation, setCurrentLocation] = useState(() => {
+    const urlLat = searchParams.get('lat');
+    const urlLng = searchParams.get('lng');
+    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: '現在地' };
+    const saved = sessionStorage.getItem('imatoilet_loc');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [realLocation, setRealLocation] = useState(() => {
+    const urlLat = searchParams.get('lat');
+    const urlLng = searchParams.get('lng');
+    if (urlLat && urlLng) return { lat: parseFloat(urlLat), lng: parseFloat(urlLng), address: '現在地' };
+    const saved = sessionStorage.getItem('imatoilet_realLoc');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [placeQuery, setPlaceQuery] = useState(() => {
+    if (searchParams.has('lat')) return '';
+    return sessionStorage.getItem('imatoilet_query') || '';
+  });
+
+  const [searchStatus, setSearchStatus] = useState(() => {
+    if (searchParams.has('lat')) return '現在地周辺を表示中';
+    return sessionStorage.getItem('imatoilet_status') || '';
+  });
+
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [searchTrigger, setSearchTrigger] = useState(0);
+
+  useEffect(() => { placeQueryRef.current = placeQuery; }, [placeQuery]);
+
+  useEffect(() => {
+    if (currentLocation) sessionStorage.setItem('imatoilet_loc', JSON.stringify(currentLocation));
+    else sessionStorage.removeItem('imatoilet_loc');
+  }, [currentLocation]);
+
+  useEffect(() => {
+    if (realLocation) sessionStorage.setItem('imatoilet_realLoc', JSON.stringify(realLocation));
+    else sessionStorage.removeItem('imatoilet_realLoc');
+  }, [realLocation]);
+
+  useEffect(() => { sessionStorage.setItem('imatoilet_query', placeQuery); }, [placeQuery]);
+  useEffect(() => { sessionStorage.setItem('imatoilet_status', searchStatus); }, [searchStatus]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (raw) setSearchHistory(JSON.parse(raw));
+    } catch (e) { console.error(e); }
+  }, []);
+
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+    if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
+      handleCurrentLocation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addToHistory = (query) => {
+    if (!query) return;
+    setSearchHistory(prev => {
+      const newHistory = [query, ...prev.filter(h => h !== query)].slice(0, 5);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+
+  const handlePlaceSearch = (overrideQuery) => {
+    const query = (typeof overrideQuery === 'string') ? overrideQuery : placeQuery;
+    if (!query) return;
+
+    if (!window.google?.maps?.places) {
+      setSearchStatus('地図データを読み込み中です。少し待ってから再試行してください');
+      return;
+    }
+
+    setSearchStatus('Googleマップで場所を解析中...');
+    addToHistory(query);
+
+    const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+    service.textSearch(
+      { query, fields: ['name', 'geometry', 'formatted_address', 'rating'] },
+      (results, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results?.length > 0) {
+          const hit = results[0];
+          const lat = hit.geometry.location.lat();
+          const lng = hit.geometry.location.lng();
+          setCurrentLocation({ lat, lng, address: hit.formatted_address || hit.name });
+          let statusMsg = `「${hit.name}」周辺`;
+          if (hit.rating) statusMsg += ` (★${hit.rating})`;
+          setSearchStatus(statusMsg + ' を表示中');
+        } else {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ address: query }, (geoResults, geoStatus) => {
+            if (geoStatus === 'OK' && geoResults[0]) {
+              const geoHit = geoResults[0];
+              setCurrentLocation({
+                lat: geoHit.geometry.location.lat(),
+                lng: geoHit.geometry.location.lng(),
+                address: geoHit.formatted_address
+              });
+              setSearchStatus(`住所「${geoHit.formatted_address}」周辺を表示`);
+            } else {
+              console.warn('Search failed:', status, geoStatus);
+              setSearchStatus('地図上に見つかりません。登録データから検索します...');
+              setCurrentLocation(null);
+              setSearchTrigger(prev => prev + 1);
+            }
+          });
+        }
+      }
+    );
+  };
+
+  const handleCurrentLocation = () => {
+    setSearchStatus('現在地を取得中...');
+    if (!navigator.geolocation) {
+      setSearchStatus('ブラウザが位置情報に対応していません');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        if (window.google?.maps?.Geocoder) {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            let addr = '現在地';
+            if (status === 'OK' && results[0]) {
+              addr = results[0].address_components
+                .filter(c => c.types.includes('locality') || c.types.includes('sublocality') || c.types.includes('neighborhood'))
+                .map(c => c.long_name).reverse().join('') || results[0].formatted_address;
+              setSearchStatus(`現在地: ${addr} 付近`);
+            } else {
+              setSearchStatus('現在地周辺を表示中');
+            }
+            const loc = { lat, lng, address: addr };
+            setCurrentLocation(loc);
+            setRealLocation(loc);
+          });
+        } else {
+          const loc = { lat, lng, address: '現在地' };
+          setCurrentLocation(loc);
+          setRealLocation(loc);
+          setSearchStatus('現在地周辺を表示中');
+        }
+      },
+      (err) => {
+        console.error(err);
+        setSearchStatus('現在地の取得に失敗しました');
+      }
+    );
+  };
+
+  const handleKeywordSearch = () => {
+    if (!placeQuery) return;
+    addToHistory(placeQuery);
+    setSearchStatus('キーワードで登録データを検索中...');
+    setCurrentLocation(null);
+    setSearchTrigger(prev => prev + 1);
+  };
+
+  const handleHistorySearch = (query) => {
+    setPlaceQuery(query);
+    handlePlaceSearch(query);
+  };
+
+  useEffect(() => {
+    async function fetchData() {
+      const currentPlaceQuery = placeQueryRef.current;
+      if (!currentLocation && !currentPlaceQuery && searchTrigger === 0) return;
+
+      let apiData = [];
+      const isLocationSearch = !!currentLocation;
+      const isKeywordSearch = !currentLocation;
+
+      try {
+        const params = new URLSearchParams();
+
+        if (currentLocation) {
+          params.append('lat', currentLocation.lat);
+          params.append('lng', currentLocation.lng);
+          params.append('radius', '5.0');
+        } else {
+          if (currentPlaceQuery) params.append('keyword', currentPlaceQuery);
+        }
+
+        const facilityCategory = searchParams.get('facilityCategory');
+        if (facilityCategory) params.append('facilityCategory', facilityCategory);
+
+        const EQ_KEY_MAP = {
+          wheelchair:       'WHEELCHAIR',
+          diaper:           'DIAPER',
+          open24h:          'OPEN_24H',
+          ostomate:         'OSTOMATE',
+          nursing_room:     'NURSING_ROOM',
+          baby_chair:       'BABY_CHAIR',
+          washlet:          'WASHLET',
+          visual_support:   'VISUAL_SUPPORT',
+          gender_separated: 'GENDER_SEPARATED',
+          unisex:           'UNISEX',
+          free:             'FREE',
+          paid:             'PAID',
+          parking:          'PARKING',
+        };
+        
+        Object.entries(EQ_KEY_MAP).forEach(([key, apiName]) => {
+          if (searchParams.get(key) === 'true') {
+            params.append('equipment', apiName);
+          }
+        });
+
+        // ★追加・変更: ページネーションパラメータを明示的に付与
+        // 現在は一覧に「さらに読み込む」ボタンがないため、一旦50件（十分な数）を取得します
+        params.append('page', '0');
+        params.append('size', '50');
+
+        const queryString = params.toString();
+        const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
+        
+        const res = await fetch(url, { cache: 'no-store' });
+        
+        if (res.ok) {
+          const data = await res.json();
+          // ★修正: バックエンドが返す Page<Toilet> の中から .content (配列) を取り出す
+          apiData = data.content || []; 
+        } else {
+          console.error('API Error');
+        }
+      } catch (e) {
+        console.error('Fetch Error', e);
+      }
+
+      // ローカルデータとのマージ
+      const localAll = loadUserToilets();
+      let localData = [];
+      if (isLocationSearch && currentLocation) {
+        const cLat = currentLocation.lat;
+        const cLng = currentLocation.lng;
+        localData = localAll.filter(t => calcDistance(cLat, cLng, t.lat, t.lng) <= 5.0);
+      } else {
+        localData = localAll;
+      }
+
+      const merged = [...apiData, ...localData];
+
+      const filters = {
+        facilityCategory:  searchParams.get('facilityCategory') || '',
+        minCleanliness:    searchParams.get('minCleanliness') ? parseInt(searchParams.get('minCleanliness'), 10) : 0,
+        keyword:           searchParams.get('keyword')?.toLowerCase() || '',
+        wheelchair:        searchParams.get('wheelchair')        === 'true',
+        diaper:            searchParams.get('diaper')            === 'true',
+        open24h:           searchParams.get('open24h')           === 'true',
+        public:            searchParams.get('public')            === 'true',
+        ostomate:          searchParams.get('ostomate')          === 'true',
+        nursing_room:      searchParams.get('nursing_room')      === 'true',
+        baby_chair:        searchParams.get('baby_chair')        === 'true',
+        washlet:           searchParams.get('washlet')           === 'true',
+        visual_support:    searchParams.get('visual_support')    === 'true',
+        gender_separated:  searchParams.get('gender_separated')  === 'true',
+        unisex:            searchParams.get('unisex')            === 'true',
+        free:              searchParams.get('free')              === 'true',
+        paid:              searchParams.get('paid')              === 'true',
+        parking:           searchParams.get('parking')           === 'true',
+      };
+
+      let result = merged.filter(t => {
+        if (filters.minCleanliness > 0 && (t.cleanliness || 3) < filters.minCleanliness) return false;
+        if (filters.facilityCategory && t.facilityCategory !== filters.facilityCategory) return false;
+        if (filters.public && !t.publicUse) return false;
+        if (filters.keyword && !isKeywordSearch) {
+          if (!(t.name || '').toLowerCase().includes(filters.keyword)) return false;
+        }
+
+        const eqSet = normalizeEquipment(t);
+
+        if (filters.wheelchair    && !eqSet.has('WHEELCHAIR'))       return false;
+        if (filters.diaper        && !eqSet.has('DIAPER'))           return false;
+        if (filters.open24h       && !eqSet.has('OPEN_24H'))         return false;
+        if (filters.ostomate      && !eqSet.has('OSTOMATE'))         return false;
+        if (filters.nursing_room  && !eqSet.has('NURSING_ROOM'))     return false;
+        if (filters.baby_chair    && !eqSet.has('BABY_CHAIR'))       return false;
+        if (filters.washlet       && !eqSet.has('WASHLET'))          return false;
+        if (filters.visual_support && !eqSet.has('VISUAL_SUPPORT'))  return false;
+        if (filters.gender_separated && !eqSet.has('GENDER_SEPARATED')) return false;
+        if (filters.unisex        && !eqSet.has('UNISEX'))           return false;
+        if (filters.free          && !eqSet.has('FREE'))             return false;
+        if (filters.paid          && !eqSet.has('PAID'))             return false;
+        if (filters.parking       && !eqSet.has('PARKING'))          return false;
+
+        return true;
+      });
+
+      // キーワード絞り込み（ローカルデータ対象）
+      if (isKeywordSearch && currentPlaceQuery) {
+        const lowerQ = currentPlaceQuery.toLowerCase();
+        result = result.filter(t =>
+          (t.name        || '').toLowerCase().includes(lowerQ) ||
+          (t.address     || '').toLowerCase().includes(lowerQ) ||
+          (t.description || '').toLowerCase().includes(lowerQ)
+        );
+      }
+
+      // 距離順ソート
+      if (currentLocation) {
+        result = result
+          .map(t => ({ ...t, distance: calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng) }))
+          .sort((a, b) => a.distance - b.distance);
+      }
+
+      // 重複除去
+      const seenIds = new Set();
+      const uniqueResult = result.filter(item => {
+        if (seenIds.has(item.id)) return false;
+        seenIds.add(item.id);
+        return true;
+      });
+
+      setFilteredToilets(uniqueResult);
+      setSearchStatus(prev => {
+        if (uniqueResult.length > 0) {
+          return prev.includes('検索中') || prev.includes('読み込み中')
+            ? `${uniqueResult.length}件のトイレが見つかりました`
+            : prev;
+        }
+        return prev.includes('付近') ? prev : '条件に一致するトイレは見つかりませんでした';
+      });
+    }
+
+    fetchData();
+  }, [searchParams, currentLocation, searchTrigger]);
+
+  return {
+    filteredToilets,
+    currentLocation,
+    realLocation,
+    placeQuery,
+    setPlaceQuery,
+    searchStatus,
+    handlePlaceSearch,
+    handleCurrentLocation,
+    handleKeywordSearch,
+    searchHistory,
+    handleHistorySearch,
+  };
+};
 </file>
 
 <file path="backend/backend/src/main/resources/application.properties">

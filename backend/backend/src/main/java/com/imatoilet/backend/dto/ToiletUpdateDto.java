@@ -45,16 +45,11 @@ public class ToiletUpdateDto {
     private String facilityCategory;
 
     // --- 設備情報 (JSONの "equipment" キーを受け取る) ---
-    // Toilet.javaと同様の問題を避けるため、念のためJsonAliasを使用しますが
-    // フィールド名が equipment であれば標準マッピングでも動作します
     @JsonAlias("equipment")
     private List<String> equipment;
 
-    // --- 互換性フラグ (将来的に廃止推奨だが、現状のAPI互換性維持のため残す) ---
+    // --- その他の互換性フラグ ---
     private Boolean publicUse;
-    private Boolean diaper;
-    private Boolean wheelchair;
-    private Boolean open24h;
     private Boolean typePark;
     private Boolean typeStation;
     private Boolean typeMall;

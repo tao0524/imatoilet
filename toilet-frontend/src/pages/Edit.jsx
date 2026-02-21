@@ -29,7 +29,7 @@ function Edit() {
       open24h:          false,
       ostomate:         false,
       nursing_room:     false,
-      baby_chair:       false, // ★追加
+      baby_chair:       false,
       washlet:          false,
       gender_separated: false,
       free:             false,
@@ -82,7 +82,7 @@ function Edit() {
         open24h:          eqSet.has('OPEN_24H'),
         ostomate:         eqSet.has('OSTOMATE'),
         nursing_room:     eqSet.has('NURSING_ROOM'),
-        baby_chair:       eqSet.has('BABY_CHAIR'),     // ★追加
+        baby_chair:       eqSet.has('BABY_CHAIR'),
         washlet:          eqSet.has('WASHLET'),
         gender_separated: eqSet.has('GENDER_SEPARATED'),
         free:             eqSet.has('FREE'),
@@ -109,10 +109,6 @@ function Edit() {
       image:            formData.images.join(','),
       facilityCategory: formData.facilityCategory,
       equipment:        buildEquipmentArray(formData.conditions),
-      // 後方互換フラグ
-      wheelchair:       formData.conditions.wheelchair,
-      diaper:           formData.conditions.diaper,
-      open24h:          formData.conditions.open24h,
     };
 
     try {
@@ -128,9 +124,9 @@ function Edit() {
       } else {
         const res = await fetch(`${API_BASE_URL}/${id}`, {
           method: 'PUT',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN 
+            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN
           },
           body: JSON.stringify(payload),
         });

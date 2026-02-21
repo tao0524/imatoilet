@@ -81,7 +81,7 @@ const CONDITION_MAP = {
   open24h:          'OPEN_24H',
   ostomate:         'OSTOMATE',
   nursing_room:     'NURSING_ROOM',
-  baby_chair:       'BABY_CHAIR',       // ★追加
+  baby_chair:       'BABY_CHAIR',
   washlet:          'WASHLET',
   gender_separated: 'GENDER_SEPARATED',
   free:             'FREE',
@@ -91,26 +91,26 @@ const CONDITION_MAP = {
 // conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
 export function buildEquipmentArray(conditions) {
   return Object.keys(conditions)
-    .filter(key => conditions[key]) // trueになっている項目だけを抽出
+    .filter(key => conditions[key])
     .map(key => {
       const enumName = CONDITION_MAP[key];
-      // CONDITION_MAPに未登録のキーが来たら、推測変換せずに落とす
       if (!enumName) {
         console.warn(`[buildEquipmentArray] CONDITION_MAPに未登録のキー: "${key}"`);
-        return null; 
+        return null;
       }
       return enumName;
     })
-    .filter(Boolean); // 配列から null や undefined を取り除き、正しいEnum名だけにする
+    .filter(Boolean);
 }
 
 /**
  * トイレオブジェクトから設備情報の Set を生成する (正規化)
  *
- * 以下の3パターンを統一して扱う:
+ * 以下の2パターンを統一して扱う:
  *   1. 新形式: equipment が文字列配列  ["WHEELCHAIR", "OPEN_24H"]
  *   2. 旧形式: equipment が CSV文字列  "wheelchair,open_24h"
- *   3. 互換フラグ: toilet.wheelchair / toilet.diaper / toilet.open24h (boolean)
+ *
+ * ※ パターン3（toilet.wheelchair 等のbooleanフラグ）はV7マイグレーション適用後に廃止済み
  *
  * @param {Object} toilet - APIレスポンスまたはローカルストレージのトイレオブジェクト
  * @returns {Set<string>} 大文字の設備名セット (例: Set{"WHEELCHAIR", "OPEN_24H"})
@@ -125,12 +125,6 @@ export function normalizeEquipment(toilet) {
   } else if (typeof toilet.equipment === 'string' && toilet.equipment.length > 0) {
     toilet.equipment.split(',').forEach(e => eqSet.add(e.trim().toUpperCase()));
   }
-
-  // 3. 個別フラグ (互換性維持 — 旧データのフォールバック)
-  if (toilet.wheelchair) eqSet.add('WHEELCHAIR');
-  if (toilet.diaper)     eqSet.add('DIAPER');
-  if (toilet.open24h)    eqSet.add('OPEN_24H');
-  if (toilet.parking)    eqSet.add('PARKING');
 
   return eqSet;
 }
