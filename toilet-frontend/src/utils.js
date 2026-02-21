@@ -91,8 +91,17 @@ const CONDITION_MAP = {
 // conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
 export function buildEquipmentArray(conditions) {
   return Object.keys(conditions)
-    .filter(key => conditions[key])
-    .map(key => CONDITION_MAP[key] || key.toUpperCase());
+    .filter(key => conditions[key]) // trueになっている項目だけを抽出
+    .map(key => {
+      const enumName = CONDITION_MAP[key];
+      // CONDITION_MAPに未登録のキーが来たら、推測変換せずに落とす
+      if (!enumName) {
+        console.warn(`[buildEquipmentArray] CONDITION_MAPに未登録のキー: "${key}"`);
+        return null; 
+      }
+      return enumName;
+    })
+    .filter(Boolean); // 配列から null や undefined を取り除き、正しいEnum名だけにする
 }
 
 /**

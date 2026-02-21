@@ -1,10 +1,14 @@
 package com.imatoilet.backend;
 
-import com.imatoilet.backend.dto.ToiletUpdateDto; // ★追加
+import com.imatoilet.backend.dto.ToiletUpdateDto;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -17,19 +21,21 @@ public class ToiletApiController {
         this.toiletService = toiletService;
     }
 
-    // 検索・一覧取得
+    // 検索・一覧取得（ページネーション対応）
     @GetMapping
-    public ResponseEntity<List<Toilet>> getToilets(
+    public ResponseEntity<Page<Toilet>> getToilets(
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
             @RequestParam(required = false, defaultValue = "5.0") Double radius,
             @RequestParam(required = false) String facilityCategory,
             @RequestParam(required = false) Integer minCleanliness,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) List<String> equipment
+            @RequestParam(required = false) Boolean publicUse, // 互換性のため追加
+            @RequestParam(required = false) List<String> equipment,
+            @PageableDefault(size = 50) Pageable pageable // デフォルト50件取得
     ) {
-        List<Toilet> results = toiletService.searchToilets(
-                lat, lng, radius, facilityCategory, minCleanliness, keyword, equipment
+        Page<Toilet> results = toiletService.searchToilets(
+                lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
         );
         return ResponseEntity.ok(results);
     }
@@ -48,7 +54,6 @@ public class ToiletApiController {
     }
     
     // 更新
-    // ★修正: 引数を ToiletUpdateDto に変更
     @PutMapping("/{id}")
     public ResponseEntity<Toilet> updateToilet(
             @PathVariable Long id, 
