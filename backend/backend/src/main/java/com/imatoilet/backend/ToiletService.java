@@ -25,7 +25,6 @@ public class ToiletService {
         this.toiletRepository = toiletRepository;
     }
 
-    // --- 検索ロジック (ページネーション対応＆DB側完全フィルタリング) ---
     public Page<Toilet> searchToilets(
             Double lat, Double lng, Double radius,
             String facilityCategory, Integer minCleanliness,
@@ -36,27 +35,25 @@ public class ToiletService {
 
         List<EquipmentType> types = convertToEnumList(equipment);
         Long typeCount = (types != null) ? (long) types.size() : 0L;
-        // ネイティブクエリ用に文字列リストを用意（空の場合はダミーを入れてIN句エラーを防ぐ）
+        
         List<String> typeStrs = (equipment != null && !equipment.isEmpty()) ? equipment : List.of("DUMMY_TYPE");
+        List<EquipmentType> safeTypes = (types != null && !types.isEmpty()) ? types : List.of(EquipmentType.WHEELCHAIR);
 
-        // 1. まずIDリストだけをページネーションで取得する
         if (lat != null && lng != null) {
             double r = (radius != null) ? radius : 5.0;
             idPage = toiletRepository.findIdsWithinRadiusWithSpecs(
                     lat, lng, r, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
         } else {
             idPage = toiletRepository.searchIdsBySpecs(
-                    facilityCategory, minCleanliness, keyword, publicUse, types, typeCount, pageable);
+                    facilityCategory, minCleanliness, keyword, publicUse, safeTypes, typeCount, pageable);
         }
 
         if (idPage.isEmpty()) {
             return new PageImpl<>(new ArrayList<>(), pageable, idPage.getTotalElements());
         }
 
-        // 2. 取得したIDリストを使って、実体（Equipment含む）をまとめてフェッチする（N+1回避）
         List<Toilet> toilets = toiletRepository.findAllByIdWithEquipment(idPage.getContent());
 
-        // 3. IN句検索は順序が保証されないため、元のIDリストの順番（距離順など）に並べ直す
         Map<Long, Toilet> toiletMap = toilets.stream()
                 .collect(Collectors.toMap(Toilet::getId, Function.identity()));
         List<Toilet> sortedToilets = idPage.getContent().stream()
@@ -67,15 +64,12 @@ public class ToiletService {
         return new PageImpl<>(sortedToilets, pageable, idPage.getTotalElements());
     }
 
-    // --- ID検索 ---
     public Toilet getToilet(Long id) {
         Long safeId = Objects.requireNonNull(id, "ID must not be null");
-        // 標準のfindById（Repository側でOverride済みのためEquipmentもEagerロードされる）
         return toiletRepository.findById(safeId)
                 .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
     }
 
-    // --- 新規登録 ---
     public Toilet createToilet(Toilet toilet) {
         if (toilet.getCleanliness() == null) {
             toilet.setCleanliness(3);
@@ -83,16 +77,11 @@ public class ToiletService {
         
         Toilet savedToilet = toiletRepository.save(toilet);
         updateEquipmentList(savedToilet, toilet.getEquipmentInput());
-        
-        // ※第2段階（DBマイグレーション）完了までは、後方互換性維持のためフラグ同期を残す
-        syncFlagsFromEquipment(savedToilet);
-
         return toiletRepository.save(savedToilet);
     }
 
-    // --- 更新 ---
     public Toilet updateToilet(Long id, Toilet details) {
-        Toilet toilet = getToilet(id); // ここでfindByIdが呼ばれる
+        Toilet toilet = getToilet(id);
 
         Optional.ofNullable(details.getName()).filter(s -> !s.isBlank()).ifPresent(toilet::setName);
         if (details.getAddress() != null) toilet.setAddress(details.getAddress());
@@ -106,7 +95,6 @@ public class ToiletService {
 
         if (details.getEquipmentInput() != null) {
             updateEquipmentList(toilet, details.getEquipmentInput());
-            syncFlagsFromEquipment(toilet);
         }
 
         Optional.ofNullable(details.getPublicUse()).ifPresent(toilet::setPublicUse);
@@ -117,7 +105,6 @@ public class ToiletService {
         return toiletRepository.save(toilet);
     }
 
-    // --- 削除 ---
     public void deleteToilet(Long id) {
         Long safeId = Objects.requireNonNull(id, "ID must not be null");
         if (!toiletRepository.existsById(safeId)) {
@@ -126,25 +113,32 @@ public class ToiletService {
         toiletRepository.deleteById(safeId);
     }
 
-    // --- ヘルパーメソッド ---
+    // ★修正: 重複エラーを防ぐための差分同期ロジック
     private void updateEquipmentList(Toilet toilet, List<String> inputs) {
         if (inputs == null) return;
-        toilet.getEquipmentList().clear();
+        
+        // 入力された文字列を Enum のリストに変換
+        List<EquipmentType> newTypes = new ArrayList<>();
         for (String typeStr : inputs) {
             try {
-                EquipmentType type = EquipmentType.valueOf(typeStr);
+                newTypes.add(EquipmentType.valueOf(typeStr));
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        // 1. 古いリストから、新リストに含まれないものを削除
+        toilet.getEquipmentList().removeIf(e -> !newTypes.contains(e.getType()));
+
+        // 2. 現在のリストに残っている設備の Type を抽出
+        List<EquipmentType> currentTypes = toilet.getEquipmentList().stream()
+                .map(Equipment::getType)
+                .collect(Collectors.toList());
+
+        // 3. 新リストのうち、まだ登録されていないものだけを追加
+        for (EquipmentType type : newTypes) {
+            if (!currentTypes.contains(type)) {
                 toilet.addEquipment(type);
-            } catch (IllegalArgumentException ignored) { 
-                // 無効なEnum文字列は安全に無視する
             }
         }
-    }
-
-    private void syncFlagsFromEquipment(Toilet toilet) {
-        List<String> names = toilet.getEquipmentNames();
-        toilet.setWheelchair(names.contains("WHEELCHAIR"));
-        toilet.setDiaper(names.contains("DIAPER"));
-        toilet.setOpen24h(names.contains("OPEN_24H"));
     }
 
     private List<EquipmentType> convertToEnumList(List<String> inputs) {

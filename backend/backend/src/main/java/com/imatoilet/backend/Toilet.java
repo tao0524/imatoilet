@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonAlias; // ★追加
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -21,8 +21,6 @@ public class Toilet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // --- 基本フィールド ---
-    
     @NotBlank(message = "名前は必須です")
     @Size(max = 100, message = "名前は100文字以内で入力してください")
     private String name;
@@ -40,10 +38,8 @@ public class Toilet {
     @Size(max = 200, message = "住所は200文字以内で入力してください")
     private String address;
 
-    // --- フラグ（互換性のため維持するが、本来はequipmentList推奨） ---
+    // --- 旧フラグ完全廃止 ---
     private Boolean publicUse;
-    private Boolean diaper;
-    private Boolean wheelchair;
     private Boolean typePark;
     private Boolean typeStation;
     private Boolean typeMall;
@@ -51,9 +47,6 @@ public class Toilet {
     @Size(max = 500, message = "説明は500文字以内で入力してください")
     private String description;
     
-    private Boolean open24h;
-
-    // --- カテゴリ ---
     @Pattern(
         regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
         message = "施設カテゴリの値が不正です"
@@ -61,9 +54,6 @@ public class Toilet {
     private String facilityCategory;
     
     private String locationCategory;
-    
-    // --- 削除: CSV用 String equipment ---
-    
     private String usageConditions;
     private String atmosphere;
 
@@ -75,33 +65,24 @@ public class Toilet {
     @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
     private String image;
 
-    // --- Equipment リレーション ---
-    // DB上のリレーション管理用（JSONには直接出さない）
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Equipment> equipmentList = new ArrayList<>();
 
-    // --- JSON 入出力用 ---
-
-    // 1. APIレスポンス用 (JSON: "equipment": ["wheelchair", "open_24h"])
-    @JsonProperty("equipment")
+    @JsonProperty(value = "equipment", access = JsonProperty.Access.READ_ONLY)
     public List<String> getEquipmentNames() {
         if (equipmentList == null) return new ArrayList<>();
         return equipmentList.stream()
-                .map(e -> e.getType().name()) // Enum名を返す
+                .map(e -> e.getType().name())
                 .collect(Collectors.toList());
     }
 
-    // 2. APIリクエスト受信用
-    // ★修正: @JsonPropertyによる二重定義を回避し、@JsonAliasで入力のみ受け付けるように変更
     @Transient
-    @JsonAlias("equipment")
+    @JsonProperty(value = "equipment", access = JsonProperty.Access.WRITE_ONLY)
     private List<String> equipmentInput;
 
-    // --- ヘルパーメソッド ---
-    
     public void addEquipment(EquipmentType type) {
         Equipment equipment = new Equipment(this, type);
         equipmentList.add(equipment);

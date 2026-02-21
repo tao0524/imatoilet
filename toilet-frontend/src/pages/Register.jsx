@@ -24,7 +24,7 @@ function Register() {
       open24h:          false,
       ostomate:         false,
       nursing_room:     false,
-      baby_chair:       false, // ★追加
+      baby_chair:       false,
       washlet:          false,
       gender_separated: false,
       free:             false,
@@ -57,10 +57,6 @@ function Register() {
       image:            formData.images.join(','),
       facilityCategory: formData.facilityCategory,
       equipment:        buildEquipmentArray(formData.conditions),
-      // 後方互換フラグ
-      wheelchair:       formData.conditions.wheelchair,
-      diaper:           formData.conditions.diaper,
-      open24h:          formData.conditions.open24h,
     };
 
     try {

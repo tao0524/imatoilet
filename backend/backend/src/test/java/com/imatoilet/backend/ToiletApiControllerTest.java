@@ -20,7 +20,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 public class ToiletApiControllerTest {
 
-    // ★追加: test/resources/application.properties の app.admin.token と一致させる
     private static final String VALID_TOKEN   = "test-admin-token";
     private static final String INVALID_TOKEN = "wrong-token";
 
@@ -35,7 +34,7 @@ public class ToiletApiControllerTest {
         toiletRepository.deleteAll();
     }
 
-    // --- GET: 一覧取得 (変更なし) ---
+    // --- GET: 一覧取得 ---
     @Test
     void shouldReturnListOfToilets() throws Exception {
         Toilet toilet = new Toilet();
@@ -51,15 +50,16 @@ public class ToiletApiControllerTest {
         
         toiletRepository.save(toilet);
 
+        // ★修正: ページネーション対応のため、$.content の中身を検証するように変更
         mockMvc.perform(get("/api/toilets"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name", is("Test Toilet")))
-                .andExpect(jsonPath("$[0].equipment", hasItem("WHEELCHAIR")))
-                .andExpect(jsonPath("$[0].equipment", hasItem("DIAPER")));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("Test Toilet")))
+                .andExpect(jsonPath("$.content[0].equipment", hasItem("WHEELCHAIR")))
+                .andExpect(jsonPath("$.content[0].equipment", hasItem("DIAPER")));
     }
 
-    // --- GET: ID指定取得 (変更なし) ---
+    // --- GET: ID指定取得 ---
     @Test
     void shouldReturnToiletById() throws Exception {
         Toilet toilet = new Toilet();
@@ -76,7 +76,7 @@ public class ToiletApiControllerTest {
                 .andExpect(jsonPath("$.equipment", hasItem("OPEN_24H")));
     }
 
-    // --- POST: 新規登録 (変更なし: 認証不要のまま) ---
+    // --- POST: 新規登録 ---
     @Test
     void shouldCreateToilet() throws Exception {
         String toiletJson = """
@@ -101,7 +101,7 @@ public class ToiletApiControllerTest {
                 .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OPEN_24H")));
     }
 
-    // --- PUT: 更新 (★ヘッダー追加) ---
+    // --- PUT: 更新 ---
     @Test
     void shouldUpdateToilet() throws Exception {
         Toilet toilet = new Toilet();
@@ -123,14 +123,14 @@ public class ToiletApiControllerTest {
         mockMvc.perform(put("/api/toilets/" + saved.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(updateJson)
-                .header("X-Admin-Token", VALID_TOKEN))   // ★追加
+                .header("X-Admin-Token", VALID_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name", is("Updated Name")))
                 .andExpect(jsonPath("$.equipment", hasSize(2)))
                 .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OSTOMATE")));
     }
 
-    // --- DELETE: 削除 (★ヘッダー追加) ---
+    // --- DELETE: 削除 ---
     @Test
     void shouldDeleteToilet() throws Exception {
         Toilet toilet = new Toilet();
@@ -139,17 +139,15 @@ public class ToiletApiControllerTest {
         toilet.setLng(0.0);
         Toilet saved = toiletRepository.save(toilet);
 
-        // 削除実行
         mockMvc.perform(delete("/api/toilets/" + saved.getId())
-                .header("X-Admin-Token", VALID_TOKEN))   // ★追加
+                .header("X-Admin-Token", VALID_TOKEN))
                 .andExpect(status().isNoContent());
 
-        // 削除後に取得して 404 になるか確認
         mockMvc.perform(get("/api/toilets/" + saved.getId()))
                 .andExpect(status().isNotFound());
     }
 
-    // ★新規追加: PUT に認証なし → 401 ---
+    // --- PUT に認証なし → 401 ---
     @Test
     void shouldReturn401WhenUpdatingWithoutToken() throws Exception {
         Toilet toilet = new Toilet();
@@ -164,11 +162,11 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(put("/api/toilets/" + saved.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(updateJson))              // ヘッダーなし
+                .content(updateJson))
                 .andExpect(status().isUnauthorized());
     }
 
-    // ★新規追加: DELETE に不正トークン → 401 ---
+    // --- DELETE に不正トークン → 401 ---
     @Test
     void shouldReturn401WhenDeletingWithInvalidToken() throws Exception {
         Toilet toilet = new Toilet();
@@ -178,11 +176,10 @@ public class ToiletApiControllerTest {
         Toilet saved = toiletRepository.save(toilet);
 
         mockMvc.perform(delete("/api/toilets/" + saved.getId())
-                .header("X-Admin-Token", INVALID_TOKEN))  // 不正トークン
+                .header("X-Admin-Token", INVALID_TOKEN))
                 .andExpect(status().isUnauthorized());
     }
 
-    // --- 以下は変更なし ---
     @Test
     void shouldReturn404ForNonExistentId() throws Exception {
         mockMvc.perform(get("/api/toilets/9999"))
@@ -234,7 +231,7 @@ public class ToiletApiControllerTest {
     @Test
     void shouldReturn404WhenDeletingNonExistent() throws Exception {
         mockMvc.perform(delete("/api/toilets/9999")
-                .header("X-Admin-Token", VALID_TOKEN))   // ★追加
+                .header("X-Admin-Token", VALID_TOKEN))
                 .andExpect(status().isNotFound());
     }
 }
