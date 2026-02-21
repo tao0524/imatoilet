@@ -1,5 +1,8 @@
+// backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java
 package com.imatoilet.backend;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,49 +18,63 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @NonNull
     List<Toilet> findAll();
 
-    // ★修正: 独自メソッドを廃止し、標準のfindByIdをオーバーライドしてEagerロード化
-    // これによりメソッド名解析やJPQLのミスによる500エラーを確実に防ぎます
     @Override
     @EntityGraph(attributePaths = {"equipmentList"})
     @NonNull
     Optional<Toilet> findById(@NonNull Long id);
 
-    // 位置検索（ネイティブクエリ）
+    // ★修正: 位置検索 + フィルタリングのネイティブクエリ（ページネーション対応）
     @Query(value = "SELECT t.id FROM toilet t WHERE " +
            "(6371 * acos(least(1.0, greatest(-1.0, " +
            "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
            "  cos(radians(t.lng) - radians(:lng)) + " +
            "  sin(radians(:lat)) * sin(radians(t.lat))" +
-           ")))) <= :radius", nativeQuery = true)
-    List<Long> findIdsWithinRadius(
+           ")))) <= :radius " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
+           "(6371 * acos(least(1.0, greatest(-1.0, cos(radians(:lat)) * cos(radians(t.lat)) * cos(radians(t.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(t.lat)))))) <= :radius " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           nativeQuery = true)
+    Page<Long> findIdsWithinRadiusWithSpecs(
         @Param("lat") Double lat,
         @Param("lng") Double lng,
-        @Param("radius") Double radius
-    );
-
-    // ID指定取得（複数）
-    @EntityGraph(attributePaths = {"equipmentList"})
-    @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
-    List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
-
-    // 検索機能
-    @Query("SELECT t.id FROM Toilet t " +
-           "LEFT JOIN t.equipmentList e " +
-           "WHERE " +
-           "(:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) AND " +
-           "(:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) AND " +
-           "(:keyword IS NULL OR " +
-           "  t.name LIKE %:keyword% OR " +
-           "  t.address LIKE %:keyword% OR " +
-           "  t.description LIKE %:keyword%) AND " +
-           "(:equipmentTypes IS NULL OR e.type IN :equipmentTypes) " +
-           "GROUP BY t.id " +
-           "HAVING (:equipmentTypes IS NULL OR COUNT(DISTINCT e.type) = :typeCount)")
-    List<Long> searchIdsBySpecs(
+        @Param("radius") Double radius,
         @Param("facilityCategory") String facilityCategory,
         @Param("minCleanliness") Integer minCleanliness,
         @Param("keyword") String keyword,
-        @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
-        @Param("typeCount") Long typeCount
+        @Param("publicUse") Boolean publicUse,
+        @Param("equipmentTypes") List<String> equipmentTypes,
+        @Param("typeCount") Integer typeCount,
+        Pageable pageable
     );
+
+    // ★修正: 条件検索のJPQL（サブクエリでCOUNTすることで安全にページネーション対応）
+    @Query("SELECT t.id FROM Toilet t " +
+           "WHERE (:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.publicUse = :publicUse) " +
+           "AND (:typeCount = 0L OR (SELECT COUNT(DISTINCT e.type) FROM Equipment e WHERE e.toilet.id = t.id AND e.type IN :equipmentTypes) = :typeCount)")
+    Page<Long> searchIdsBySpecs(
+        @Param("facilityCategory") String facilityCategory,
+        @Param("minCleanliness") Integer minCleanliness,
+        @Param("keyword") String keyword,
+        @Param("publicUse") Boolean publicUse,
+        @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
+        @Param("typeCount") Long typeCount,
+        Pageable pageable
+    );
+
+    // 2段階フェッチ用（N+1回避）
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
+    List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
 }

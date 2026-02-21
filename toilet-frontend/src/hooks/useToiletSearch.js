@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { loadUserToilets, calcDistance, normalizeEquipment } from '../utils'; // ★normalizeEquipment追加
+import { loadUserToilets, calcDistance, normalizeEquipment } from '../utils'; 
 import { API_BASE_URL } from '../config/api';
 
 const HISTORY_KEY = 'imatoilet_search_history';
@@ -206,15 +206,13 @@ export const useToiletSearch = () => {
         const facilityCategory = searchParams.get('facilityCategory');
         if (facilityCategory) params.append('facilityCategory', facilityCategory);
 
-        // ★修正: baby_chair を追加。open24h → OPEN_24H、nursing_room → NURSING_ROOM等の
-        //         変換ルールを明示的に定義し、暗黙の toUpperCase() に依存しない。
         const EQ_KEY_MAP = {
           wheelchair:       'WHEELCHAIR',
           diaper:           'DIAPER',
-          open24h:          'OPEN_24H',       // アンダースコアあり
+          open24h:          'OPEN_24H',
           ostomate:         'OSTOMATE',
           nursing_room:     'NURSING_ROOM',
-          baby_chair:       'BABY_CHAIR',     // ★追加
+          baby_chair:       'BABY_CHAIR',
           washlet:          'WASHLET',
           visual_support:   'VISUAL_SUPPORT',
           gender_separated: 'GENDER_SEPARATED',
@@ -223,17 +221,30 @@ export const useToiletSearch = () => {
           paid:             'PAID',
           parking:          'PARKING',
         };
+        
         Object.entries(EQ_KEY_MAP).forEach(([key, apiName]) => {
           if (searchParams.get(key) === 'true') {
             params.append('equipment', apiName);
           }
         });
 
+        // ★追加・変更: ページネーションパラメータを明示的に付与
+        // 現在は一覧に「さらに読み込む」ボタンがないため、一旦50件（十分な数）を取得します
+        params.append('page', '0');
+        params.append('size', '50');
+
         const queryString = params.toString();
         const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
+        
         const res = await fetch(url, { cache: 'no-store' });
-        if (res.ok) apiData = await res.json();
-        else console.error('API Error');
+        
+        if (res.ok) {
+          const data = await res.json();
+          // ★修正: バックエンドが返す Page<Toilet> の中から .content (配列) を取り出す
+          apiData = data.content || []; 
+        } else {
+          console.error('API Error');
+        }
       } catch (e) {
         console.error('Fetch Error', e);
       }
@@ -251,7 +262,6 @@ export const useToiletSearch = () => {
 
       const merged = [...apiData, ...localData];
 
-      // ★修正: facilityCategory の二重定義を解消 (|| '' を使う1行に統一)
       const filters = {
         facilityCategory:  searchParams.get('facilityCategory') || '',
         minCleanliness:    searchParams.get('minCleanliness') ? parseInt(searchParams.get('minCleanliness'), 10) : 0,
@@ -262,7 +272,7 @@ export const useToiletSearch = () => {
         public:            searchParams.get('public')            === 'true',
         ostomate:          searchParams.get('ostomate')          === 'true',
         nursing_room:      searchParams.get('nursing_room')      === 'true',
-        baby_chair:        searchParams.get('baby_chair')        === 'true', // ★追加
+        baby_chair:        searchParams.get('baby_chair')        === 'true',
         washlet:           searchParams.get('washlet')           === 'true',
         visual_support:    searchParams.get('visual_support')    === 'true',
         gender_separated:  searchParams.get('gender_separated')  === 'true',
@@ -280,7 +290,6 @@ export const useToiletSearch = () => {
           if (!(t.name || '').toLowerCase().includes(filters.keyword)) return false;
         }
 
-        // ★修正: インラインのeqList生成を廃止し normalizeEquipment() に統一
         const eqSet = normalizeEquipment(t);
 
         if (filters.wheelchair    && !eqSet.has('WHEELCHAIR'))       return false;
@@ -288,7 +297,7 @@ export const useToiletSearch = () => {
         if (filters.open24h       && !eqSet.has('OPEN_24H'))         return false;
         if (filters.ostomate      && !eqSet.has('OSTOMATE'))         return false;
         if (filters.nursing_room  && !eqSet.has('NURSING_ROOM'))     return false;
-        if (filters.baby_chair    && !eqSet.has('BABY_CHAIR'))       return false; // ★追加
+        if (filters.baby_chair    && !eqSet.has('BABY_CHAIR'))       return false;
         if (filters.washlet       && !eqSet.has('WASHLET'))          return false;
         if (filters.visual_support && !eqSet.has('VISUAL_SUPPORT'))  return false;
         if (filters.gender_separated && !eqSet.has('GENDER_SEPARATED')) return false;

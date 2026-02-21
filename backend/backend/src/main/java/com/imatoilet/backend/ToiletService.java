@@ -1,14 +1,18 @@
 package com.imatoilet.backend;
 
 import com.imatoilet.backend.exception.ResourceNotFoundException;
-import com.imatoilet.backend.dto.ToiletUpdateDto; // 必要であればimport
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,71 +25,52 @@ public class ToiletService {
         this.toiletRepository = toiletRepository;
     }
 
-    // --- 検索ロジック ---
-    public List<Toilet> searchToilets(
+    // --- 検索ロジック (ページネーション対応＆DB側完全フィルタリング) ---
+    public Page<Toilet> searchToilets(
             Double lat, Double lng, Double radius,
             String facilityCategory, Integer minCleanliness,
-            String keyword, List<String> equipment
+            String keyword, Boolean publicUse, List<String> equipment,
+            Pageable pageable
     ) {
-        // 1. まずベースとなるリストを取得
-        List<Toilet> results;
+        Page<Long> idPage;
 
+        List<EquipmentType> types = convertToEnumList(equipment);
+        Long typeCount = (types != null) ? (long) types.size() : 0L;
+        // ネイティブクエリ用に文字列リストを用意（空の場合はダミーを入れてIN句エラーを防ぐ）
+        List<String> typeStrs = (equipment != null && !equipment.isEmpty()) ? equipment : List.of("DUMMY_TYPE");
+
+        // 1. まずIDリストだけをページネーションで取得する
         if (lat != null && lng != null) {
-            // 位置情報あり
             double r = (radius != null) ? radius : 5.0;
-            List<Long> ids = toiletRepository.findIdsWithinRadius(lat, lng, r);
-
-            if (ids.isEmpty()) return new ArrayList<>();
-            results = toiletRepository.findAllByIdWithEquipment(ids);
+            idPage = toiletRepository.findIdsWithinRadiusWithSpecs(
+                    lat, lng, r, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
         } else {
-            // 位置情報なし（条件検索）
-            List<EquipmentType> types = convertToEnumList(equipment);
-            Long typeCount = (types != null) ? (long) types.size() : null;
-
-            if (facilityCategory != null || minCleanliness != null || keyword != null || types != null) {
-                List<Long> ids = toiletRepository.searchIdsBySpecs(facilityCategory, minCleanliness, keyword, types, typeCount);
-                if (ids.isEmpty()) return new ArrayList<>();
-                return toiletRepository.findAllByIdWithEquipment(ids);
-            } else {
-                return toiletRepository.findAll();
-            }
+            idPage = toiletRepository.searchIdsBySpecs(
+                    facilityCategory, minCleanliness, keyword, publicUse, types, typeCount, pageable);
         }
 
-        // 2. Java側フィルタリング
-        return results.stream()
-            .filter(t -> {
-                if (facilityCategory != null && !facilityCategory.isEmpty()) {
-                    if (!facilityCategory.equals(t.getFacilityCategory())) return false;
-                }
-                if (minCleanliness != null) {
-                    if (t.getCleanliness() == null || t.getCleanliness() < minCleanliness) return false;
-                }
-                if (keyword != null && !keyword.isEmpty()) {
-                    String k = keyword.toLowerCase();
-                    boolean matchName = t.getName() != null && t.getName().toLowerCase().contains(k);
-                    boolean matchAddr = t.getAddress() != null && t.getAddress().toLowerCase().contains(k);
-                    boolean matchDesc = t.getDescription() != null && t.getDescription().toLowerCase().contains(k);
-                    boolean matchEq = t.getEquipmentNames().stream()
-                            .anyMatch(eqName -> eqName.toLowerCase().contains(k));
-                    if (!matchName && !matchAddr && !matchDesc && !matchEq) return false;
-                }
-                if (equipment != null && !equipment.isEmpty()) {
-                    List<String> holding = t.getEquipmentNames(); 
-                    for (String req : equipment) {
-                        boolean hasIt = holding.stream().anyMatch(h -> h.equalsIgnoreCase(req));
-                        if (!hasIt) return false;
-                    }
-                }
-                return true;
-            })
-            .limit(100)
-            .collect(Collectors.toList());
+        if (idPage.isEmpty()) {
+            return new PageImpl<>(new ArrayList<>(), pageable, idPage.getTotalElements());
+        }
+
+        // 2. 取得したIDリストを使って、実体（Equipment含む）をまとめてフェッチする（N+1回避）
+        List<Toilet> toilets = toiletRepository.findAllByIdWithEquipment(idPage.getContent());
+
+        // 3. IN句検索は順序が保証されないため、元のIDリストの順番（距離順など）に並べ直す
+        Map<Long, Toilet> toiletMap = toilets.stream()
+                .collect(Collectors.toMap(Toilet::getId, Function.identity()));
+        List<Toilet> sortedToilets = idPage.getContent().stream()
+                .map(toiletMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(sortedToilets, pageable, idPage.getTotalElements());
     }
 
     // --- ID検索 ---
     public Toilet getToilet(Long id) {
         Long safeId = Objects.requireNonNull(id, "ID must not be null");
-        // ★修正: 標準のfindByIdに戻す（Repository側でOverride済みのため安全）
+        // 標準のfindById（Repository側でOverride済みのためEquipmentもEagerロードされる）
         return toiletRepository.findById(safeId)
                 .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
     }
@@ -98,6 +83,8 @@ public class ToiletService {
         
         Toilet savedToilet = toiletRepository.save(toilet);
         updateEquipmentList(savedToilet, toilet.getEquipmentInput());
+        
+        // ※第2段階（DBマイグレーション）完了までは、後方互換性維持のためフラグ同期を残す
         syncFlagsFromEquipment(savedToilet);
 
         return toiletRepository.save(savedToilet);
@@ -147,7 +134,9 @@ public class ToiletService {
             try {
                 EquipmentType type = EquipmentType.valueOf(typeStr);
                 toilet.addEquipment(type);
-            } catch (IllegalArgumentException e) { }
+            } catch (IllegalArgumentException ignored) { 
+                // 無効なEnum文字列は安全に無視する
+            }
         }
     }
 
@@ -164,7 +153,7 @@ public class ToiletService {
         for (String s : inputs) {
             try {
                 list.add(EquipmentType.valueOf(s));
-            } catch (IllegalArgumentException e) { }
+            } catch (IllegalArgumentException ignored) { }
         }
         return list.isEmpty() ? null : list;
     }
