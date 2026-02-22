@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.util.List;
+import java.time.LocalDate;
 
 /**
  * トイレ情報更新用DTO
@@ -35,8 +36,17 @@ public class ToiletUpdateDto {
     private Integer cleanliness;
 
     @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    
     @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
     private String image;
+
+    @Size(max = 100, message = "出典は100文字以内で入力してください")
+    private String source;
+
+    @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
+    private String sourceUrl;
+
+    private LocalDate lastVerified;
 
     @Pattern(
         regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",

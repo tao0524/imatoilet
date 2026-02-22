@@ -3,6 +3,7 @@ package com.imatoilet.backend;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,6 +65,14 @@ public class Toilet {
     @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
     @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
     private String image;
+
+    @Size(max = 100, message = "出典は100文字以内で入力してください")
+    private String source;
+
+    @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
+    private String sourceUrl;
+
+    private LocalDate lastVerified;
 
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

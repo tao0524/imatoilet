@@ -68,6 +68,9 @@ backend/backend/src/main/resources/db/migration/V3__add_search_indexes.sql
 backend/backend/src/main/resources/db/migration/V4__insert_sample_data.sql
 backend/backend/src/main/resources/db/migration/V5__add_image_column.sql
 backend/backend/src/main/resources/db/migration/V6__add_baby_chair_equipment.sql
+backend/backend/src/main/resources/db/migration/V7__drop_boolean_flags.sql
+backend/backend/src/main/resources/db/migration/V8__add_source_columns.sql
+backend/backend/src/main/resources/db/migration/V9__insert_open_data.sql
 backend/backend/src/test/java/com/imatoilet/backend/BackendApplicationTests.java
 backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java
 backend/backend/src/test/resources/application.properties
@@ -128,6 +131,113 @@ update.json
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="backend/backend/src/main/resources/db/migration/V8__add_source_columns.sql">
+-- V8__add_source_columns.sql
+-- データ出典管理カラムの追加
+-- 面接・デモで「データ品質を意識した設計」をアピールするための拡張
+
+BEGIN;
+
+ALTER TABLE toilet ADD COLUMN IF NOT EXISTS source VARCHAR(100);
+ALTER TABLE toilet ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE toilet ADD COLUMN IF NOT EXISTS last_verified DATE;
+
+-- 既存のV4サンプルデータに出典を設定
+UPDATE toilet
+SET source = 'サンプルデータ（要確認）',
+    source_url = NULL,
+    last_verified = '2026-02-21'
+WHERE source IS NULL;
+
+COMMIT;
+</file>
+
+<file path="backend/backend/src/main/resources/db/migration/V9__insert_open_data.sql">
+-- V9__insert_open_data.sql
+-- つくば市バリアフリーマップ登録施設から取り込み
+-- 出典: つくば市バリアフリーマップ (https://www.city.tsukuba.lg.jp/)
+-- 対象: 多目的トイレあり かつ トイレのみ利用許可の施設
+
+BEGIN;
+
+INSERT INTO toilet (
+  name, address, lat, lng, description, cleanliness,
+  facility_category, public_use, equipment,
+  source, source_url, last_verified
+) VALUES
+('ローソンつくば小茎店', '茨城県つくば市小茎294-1', 36.018, 140.1347, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ローソンつくば筑穂二丁目', '茨城県つくば市筑穂2-2-5', 36.0765, 140.0674, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ローソン新つくば妻木店', '茨城県つくば市妻木216-1', 36.0888, 140.1087, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ローソンつくば東新井店', '茨城県つくば市東新井24-14', 36.0829, 140.1155, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ホテルベストランド', '茨城県つくば市研究学園五丁目8番地4', 36.0812, 140.0861, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。バリアフリー対応の部屋が3室あり', 4, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ホテルマークワンつくば研究学園', '茨城県つくば市研究学園5丁目13番地5', 36.0776, 140.0855, '多目的トイレあり。スロープあり、オストメイト対応、障害者駐車場あり。障害者用駐車場利用', 4, 'hotel_tourism', true, 'WHEELCHAIR,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ホテルグランド東雲', '茨城県つくば市小野崎488-1', 36.0721, 140.1039, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ヨークベニマル　つくば竹園店', '茨城県つくば市竹園１－３－１', 36.079, 140.1194, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('イーアスつくば', '茨城県つくば市研究学園5丁目19番地', 36.0781, 140.0785, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくばクレオスクエア', '茨城県つくば市吾妻1-6-1', 36.0805, 140.1093, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ＬＡＬＡガーデンつくば', '茨城県つくば市小野崎字千駄苅278-1', 36.0785, 140.1098, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('株式会社とりせん研究学園店', '茨城県つくば市研究学園5-18-1', 36.0784, 140.0783, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　筑波店', '茨城県つくば市北条内町裏５１４４', 36.222, 140.1976, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　フードスクエア学園店', '茨城県つくば市竹園２丁目１２－１', 36.0796, 140.1179, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　テクノパーク桜店', '茨城県つくば市桜１丁目２２番地', 36.0451, 140.0933, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　みどりの駅前店', '茨城県つくば市みどりの１丁目３－１', 36.0857, 140.058, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　フードスクエアつくばスタイル店', '茨城県つくば市研究学園５丁目１９番', 36.0769, 140.0797, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　万博記念公園駅前店', '茨城県つくば市島名福田坪土地区画整理地48街区', 36.0557, 140.0305, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　フードスクエア学園の森店', '茨城県つくば市学園の森２丁目３４－４', 36.0811, 140.0809, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　筑波大学店', '茨城県つくば市天久保３丁目１－１０', 36.0991, 140.1074, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　プルシェつくばキュート店', '茨城県つくば市吾妻１－６－１', 36.0809, 140.1109, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくば駅', '茨城県つくば市吾妻2-128', 36.0857, 140.1114, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('研究学園駅', '茨城県つくば市研究学園5-9-1', 36.0851, 140.0787, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('万博記念公園駅', '茨城県つくば市島名4386', 36.0589, 140.0367, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('みどりの駅', '茨城県つくば市みどりの1-29-3', 36.082, 140.0519, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('北１駐車場', '茨城県つくば市吾妻2-4-6', 36.0797, 140.1081, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('南２駐車場', '茨城県つくば市吾妻1-12-10', 36.0877, 140.1084, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('南１駐車場', '茨城県つくば市吾妻1-5-1', 36.0873, 140.112, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくば文化会館アルス（中央図書館）', '茨城県つくば市吾妻2-8', 36.0807, 140.1107, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくば市役所', '茨城県つくば市研究学園1-1-1', 36.0745, 140.0836, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('大穂窓口センター', '茨城県つくば市筑穂1-10-4', 36.0753, 140.0625, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('茎崎窓口センター', '茨城県つくば市小茎320', 36.0167, 140.1291, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('谷田部保健センター', '茨城県つくば市谷田部4774-18', 36.0505, 140.1278, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('桜保健センター', '茨城県つくば市流星台61-1', 36.0842, 140.0917, '多目的トイレあり。スロープあり、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくばカピオ', '茨城県つくば市竹園1-10-1', 36.0799, 140.1123, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('市民ホールやたべ', '茨城県つくば市谷田部4711', 36.0482, 140.126, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波交流センター', '茨城県つくば市北条5060', 36.2184, 140.2006, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('松代交流センター', '茨城県つくば市松代4-16-3', 36.0739, 140.1208, '多目的トイレあり。スロープあり、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('竹園交流センター', '茨城県つくば市竹園3-19-2', 36.0752, 140.1116, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('二の宮交流センター', '茨城県つくば市二の宮4-6-2', 36.0756, 140.1196, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('大穂交流センター', '茨城県つくば市筑穂1-10-4', 36.0735, 140.0633, '多目的トイレあり。スロープあり、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('宝篋山小田休憩所', '茨城県つくば市小田4544', 36.2076, 140.166, '多目的トイレあり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波山梅林休憩所トイレ', '茨城県つくば市沼田1435-56', 36.225, 140.0992, '多目的トイレあり。スロープあり。', 4, 'public', true, 'WHEELCHAIR', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('市営筑波山第1駐車場トイレ', '茨城県つくば市沼田1698番地1', 36.2301, 140.0976, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('市営筑波山第2駐車場トイレ', '茨城県つくば市筑波1222', 36.2247, 140.1014, '多目的トイレあり。スロープあり、オストメイト対応、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('市営筑波山第3駐車場トイレ', '茨城県つくば市筑波1108', 36.228, 140.1034, '多目的トイレあり。スロープあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波山御幸が原トイレ(女体山側)', '茨城県つくば市筑波1', 36.2209, 140.1086, '多目的トイレあり。スロープあり。', 4, 'public', true, 'WHEELCHAIR', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波山御幸が原トイレ(男体山側)', '茨城県つくば市筑波1', 36.2236, 140.1085, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波山おもてなし館', '茨城県つくば市沼田1690-3', 36.2331, 140.1005, '多目的トイレあり。スロープあり、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波窓口センター', '茨城県つくば市北条5060', 36.2243, 140.199, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('研究学園駅前公園', '茨城県つくば市学園南2丁目1', 36.0839, 140.0772, '多目的トイレあり。障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくば駅前広場', '茨城県つくば市吾妻1-121', 36.0792, 140.111, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('研究学園駅前広場', '茨城県つくば市研究学園5-111', 36.083, 140.0822, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21');
+
+-- Equipment テーブルへの反映
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%WHEELCHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'DIAPER' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%DIAPER%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OSTOMATE' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%OSTOMATE%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%NURSING_ROOM%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'PARKING' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%PARKING%';
+
+COMMIT;
+</file>
 
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
@@ -738,65 +848,6 @@ public class AdminTokenFilter extends OncePerRequestFilter {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/dto/ToiletUpdateDto.java">
-package com.imatoilet.backend.dto;
-
-import com.fasterxml.jackson.annotation.JsonAlias;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import java.util.List;
-
-/**
- * トイレ情報更新用DTO
- * 部分更新に対応するため、全てのフィールドにおける必須チェック(@NotNull, @NotBlank)を排除しています。
- * ただし、値が送信された場合の形式チェック(@Size, @Pattern等)は維持します。
- */
-@Data
-public class ToiletUpdateDto {
-
-    @Size(max = 100, message = "名前は100文字以内で入力してください")
-    private String name;
-
-    @DecimalMin(value = "-90.0", message = "緯度は-90以上である必要があります")
-    @DecimalMax(value = "90.0", message = "緯度は90以下である必要があります")
-    private Double lat;
-
-    @DecimalMin(value = "-180.0", message = "経度は-180以上である必要があります")
-    @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
-    private Double lng;
-
-    @Size(max = 200, message = "住所は200文字以内で入力してください")
-    private String address;
-
-    @Size(max = 500, message = "説明は500文字以内で入力してください")
-    private String description;
-
-    @Min(value = 1, message = "清潔度は1以上である必要があります")
-    @Max(value = 5, message = "清潔度は5以下である必要があります")
-    private Integer cleanliness;
-
-    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
-    @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
-    private String image;
-
-    @Pattern(
-        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
-        message = "施設カテゴリの値が不正です"
-    )
-    private String facilityCategory;
-
-    // --- 設備情報 (JSONの "equipment" キーを受け取る) ---
-    @JsonAlias("equipment")
-    private List<String> equipment;
-
-    // --- その他の互換性フラグ ---
-    private Boolean publicUse;
-    private Boolean typePark;
-    private Boolean typeStation;
-    private Boolean typeMall;
-}
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/EquipmentRepository.java">
 package com.imatoilet.backend;
 
@@ -1053,6 +1104,19 @@ ALTER TABLE toilet ADD COLUMN IF NOT EXISTS image TEXT;
 -- UNISEX, FREE, PAID, OPEN_24H, PARKING
 
 SELECT 1; -- Flywayが空ファイルをエラーにするため、ダミーSELECTを置く
+</file>
+
+<file path="backend/backend/src/main/resources/db/migration/V7__drop_boolean_flags.sql">
+-- V7__drop_boolean_flags.sql
+-- Phase 2: Booleanフラグの完全廃止
+
+BEGIN;
+
+ALTER TABLE toilet DROP COLUMN IF EXISTS wheelchair;
+ALTER TABLE toilet DROP COLUMN IF EXISTS diaper;
+ALTER TABLE toilet DROP COLUMN IF EXISTS open24h;
+
+COMMIT;
 </file>
 
 <file path="toilet-frontend/.env.example">
@@ -1993,6 +2057,75 @@ afterAll(() => server.close());
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/dto/ToiletUpdateDto.java">
+package com.imatoilet.backend.dto;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import java.util.List;
+import java.time.LocalDate;
+
+/**
+ * トイレ情報更新用DTO
+ * 部分更新に対応するため、全てのフィールドにおける必須チェック(@NotNull, @NotBlank)を排除しています。
+ * ただし、値が送信された場合の形式チェック(@Size, @Pattern等)は維持します。
+ */
+@Data
+public class ToiletUpdateDto {
+
+    @Size(max = 100, message = "名前は100文字以内で入力してください")
+    private String name;
+
+    @DecimalMin(value = "-90.0", message = "緯度は-90以上である必要があります")
+    @DecimalMax(value = "90.0", message = "緯度は90以下である必要があります")
+    private Double lat;
+
+    @DecimalMin(value = "-180.0", message = "経度は-180以上である必要があります")
+    @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
+    private Double lng;
+
+    @Size(max = 200, message = "住所は200文字以内で入力してください")
+    private String address;
+
+    @Size(max = 500, message = "説明は500文字以内で入力してください")
+    private String description;
+
+    @Min(value = 1, message = "清潔度は1以上である必要があります")
+    @Max(value = 5, message = "清潔度は5以下である必要があります")
+    private Integer cleanliness;
+
+    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    
+    @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
+    private String image;
+
+    @Size(max = 100, message = "出典は100文字以内で入力してください")
+    private String source;
+
+    @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
+    private String sourceUrl;
+
+    private LocalDate lastVerified;
+
+    @Pattern(
+        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
+        message = "施設カテゴリの値が不正です"
+    )
+    private String facilityCategory;
+
+    // --- 設備情報 (JSONの "equipment" キーを受け取る) ---
+    @JsonAlias("equipment")
+    private List<String> equipment;
+
+    // --- その他の互換性フラグ ---
+    private Boolean publicUse;
+    private Boolean typePark;
+    private Boolean typeStation;
+    private Boolean typeMall;
+}
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Equipment.java">
 package com.imatoilet.backend;
 
@@ -2290,122 +2423,6 @@ function PlaceSearch({
 export default PlaceSearch;
 </file>
 
-<file path="toilet-frontend/src/utils.test.js">
-import { calcDistance, makeId, loadUserToilets, saveUserToilets, buildEquipmentArray, normalizeEquipment } from './utils';
-import { vi } from 'vitest';
-
-describe('utils.js (便利関数)', () => {
-
-  // 1. 距離計算のテスト
-  describe('calcDistance', () => {
-    it('同じ場所なら距離は0kmになること', () => {
-      const dist = calcDistance(36.0, 140.0, 36.0, 140.0);
-      expect(dist).toBe(0);
-    });
-
-    it('つくば駅と秋葉原駅の距離が妥当であること（約40~60km）', () => {
-      const dist = calcDistance(36.083, 140.112, 35.698, 139.774);
-      expect(dist).toBeGreaterThan(40);
-      expect(dist).toBeLessThan(60);
-    });
-  });
-
-  // 2. ID生成のテスト
-  describe('makeId', () => {
-    it('IDが "u_" で始まっていること', () => {
-      const id = makeId();
-      expect(id.startsWith('u_')).toBe(true);
-    });
-
-    it('連続で呼んでも違うIDが生成されること（ユニーク性）', () => {
-      const id1 = makeId();
-      const id2 = makeId();
-      expect(id1).not.toBe(id2);
-    });
-  });
-
-  // 3. LocalStorage保存・読み込みのテスト
-  describe('LocalStorage Helpers', () => {
-    beforeEach(() => {
-      localStorage.clear();
-    });
-
-    it('データがない場合は空配列 [] を返すこと', () => {
-      const data = loadUserToilets();
-      expect(data).toEqual([]);
-    });
-
-    it('データを保存して、それを正しく読み込めること', () => {
-      const dummyData = [
-        { id: 'test1', name: 'トイレA' },
-        { id: 'test2', name: 'トイレB' }
-      ];
-
-      saveUserToilets(dummyData);
-      const loaded = loadUserToilets();
-
-      expect(loaded).toHaveLength(2);
-      expect(loaded[0].name).toBe('トイレA');
-    });
-  });
-  
-  // 4. buildEquipmentArray のテスト
-  describe('buildEquipmentArray', () => {
-    it('登録されたキーが正しくEnum名に変換されること', () => {
-      const conditions = {
-        wheelchair: true,
-        open24h: true, 
-        diaper: false
-      };
-      const result = buildEquipmentArray(conditions);
-      expect(result).toEqual(['WHEELCHAIR', 'OPEN_24H']);
-    });
-
-    it('CONDITION_MAPに未登録のキーは安全に除外されること', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      const conditions = {
-        wheelchair: true,
-        unknown_key: true 
-      };
-      const result = buildEquipmentArray(conditions);
-      
-      expect(result).toEqual(['WHEELCHAIR']); 
-
-      consoleWarnSpy.mockRestore(); 
-    });
-  });
-
-  // 5. normalizeEquipment のテスト
-  describe('normalizeEquipment', () => {
-    it('新形式 (配列) を正しくSetに変換すること', () => {
-      const toilet = { equipment: ['WHEELCHAIR', 'OPEN_24H'] };
-      const result = normalizeEquipment(toilet);
-      expect(result.has('WHEELCHAIR')).toBe(true);
-      expect(result.has('OPEN_24H')).toBe(true);
-      expect(result.size).toBe(2);
-    });
-
-    it('旧形式 (CSV文字列) を正しくSetに変換すること', () => {
-      const toilet = { equipment: 'wheelchair, open_24h' }; 
-      const result = normalizeEquipment(toilet);
-      expect(result.has('WHEELCHAIR')).toBe(true);
-      expect(result.has('OPEN_24H')).toBe(true);
-      expect(result.size).toBe(2);
-    });
-
-    it('equipmentがnullや空の場合は空のSetを返すこと', () => {
-      const toilet1 = { equipment: null };
-      const toilet2 = { equipment: [] };
-      const toilet3 = { equipment: '' };
-      expect(normalizeEquipment(toilet1).size).toBe(0);
-      expect(normalizeEquipment(toilet2).size).toBe(0);
-      expect(normalizeEquipment(toilet3).size).toBe(0);
-    });
-  });
-});
-</file>
-
 <file path="toilet-frontend/vite.config.js">
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -2640,27 +2657,33 @@ public class GlobalExceptionHandler {
 </file>
 
 <file path="backend/backend/src/main/resources/application-dev.properties">
-# （既存の設定はそのまま）
+# ローカル開発用 H2データベース設定
 spring.datasource.url=jdbc:h2:mem:imatoiletdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
 spring.datasource.username=sa
 spring.datasource.password=
 spring.datasource.driver-class-name=org.h2.Driver
 
+# JPA / Hibernate 設定
 spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
-spring.jpa.hibernate.ddl-auto=create-drop
-spring.jpa.show-sql=true
+# 変更後（テーブル構造はそのままで、Flywayにデータだけを入れさせる）
+spring.jpa.hibernate.ddl-auto=validate
+spring.flyway.enabled=true
 
-spring.flyway.enabled=false
+# Flyway を有効化（SQLファイルからデータを投入する）
+spring.flyway.enabled=true
+
+# H2コンソール設定
 spring.h2.console.enabled=true
 spring.h2.console.path=/h2-console
 
+# CORS 設定
 app.cors.allowed-origins=http://localhost:4173,http://localhost:5173
 app.cors.allow-credentials=false
 
 server.port=8080
 spring.jpa.open-in-view=false
 
-# ★追加: ローカル開発用トークン (本番と同じ値を使わないこと)
+# ローカル開発用トークン (本番と同じ値を使わないこと)
 app.admin.token=dev-admin-token-local
 </file>
 
@@ -3683,6 +3706,122 @@ function ListPanel({ filteredToilets = [], currentLocation }) {
 }
 
 export default ListPanel;
+</file>
+
+<file path="toilet-frontend/src/utils.test.js">
+import { calcDistance, makeId, loadUserToilets, saveUserToilets, buildEquipmentArray, normalizeEquipment } from './utils';
+import { vi } from 'vitest';
+
+describe('utils.js (便利関数)', () => {
+
+  // 1. 距離計算のテスト
+  describe('calcDistance', () => {
+    it('同じ場所なら距離は0kmになること', () => {
+      const dist = calcDistance(36.0, 140.0, 36.0, 140.0);
+      expect(dist).toBe(0);
+    });
+
+    it('つくば駅と秋葉原駅の距離が妥当であること（約40~60km）', () => {
+      const dist = calcDistance(36.083, 140.112, 35.698, 139.774);
+      expect(dist).toBeGreaterThan(40);
+      expect(dist).toBeLessThan(60);
+    });
+  });
+
+  // 2. ID生成のテスト
+  describe('makeId', () => {
+    it('IDが "u_" で始まっていること', () => {
+      const id = makeId();
+      expect(id.startsWith('u_')).toBe(true);
+    });
+
+    it('連続で呼んでも違うIDが生成されること（ユニーク性）', () => {
+      const id1 = makeId();
+      const id2 = makeId();
+      expect(id1).not.toBe(id2);
+    });
+  });
+
+  // 3. LocalStorage保存・読み込みのテスト
+  describe('LocalStorage Helpers', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('データがない場合は空配列 [] を返すこと', () => {
+      const data = loadUserToilets();
+      expect(data).toEqual([]);
+    });
+
+    it('データを保存して、それを正しく読み込めること', () => {
+      const dummyData = [
+        { id: 'test1', name: 'トイレA' },
+        { id: 'test2', name: 'トイレB' }
+      ];
+
+      saveUserToilets(dummyData);
+      const loaded = loadUserToilets();
+
+      expect(loaded).toHaveLength(2);
+      expect(loaded[0].name).toBe('トイレA');
+    });
+  });
+  
+  // 4. buildEquipmentArray のテスト
+  describe('buildEquipmentArray', () => {
+    it('登録されたキーが正しくEnum名に変換されること', () => {
+      const conditions = {
+        wheelchair: true,
+        open24h: true, 
+        diaper: false
+      };
+      const result = buildEquipmentArray(conditions);
+      expect(result).toEqual(['WHEELCHAIR', 'OPEN_24H']);
+    });
+
+    it('CONDITION_MAPに未登録のキーは安全に除外されること', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const conditions = {
+        wheelchair: true,
+        unknown_key: true 
+      };
+      const result = buildEquipmentArray(conditions);
+      
+      expect(result).toEqual(['WHEELCHAIR']); 
+
+      consoleWarnSpy.mockRestore(); 
+    });
+  });
+
+  // 5. normalizeEquipment のテスト
+  describe('normalizeEquipment', () => {
+    it('新形式 (配列) を正しくSetに変換すること', () => {
+      const toilet = { equipment: ['WHEELCHAIR', 'OPEN_24H'] };
+      const result = normalizeEquipment(toilet);
+      expect(result.has('WHEELCHAIR')).toBe(true);
+      expect(result.has('OPEN_24H')).toBe(true);
+      expect(result.size).toBe(2);
+    });
+
+    it('旧形式 (CSV文字列) を正しくSetに変換すること', () => {
+      const toilet = { equipment: 'wheelchair, open_24h' }; 
+      const result = normalizeEquipment(toilet);
+      expect(result.has('WHEELCHAIR')).toBe(true);
+      expect(result.has('OPEN_24H')).toBe(true);
+      expect(result.size).toBe(2);
+    });
+
+    it('equipmentがnullや空の場合は空のSetを返すこと', () => {
+      const toilet1 = { equipment: null };
+      const toilet2 = { equipment: [] };
+      const toilet3 = { equipment: '' };
+      expect(normalizeEquipment(toilet1).size).toBe(0);
+      expect(normalizeEquipment(toilet2).size).toBe(0);
+      expect(normalizeEquipment(toilet3).size).toBe(0);
+    });
+  });
+});
 </file>
 
 <file path="toilet-frontend/index.html">
@@ -4872,139 +5011,6 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
 };
 </file>
 
-<file path="toilet-frontend/src/utils.js">
-// toilet-frontend/src/utils.js
-export const STORAGE_KEY = "imatoilet_user_toilets_v1";
-
-// ユーザー登録データを読み込む
-export function loadUserToilets() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-// ユーザー登録データを保存する
-export function saveUserToilets(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-}
-
-// ID生成
-export function makeId() {
-  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
-}
-
-// 現在日付 (YYYY-MM-DD)
-export function nowISO() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-// 2点間の距離計算 (Haversine formula)
-export function calcDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// Cloudinaryへの画像アップロード関数
-export async function uploadToCloudinary(file) {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
-
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: formData
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
-  }
-
-  const data = await res.json();
-  return data.secure_url;
-}
-
-/**
- * フロントエンドのconditionsキー → バックエンドのEnum名 マッピング
- * ★追加: baby_chair → BABY_CHAIR
- *
- * 新しい設備を追加するときはここだけ編集すればよい。
- */
-const CONDITION_MAP = {
-  wheelchair:       'WHEELCHAIR',
-  diaper:           'DIAPER',
-  open24h:          'OPEN_24H',
-  ostomate:         'OSTOMATE',
-  nursing_room:     'NURSING_ROOM',
-  baby_chair:       'BABY_CHAIR',
-  washlet:          'WASHLET',
-  gender_separated: 'GENDER_SEPARATED',
-  free:             'FREE',
-  parking:          'PARKING',
-};
-
-// conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
-export function buildEquipmentArray(conditions) {
-  return Object.keys(conditions)
-    .filter(key => conditions[key])
-    .map(key => {
-      const enumName = CONDITION_MAP[key];
-      if (!enumName) {
-        console.warn(`[buildEquipmentArray] CONDITION_MAPに未登録のキー: "${key}"`);
-        return null;
-      }
-      return enumName;
-    })
-    .filter(Boolean);
-}
-
-/**
- * トイレオブジェクトから設備情報の Set を生成する (正規化)
- *
- * 以下の2パターンを統一して扱う:
- *   1. 新形式: equipment が文字列配列  ["WHEELCHAIR", "OPEN_24H"]
- *   2. 旧形式: equipment が CSV文字列  "wheelchair,open_24h"
- *
- * ※ パターン3（toilet.wheelchair 等のbooleanフラグ）はV7マイグレーション適用後に廃止済み
- *
- * @param {Object} toilet - APIレスポンスまたはローカルストレージのトイレオブジェクト
- * @returns {Set<string>} 大文字の設備名セット (例: Set{"WHEELCHAIR", "OPEN_24H"})
- */
-export function normalizeEquipment(toilet) {
-  const eqSet = new Set();
-
-  // 1. 配列形式 (新形式)
-  if (Array.isArray(toilet.equipment)) {
-    toilet.equipment.forEach(e => eqSet.add(e.toUpperCase()));
-  // 2. CSV文字列形式 (旧形式)
-  } else if (typeof toilet.equipment === 'string' && toilet.equipment.length > 0) {
-    toilet.equipment.split(',').forEach(e => eqSet.add(e.trim().toUpperCase()));
-  }
-
-  return eqSet;
-}
-</file>
-
 <file path="backend/backend/pom.xml">
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -5113,246 +5119,6 @@ export function normalizeEquipment(toilet) {
   </build>
 
 </project>
-</file>
-
-<file path="backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java">
-package com.imatoilet.backend;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
-
-import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@SpringBootTest
-@AutoConfigureMockMvc
-@Transactional
-@ActiveProfiles("test")
-public class ToiletApiControllerTest {
-
-    private static final String VALID_TOKEN   = "test-admin-token";
-    private static final String INVALID_TOKEN = "wrong-token";
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ToiletRepository toiletRepository;
-
-    @BeforeEach
-    void setUp() {
-        toiletRepository.deleteAll();
-    }
-
-    // --- GET: 一覧取得 ---
-    @Test
-    void shouldReturnListOfToilets() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Test Toilet");
-        toilet.setLat(35.0);
-        toilet.setLng(139.0);
-        toilet.setAddress("Test Address");
-        toilet.setDescription("Test Description");
-        toilet.setCleanliness(5);
-        
-        toilet.addEquipment(EquipmentType.WHEELCHAIR);
-        toilet.addEquipment(EquipmentType.DIAPER);
-        
-        toiletRepository.save(toilet);
-
-        // ★修正: ページネーション対応のため、$.content の中身を検証するように変更
-        mockMvc.perform(get("/api/toilets"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].name", is("Test Toilet")))
-                .andExpect(jsonPath("$.content[0].equipment", hasItem("WHEELCHAIR")))
-                .andExpect(jsonPath("$.content[0].equipment", hasItem("DIAPER")));
-    }
-
-    // --- GET: ID指定取得 ---
-    @Test
-    void shouldReturnToiletById() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Detail Test");
-        toilet.setLat(36.0);
-        toilet.setLng(140.0);
-        toilet.addEquipment(EquipmentType.OPEN_24H); 
-        
-        Toilet saved = toiletRepository.save(toilet);
-
-        mockMvc.perform(get("/api/toilets/" + saved.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("Detail Test")))
-                .andExpect(jsonPath("$.equipment", hasItem("OPEN_24H")));
-    }
-
-    // --- POST: 新規登録 ---
-    @Test
-    void shouldCreateToilet() throws Exception {
-        String toiletJson = """
-            {
-                "name": "New Toilet",
-                "lat": 35.123,
-                "lng": 139.456,
-                "address": "New Address",
-                "description": "New Desc",
-                "cleanliness": 4,
-                "facilityCategory": "park",
-                "equipment": ["WHEELCHAIR", "OPEN_24H"], 
-                "image": "http://example.com/img.jpg"
-            }
-        """;
-
-        mockMvc.perform(post("/api/toilets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(toiletJson))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name", is("New Toilet")))
-                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OPEN_24H")));
-    }
-
-    // --- PUT: 更新 ---
-    @Test
-    void shouldUpdateToilet() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Old Name");
-        toilet.setLat(35.0);
-        toilet.setLng(139.0);
-        toilet.addEquipment(EquipmentType.DIAPER); 
-        Toilet saved = toiletRepository.save(toilet);
-
-        String updateJson = """
-            {
-                "name": "Updated Name",
-                "lat": 35.0,
-                "lng": 139.0,
-                "equipment": ["WHEELCHAIR", "OSTOMATE"]
-            }
-        """;
-
-        mockMvc.perform(put("/api/toilets/" + saved.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateJson)
-                .header("X-Admin-Token", VALID_TOKEN))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("Updated Name")))
-                .andExpect(jsonPath("$.equipment", hasSize(2)))
-                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OSTOMATE")));
-    }
-
-    // --- DELETE: 削除 ---
-    @Test
-    void shouldDeleteToilet() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("To Delete");
-        toilet.setLat(0.0);
-        toilet.setLng(0.0);
-        Toilet saved = toiletRepository.save(toilet);
-
-        mockMvc.perform(delete("/api/toilets/" + saved.getId())
-                .header("X-Admin-Token", VALID_TOKEN))
-                .andExpect(status().isNoContent());
-
-        mockMvc.perform(get("/api/toilets/" + saved.getId()))
-                .andExpect(status().isNotFound());
-    }
-
-    // --- PUT に認証なし → 401 ---
-    @Test
-    void shouldReturn401WhenUpdatingWithoutToken() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Auth Test");
-        toilet.setLat(35.0);
-        toilet.setLng(139.0);
-        Toilet saved = toiletRepository.save(toilet);
-
-        String updateJson = """
-            { "name": "Hacked", "lat": 35.0, "lng": 139.0 }
-        """;
-
-        mockMvc.perform(put("/api/toilets/" + saved.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateJson))
-                .andExpect(status().isUnauthorized());
-    }
-
-    // --- DELETE に不正トークン → 401 ---
-    @Test
-    void shouldReturn401WhenDeletingWithInvalidToken() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Auth Test");
-        toilet.setLat(35.0);
-        toilet.setLng(139.0);
-        Toilet saved = toiletRepository.save(toilet);
-
-        mockMvc.perform(delete("/api/toilets/" + saved.getId())
-                .header("X-Admin-Token", INVALID_TOKEN))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void shouldReturn404ForNonExistentId() throws Exception {
-        mockMvc.perform(get("/api/toilets/9999"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void shouldReturn400WhenNameIsBlank() throws Exception {
-        String invalidJson = """
-            { "name": "", "lat": 35.0, "lng": 139.0 }
-        """;
-
-        mockMvc.perform(post("/api/toilets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void shouldReturn400WhenLatIsNull() throws Exception {
-        String invalidJson = """
-            { "name": "Valid Name", "lng": 139.0 }
-        """;
-
-        mockMvc.perform(post("/api/toilets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void shouldAcceptMultipleImageUrls() throws Exception {
-        String json = """
-            {
-                "name": "Multi Image",
-                "lat": 35.0,
-                "lng": 139.0,
-                "image": "https://example.com/1.jpg,https://example.com/2.jpg"
-            }
-        """;
-
-        mockMvc.perform(post("/api/toilets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.image", is("https://example.com/1.jpg,https://example.com/2.jpg")));
-    }
-
-    @Test
-    void shouldReturn404WhenDeletingNonExistent() throws Exception {
-        mockMvc.perform(delete("/api/toilets/9999")
-                .header("X-Admin-Token", VALID_TOKEN))
-                .andExpect(status().isNotFound());
-    }
-}
 </file>
 
 <file path="toilet-frontend/src/search.css">
@@ -6194,6 +5960,379 @@ public class ToiletApiControllerTest {
 }
 </file>
 
+<file path="toilet-frontend/src/utils.js">
+// toilet-frontend/src/utils.js
+export const STORAGE_KEY = "imatoilet_user_toilets_v1";
+
+// ユーザー登録データを読み込む
+export function loadUserToilets() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// ユーザー登録データを保存する
+export function saveUserToilets(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+// ID生成
+export function makeId() {
+  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
+}
+
+// 現在日付 (YYYY-MM-DD)
+export function nowISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// 2点間の距離計算 (Haversine formula)
+export function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Cloudinaryへの画像アップロード関数
+export async function uploadToCloudinary(file) {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
+  }
+
+  const data = await res.json();
+  return data.secure_url;
+}
+
+/**
+ * フロントエンドのconditionsキー → バックエンドのEnum名 マッピング
+ * ★追加: baby_chair → BABY_CHAIR
+ *
+ * 新しい設備を追加するときはここだけ編集すればよい。
+ */
+const CONDITION_MAP = {
+  wheelchair:       'WHEELCHAIR',
+  diaper:           'DIAPER',
+  open24h:          'OPEN_24H',
+  ostomate:         'OSTOMATE',
+  nursing_room:     'NURSING_ROOM',
+  baby_chair:       'BABY_CHAIR',
+  washlet:          'WASHLET',
+  gender_separated: 'GENDER_SEPARATED',
+  free:             'FREE',
+  parking:          'PARKING',
+};
+
+// conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
+export function buildEquipmentArray(conditions) {
+  return Object.keys(conditions)
+    .filter(key => conditions[key])
+    .map(key => {
+      const enumName = CONDITION_MAP[key];
+      if (!enumName) {
+        console.warn(`[buildEquipmentArray] CONDITION_MAPに未登録のキー: "${key}"`);
+        return null;
+      }
+      return enumName;
+    })
+    .filter(Boolean);
+}
+
+/**
+ * トイレオブジェクトから設備情報の Set を生成する (正規化)
+ *
+ * 以下の2パターンを統一して扱う:
+ *   1. 新形式: equipment が文字列配列  ["WHEELCHAIR", "OPEN_24H"]
+ *   2. 旧形式: equipment が CSV文字列  "wheelchair,open_24h"
+ *
+ * ※ パターン3（toilet.wheelchair 等のbooleanフラグ）はV7マイグレーション適用後に廃止済み
+ *
+ * @param {Object} toilet - APIレスポンスまたはローカルストレージのトイレオブジェクト
+ * @returns {Set<string>} 大文字の設備名セット (例: Set{"WHEELCHAIR", "OPEN_24H"})
+ */
+export function normalizeEquipment(toilet) {
+  const eqSet = new Set();
+
+  // 1. 配列形式 (新形式)
+  if (Array.isArray(toilet.equipment)) {
+    toilet.equipment.forEach(e => eqSet.add(e.toUpperCase()));
+  // 2. CSV文字列形式 (旧形式)
+  } else if (typeof toilet.equipment === 'string' && toilet.equipment.length > 0) {
+    toilet.equipment.split(',').forEach(e => eqSet.add(e.trim().toUpperCase()));
+  }
+
+  return eqSet;
+}
+</file>
+
+<file path="backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java">
+package com.imatoilet.backend;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+@ActiveProfiles("test")
+public class ToiletApiControllerTest {
+
+    private static final String VALID_TOKEN   = "test-admin-token";
+    private static final String INVALID_TOKEN = "wrong-token";
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ToiletRepository toiletRepository;
+
+    @BeforeEach
+    void setUp() {
+        toiletRepository.deleteAll();
+    }
+
+    // --- GET: 一覧取得 ---
+    @Test
+    void shouldReturnListOfToilets() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Test Toilet");
+        toilet.setLat(35.0);
+        toilet.setLng(139.0);
+        toilet.setAddress("Test Address");
+        toilet.setDescription("Test Description");
+        toilet.setCleanliness(5);
+        
+        toilet.addEquipment(EquipmentType.WHEELCHAIR);
+        toilet.addEquipment(EquipmentType.DIAPER);
+        
+        toiletRepository.save(toilet);
+
+        // ★修正: ページネーション対応のため、$.content の中身を検証するように変更
+        mockMvc.perform(get("/api/toilets"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("Test Toilet")))
+                .andExpect(jsonPath("$.content[0].equipment", hasItem("WHEELCHAIR")))
+                .andExpect(jsonPath("$.content[0].equipment", hasItem("DIAPER")));
+    }
+
+    // --- GET: ID指定取得 ---
+    @Test
+    void shouldReturnToiletById() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Detail Test");
+        toilet.setLat(36.0);
+        toilet.setLng(140.0);
+        toilet.addEquipment(EquipmentType.OPEN_24H); 
+        
+        Toilet saved = toiletRepository.save(toilet);
+
+        mockMvc.perform(get("/api/toilets/" + saved.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("Detail Test")))
+                .andExpect(jsonPath("$.equipment", hasItem("OPEN_24H")));
+    }
+
+    // --- POST: 新規登録 ---
+    @Test
+    void shouldCreateToilet() throws Exception {
+        String toiletJson = """
+            {
+                "name": "New Toilet",
+                "lat": 35.123,
+                "lng": 139.456,
+                "address": "New Address",
+                "description": "New Desc",
+                "cleanliness": 4,
+                "facilityCategory": "park",
+                "equipment": ["WHEELCHAIR", "OPEN_24H"], 
+                "image": "http://example.com/img.jpg"
+            }
+        """;
+
+        mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(toiletJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("New Toilet")))
+                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OPEN_24H")));
+    }
+
+    // --- PUT: 更新 ---
+    @Test
+    void shouldUpdateToilet() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Old Name");
+        toilet.setLat(35.0);
+        toilet.setLng(139.0);
+        toilet.addEquipment(EquipmentType.DIAPER); 
+        Toilet saved = toiletRepository.save(toilet);
+
+        String updateJson = """
+            {
+                "name": "Updated Name",
+                "lat": 35.0,
+                "lng": 139.0,
+                "equipment": ["WHEELCHAIR", "OSTOMATE"]
+            }
+        """;
+
+        mockMvc.perform(put("/api/toilets/" + saved.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson)
+                .header("X-Admin-Token", VALID_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("Updated Name")))
+                .andExpect(jsonPath("$.equipment", hasSize(2)))
+                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OSTOMATE")));
+    }
+
+    // --- DELETE: 削除 ---
+    @Test
+    void shouldDeleteToilet() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("To Delete");
+        toilet.setLat(0.0);
+        toilet.setLng(0.0);
+        Toilet saved = toiletRepository.save(toilet);
+
+        mockMvc.perform(delete("/api/toilets/" + saved.getId())
+                .header("X-Admin-Token", VALID_TOKEN))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/toilets/" + saved.getId()))
+                .andExpect(status().isNotFound());
+    }
+
+    // --- PUT に認証なし → 401 ---
+    @Test
+    void shouldReturn401WhenUpdatingWithoutToken() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Auth Test");
+        toilet.setLat(35.0);
+        toilet.setLng(139.0);
+        Toilet saved = toiletRepository.save(toilet);
+
+        String updateJson = """
+            { "name": "Hacked", "lat": 35.0, "lng": 139.0 }
+        """;
+
+        mockMvc.perform(put("/api/toilets/" + saved.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- DELETE に不正トークン → 401 ---
+    @Test
+    void shouldReturn401WhenDeletingWithInvalidToken() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Auth Test");
+        toilet.setLat(35.0);
+        toilet.setLng(139.0);
+        Toilet saved = toiletRepository.save(toilet);
+
+        mockMvc.perform(delete("/api/toilets/" + saved.getId())
+                .header("X-Admin-Token", INVALID_TOKEN))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturn404ForNonExistentId() throws Exception {
+        mockMvc.perform(get("/api/toilets/9999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn400WhenNameIsBlank() throws Exception {
+        String invalidJson = """
+            { "name": "", "lat": 35.0, "lng": 139.0 }
+        """;
+
+        mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturn400WhenLatIsNull() throws Exception {
+        String invalidJson = """
+            { "name": "Valid Name", "lng": 139.0 }
+        """;
+
+        mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldAcceptMultipleImageUrls() throws Exception {
+        String json = """
+            {
+                "name": "Multi Image",
+                "lat": 35.0,
+                "lng": 139.0,
+                "image": "https://example.com/1.jpg,https://example.com/2.jpg"
+            }
+        """;
+
+        mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.image", is("https://example.com/1.jpg,https://example.com/2.jpg")));
+    }
+
+    @Test
+    void shouldReturn404WhenDeletingNonExistent() throws Exception {
+        mockMvc.perform(delete("/api/toilets/9999")
+                .header("X-Admin-Token", VALID_TOKEN))
+                .andExpect(status().isNotFound());
+    }
+}
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
 // backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java
 package com.imatoilet.backend;
@@ -6368,7 +6507,10 @@ public class ToiletService {
         if (details.getDescription() != null) toilet.setDescription(details.getDescription());
         if (details.getImage() != null) toilet.setImage(details.getImage());
         if (details.getFacilityCategory() != null) toilet.setFacilityCategory(details.getFacilityCategory());
-
+        if (details.getSource() != null) toilet.setSource(details.getSource());
+        if (details.getSourceUrl() != null) toilet.setSourceUrl(details.getSourceUrl());
+        if (details.getLastVerified() != null) toilet.setLastVerified(details.getLastVerified());
+        
         Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
         Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
         Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
@@ -6393,14 +6535,30 @@ public class ToiletService {
         toiletRepository.deleteById(safeId);
     }
 
+    // ★修正: 重複エラーを防ぐための差分同期ロジック
     private void updateEquipmentList(Toilet toilet, List<String> inputs) {
         if (inputs == null) return;
-        toilet.getEquipmentList().clear();
+        
+        // 入力された文字列を Enum のリストに変換
+        List<EquipmentType> newTypes = new ArrayList<>();
         for (String typeStr : inputs) {
             try {
-                EquipmentType type = EquipmentType.valueOf(typeStr);
+                newTypes.add(EquipmentType.valueOf(typeStr));
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        // 1. 古いリストから、新リストに含まれないものを削除
+        toilet.getEquipmentList().removeIf(e -> !newTypes.contains(e.getType()));
+
+        // 2. 現在のリストに残っている設備の Type を抽出
+        List<EquipmentType> currentTypes = toilet.getEquipmentList().stream()
+                .map(Equipment::getType)
+                .collect(Collectors.toList());
+
+        // 3. 新リストのうち、まだ登録されていないものだけを追加
+        for (EquipmentType type : newTypes) {
+            if (!currentTypes.contains(type)) {
                 toilet.addEquipment(type);
-            } catch (IllegalArgumentException ignored) { 
             }
         }
     }
@@ -6608,6 +6766,7 @@ package com.imatoilet.backend;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -6669,6 +6828,14 @@ public class Toilet {
     @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
     @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
     private String image;
+
+    @Size(max = 100, message = "出典は100文字以内で入力してください")
+    private String source;
+
+    @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
+    private String sourceUrl;
+
+    private LocalDate lastVerified;
 
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
@@ -6763,6 +6930,10 @@ public class ToiletApiController {
         toiletDetails.setImage(dto.getImage());
         toiletDetails.setFacilityCategory(dto.getFacilityCategory());
         toiletDetails.setEquipmentInput(dto.getEquipment());
+
+        toiletDetails.setSource(dto.getSource());
+        toiletDetails.setSourceUrl(dto.getSourceUrl());
+        toiletDetails.setLastVerified(dto.getLastVerified());
 
         toiletDetails.setPublicUse(dto.getPublicUse());
         toiletDetails.setTypePark(dto.getTypePark());
