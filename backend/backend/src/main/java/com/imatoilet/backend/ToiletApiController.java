@@ -28,7 +28,7 @@ public class ToiletApiController {
             @RequestParam(required = false, defaultValue = "5.0") Double radius,
             @RequestParam(required = false) String facilityCategory,
             @RequestParam(required = false) Integer minCleanliness,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "") String keyword,
             @RequestParam(required = false) Boolean publicUse,
             @RequestParam(required = false) List<String> equipment,
             @PageableDefault(size = 50) Pageable pageable
@@ -65,6 +65,10 @@ public class ToiletApiController {
         toiletDetails.setImage(dto.getImage());
         toiletDetails.setFacilityCategory(dto.getFacilityCategory());
         toiletDetails.setEquipmentInput(dto.getEquipment());
+
+        toiletDetails.setSource(dto.getSource());
+        toiletDetails.setSourceUrl(dto.getSourceUrl());
+        toiletDetails.setLastVerified(dto.getLastVerified());
 
         toiletDetails.setPublicUse(dto.getPublicUse());
         toiletDetails.setTypePark(dto.getTypePark());

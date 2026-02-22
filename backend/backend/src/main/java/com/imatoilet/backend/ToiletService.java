@@ -88,7 +88,10 @@ public class ToiletService {
         if (details.getDescription() != null) toilet.setDescription(details.getDescription());
         if (details.getImage() != null) toilet.setImage(details.getImage());
         if (details.getFacilityCategory() != null) toilet.setFacilityCategory(details.getFacilityCategory());
-
+        if (details.getSource() != null) toilet.setSource(details.getSource());
+        if (details.getSourceUrl() != null) toilet.setSourceUrl(details.getSourceUrl());
+        if (details.getLastVerified() != null) toilet.setLastVerified(details.getLastVerified());
+        
         Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
         Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
         Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
