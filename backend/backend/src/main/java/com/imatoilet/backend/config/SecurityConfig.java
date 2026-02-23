@@ -25,7 +25,6 @@ public class SecurityConfig {
     @Value("${app.cors.allow-credentials:false}")
     private boolean allowCredentials;
 
-    // ★追加: AdminTokenFilter を注入
     private final AdminTokenFilter adminTokenFilter;
 
     public SecurityConfig(AdminTokenFilter adminTokenFilter) {
@@ -36,15 +35,20 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> 
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/h2-console/**")  // ← H2コンソール用
+            )
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())  // ← H2コンソールはiframe使用
+            )
+            .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/h2-console/**").permitAll()  // ← H2コンソール許可
                 .requestMatchers("/api/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().denyAll()
             )
-            // ★追加: AdminTokenFilter を AnonymousAuthenticationFilter の前に挿入
             .addFilterBefore(adminTokenFilter, AnonymousAuthenticationFilter.class);
 
         return http.build();
@@ -53,13 +57,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
+
         String[] origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toArray(String[]::new);
         configuration.setAllowedOrigins(List.of(origins));
-        
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(allowCredentials);

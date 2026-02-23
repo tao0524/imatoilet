@@ -198,7 +198,7 @@ export const useToiletSearch = () => {
         if (currentLocation) {
           params.append('lat', currentLocation.lat);
           params.append('lng', currentLocation.lng);
-          params.append('radius', '5.0');
+          params.append('radius', '50.0');
         } else {
           if (currentPlaceQuery) params.append('keyword', currentPlaceQuery);
         }
@@ -231,7 +231,7 @@ export const useToiletSearch = () => {
         // ★追加・変更: ページネーションパラメータを明示的に付与
         // 現在は一覧に「さらに読み込む」ボタンがないため、一旦50件（十分な数）を取得します
         params.append('page', '0');
-        params.append('size', '50');
+        params.append('size', '50.0');
 
         const queryString = params.toString();
         const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
