@@ -36,7 +36,7 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**")  // ← H2コンソール用
+                .ignoringRequestMatchers("/h2-console/**", "/api/**")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())  // ← H2コンソールはiframe使用
