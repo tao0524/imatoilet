@@ -132,113 +132,6 @@ update.json
 <files>
 This section contains the contents of the repository's files.
 
-<file path="backend/backend/src/main/resources/db/migration/V8__add_source_columns.sql">
--- V8__add_source_columns.sql
--- データ出典管理カラムの追加
--- 面接・デモで「データ品質を意識した設計」をアピールするための拡張
-
-BEGIN;
-
-ALTER TABLE toilet ADD COLUMN IF NOT EXISTS source VARCHAR(100);
-ALTER TABLE toilet ADD COLUMN IF NOT EXISTS source_url TEXT;
-ALTER TABLE toilet ADD COLUMN IF NOT EXISTS last_verified DATE;
-
--- 既存のV4サンプルデータに出典を設定
-UPDATE toilet
-SET source = 'サンプルデータ（要確認）',
-    source_url = NULL,
-    last_verified = '2026-02-21'
-WHERE source IS NULL;
-
-COMMIT;
-</file>
-
-<file path="backend/backend/src/main/resources/db/migration/V9__insert_open_data.sql">
--- V9__insert_open_data.sql
--- つくば市バリアフリーマップ登録施設から取り込み
--- 出典: つくば市バリアフリーマップ (https://www.city.tsukuba.lg.jp/)
--- 対象: 多目的トイレあり かつ トイレのみ利用許可の施設
-
-BEGIN;
-
-INSERT INTO toilet (
-  name, address, lat, lng, description, cleanliness,
-  facility_category, public_use, equipment,
-  source, source_url, last_verified
-) VALUES
-('ローソンつくば小茎店', '茨城県つくば市小茎294-1', 36.018, 140.1347, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('ローソンつくば筑穂二丁目', '茨城県つくば市筑穂2-2-5', 36.0765, 140.0674, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('ローソン新つくば妻木店', '茨城県つくば市妻木216-1', 36.0888, 140.1087, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('ローソンつくば東新井店', '茨城県つくば市東新井24-14', 36.0829, 140.1155, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('ホテルベストランド', '茨城県つくば市研究学園五丁目8番地4', 36.0812, 140.0861, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。バリアフリー対応の部屋が3室あり', 4, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('ホテルマークワンつくば研究学園', '茨城県つくば市研究学園5丁目13番地5', 36.0776, 140.0855, '多目的トイレあり。スロープあり、オストメイト対応、障害者駐車場あり。障害者用駐車場利用', 4, 'hotel_tourism', true, 'WHEELCHAIR,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('ホテルグランド東雲', '茨城県つくば市小野崎488-1', 36.0721, 140.1039, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('ヨークベニマル　つくば竹園店', '茨城県つくば市竹園１－３－１', 36.079, 140.1194, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('イーアスつくば', '茨城県つくば市研究学園5丁目19番地', 36.0781, 140.0785, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('つくばクレオスクエア', '茨城県つくば市吾妻1-6-1', 36.0805, 140.1093, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('ＬＡＬＡガーデンつくば', '茨城県つくば市小野崎字千駄苅278-1', 36.0785, 140.1098, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('株式会社とりせん研究学園店', '茨城県つくば市研究学園5-18-1', 36.0784, 140.0783, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　筑波店', '茨城県つくば市北条内町裏５１４４', 36.222, 140.1976, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　フードスクエア学園店', '茨城県つくば市竹園２丁目１２－１', 36.0796, 140.1179, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　テクノパーク桜店', '茨城県つくば市桜１丁目２２番地', 36.0451, 140.0933, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　みどりの駅前店', '茨城県つくば市みどりの１丁目３－１', 36.0857, 140.058, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　フードスクエアつくばスタイル店', '茨城県つくば市研究学園５丁目１９番', 36.0769, 140.0797, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　万博記念公園駅前店', '茨城県つくば市島名福田坪土地区画整理地48街区', 36.0557, 140.0305, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　フードスクエア学園の森店', '茨城県つくば市学園の森２丁目３４－４', 36.0811, 140.0809, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　筑波大学店', '茨城県つくば市天久保３丁目１－１０', 36.0991, 140.1074, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('カスミ　プルシェつくばキュート店', '茨城県つくば市吾妻１－６－１', 36.0809, 140.1109, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('つくば駅', '茨城県つくば市吾妻2-128', 36.0857, 140.1114, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('研究学園駅', '茨城県つくば市研究学園5-9-1', 36.0851, 140.0787, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('万博記念公園駅', '茨城県つくば市島名4386', 36.0589, 140.0367, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('みどりの駅', '茨城県つくば市みどりの1-29-3', 36.082, 140.0519, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('北１駐車場', '茨城県つくば市吾妻2-4-6', 36.0797, 140.1081, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('南２駐車場', '茨城県つくば市吾妻1-12-10', 36.0877, 140.1084, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('南１駐車場', '茨城県つくば市吾妻1-5-1', 36.0873, 140.112, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('つくば文化会館アルス（中央図書館）', '茨城県つくば市吾妻2-8', 36.0807, 140.1107, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('つくば市役所', '茨城県つくば市研究学園1-1-1', 36.0745, 140.0836, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('大穂窓口センター', '茨城県つくば市筑穂1-10-4', 36.0753, 140.0625, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('茎崎窓口センター', '茨城県つくば市小茎320', 36.0167, 140.1291, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('谷田部保健センター', '茨城県つくば市谷田部4774-18', 36.0505, 140.1278, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('桜保健センター', '茨城県つくば市流星台61-1', 36.0842, 140.0917, '多目的トイレあり。スロープあり、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('つくばカピオ', '茨城県つくば市竹園1-10-1', 36.0799, 140.1123, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('市民ホールやたべ', '茨城県つくば市谷田部4711', 36.0482, 140.126, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('筑波交流センター', '茨城県つくば市北条5060', 36.2184, 140.2006, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('松代交流センター', '茨城県つくば市松代4-16-3', 36.0739, 140.1208, '多目的トイレあり。スロープあり、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('竹園交流センター', '茨城県つくば市竹園3-19-2', 36.0752, 140.1116, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('二の宮交流センター', '茨城県つくば市二の宮4-6-2', 36.0756, 140.1196, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('大穂交流センター', '茨城県つくば市筑穂1-10-4', 36.0735, 140.0633, '多目的トイレあり。スロープあり、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('宝篋山小田休憩所', '茨城県つくば市小田4544', 36.2076, 140.166, '多目的トイレあり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('筑波山梅林休憩所トイレ', '茨城県つくば市沼田1435-56', 36.225, 140.0992, '多目的トイレあり。スロープあり。', 4, 'public', true, 'WHEELCHAIR', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('市営筑波山第1駐車場トイレ', '茨城県つくば市沼田1698番地1', 36.2301, 140.0976, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('市営筑波山第2駐車場トイレ', '茨城県つくば市筑波1222', 36.2247, 140.1014, '多目的トイレあり。スロープあり、オストメイト対応、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('市営筑波山第3駐車場トイレ', '茨城県つくば市筑波1108', 36.228, 140.1034, '多目的トイレあり。スロープあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('筑波山御幸が原トイレ(女体山側)', '茨城県つくば市筑波1', 36.2209, 140.1086, '多目的トイレあり。スロープあり。', 4, 'public', true, 'WHEELCHAIR', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('筑波山御幸が原トイレ(男体山側)', '茨城県つくば市筑波1', 36.2236, 140.1085, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('筑波山おもてなし館', '茨城県つくば市沼田1690-3', 36.2331, 140.1005, '多目的トイレあり。スロープあり、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('筑波窓口センター', '茨城県つくば市北条5060', 36.2243, 140.199, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('研究学園駅前公園', '茨城県つくば市学園南2丁目1', 36.0839, 140.0772, '多目的トイレあり。障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('つくば駅前広場', '茨城県つくば市吾妻1-121', 36.0792, 140.111, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
-('研究学園駅前広場', '茨城県つくば市研究学園5-111', 36.083, 140.0822, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21');
-
--- Equipment テーブルへの反映
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%WHEELCHAIR%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'DIAPER' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%DIAPER%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'OSTOMATE' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%OSTOMATE%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%NURSING_ROOM%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'PARKING' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%PARKING%';
-
-COMMIT;
-</file>
-
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
 *.cmd text eol=crlf
@@ -1115,6 +1008,113 @@ BEGIN;
 ALTER TABLE toilet DROP COLUMN IF EXISTS wheelchair;
 ALTER TABLE toilet DROP COLUMN IF EXISTS diaper;
 ALTER TABLE toilet DROP COLUMN IF EXISTS open24h;
+
+COMMIT;
+</file>
+
+<file path="backend/backend/src/main/resources/db/migration/V8__add_source_columns.sql">
+-- V8__add_source_columns.sql
+-- データ出典管理カラムの追加
+-- 面接・デモで「データ品質を意識した設計」をアピールするための拡張
+
+BEGIN;
+
+ALTER TABLE toilet ADD COLUMN IF NOT EXISTS source VARCHAR(100);
+ALTER TABLE toilet ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE toilet ADD COLUMN IF NOT EXISTS last_verified DATE;
+
+-- 既存のV4サンプルデータに出典を設定
+UPDATE toilet
+SET source = 'サンプルデータ（要確認）',
+    source_url = NULL,
+    last_verified = '2026-02-21'
+WHERE source IS NULL;
+
+COMMIT;
+</file>
+
+<file path="backend/backend/src/main/resources/db/migration/V9__insert_open_data.sql">
+-- V9__insert_open_data.sql
+-- つくば市バリアフリーマップ登録施設から取り込み
+-- 出典: つくば市バリアフリーマップ (https://www.city.tsukuba.lg.jp/)
+-- 対象: 多目的トイレあり かつ トイレのみ利用許可の施設
+
+BEGIN;
+
+INSERT INTO toilet (
+  name, address, lat, lng, description, cleanliness,
+  facility_category, public_use, equipment,
+  source, source_url, last_verified
+) VALUES
+('ローソンつくば小茎店', '茨城県つくば市小茎294-1', 36.018, 140.1347, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ローソンつくば筑穂二丁目', '茨城県つくば市筑穂2-2-5', 36.0765, 140.0674, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ローソン新つくば妻木店', '茨城県つくば市妻木216-1', 36.0888, 140.1087, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ローソンつくば東新井店', '茨城県つくば市東新井24-14', 36.0829, 140.1155, '多目的トイレあり。', 3, 'convenience', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ホテルベストランド', '茨城県つくば市研究学園五丁目8番地4', 36.0812, 140.0861, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。バリアフリー対応の部屋が3室あり', 4, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ホテルマークワンつくば研究学園', '茨城県つくば市研究学園5丁目13番地5', 36.0776, 140.0855, '多目的トイレあり。スロープあり、オストメイト対応、障害者駐車場あり。障害者用駐車場利用', 4, 'hotel_tourism', true, 'WHEELCHAIR,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ホテルグランド東雲', '茨城県つくば市小野崎488-1', 36.0721, 140.1039, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ヨークベニマル　つくば竹園店', '茨城県つくば市竹園１－３－１', 36.079, 140.1194, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('イーアスつくば', '茨城県つくば市研究学園5丁目19番地', 36.0781, 140.0785, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくばクレオスクエア', '茨城県つくば市吾妻1-6-1', 36.0805, 140.1093, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('ＬＡＬＡガーデンつくば', '茨城県つくば市小野崎字千駄苅278-1', 36.0785, 140.1098, '多目的トイレあり。スロープあり、オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('株式会社とりせん研究学園店', '茨城県つくば市研究学園5-18-1', 36.0784, 140.0783, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　筑波店', '茨城県つくば市北条内町裏５１４４', 36.222, 140.1976, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　フードスクエア学園店', '茨城県つくば市竹園２丁目１２－１', 36.0796, 140.1179, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　テクノパーク桜店', '茨城県つくば市桜１丁目２２番地', 36.0451, 140.0933, '多目的トイレあり。ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　みどりの駅前店', '茨城県つくば市みどりの１丁目３－１', 36.0857, 140.058, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　フードスクエアつくばスタイル店', '茨城県つくば市研究学園５丁目１９番', 36.0769, 140.0797, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　万博記念公園駅前店', '茨城県つくば市島名福田坪土地区画整理地48街区', 36.0557, 140.0305, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　フードスクエア学園の森店', '茨城県つくば市学園の森２丁目３４－４', 36.0811, 140.0809, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　筑波大学店', '茨城県つくば市天久保３丁目１－１０', 36.0991, 140.1074, '多目的トイレあり。オストメイト対応、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('カスミ　プルシェつくばキュート店', '茨城県つくば市吾妻１－６－１', 36.0809, 140.1109, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 3, 'commercial', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくば駅', '茨城県つくば市吾妻2-128', 36.0857, 140.1114, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('研究学園駅', '茨城県つくば市研究学園5-9-1', 36.0851, 140.0787, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('万博記念公園駅', '茨城県つくば市島名4386', 36.0589, 140.0367, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('みどりの駅', '茨城県つくば市みどりの1-29-3', 36.082, 140.0519, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('北１駐車場', '茨城県つくば市吾妻2-4-6', 36.0797, 140.1081, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('南２駐車場', '茨城県つくば市吾妻1-12-10', 36.0877, 140.1084, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('南１駐車場', '茨城県つくば市吾妻1-5-1', 36.0873, 140.112, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくば文化会館アルス（中央図書館）', '茨城県つくば市吾妻2-8', 36.0807, 140.1107, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくば市役所', '茨城県つくば市研究学園1-1-1', 36.0745, 140.0836, '多目的トイレあり。オストメイト対応、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('大穂窓口センター', '茨城県つくば市筑穂1-10-4', 36.0753, 140.0625, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('茎崎窓口センター', '茨城県つくば市小茎320', 36.0167, 140.1291, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('谷田部保健センター', '茨城県つくば市谷田部4774-18', 36.0505, 140.1278, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('桜保健センター', '茨城県つくば市流星台61-1', 36.0842, 140.0917, '多目的トイレあり。スロープあり、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくばカピオ', '茨城県つくば市竹園1-10-1', 36.0799, 140.1123, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('市民ホールやたべ', '茨城県つくば市谷田部4711', 36.0482, 140.126, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波交流センター', '茨城県つくば市北条5060', 36.2184, 140.2006, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('松代交流センター', '茨城県つくば市松代4-16-3', 36.0739, 140.1208, '多目的トイレあり。スロープあり、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('竹園交流センター', '茨城県つくば市竹園3-19-2', 36.0752, 140.1116, '多目的トイレあり。授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('二の宮交流センター', '茨城県つくば市二の宮4-6-2', 36.0756, 140.1196, '多目的トイレあり。スロープあり、授乳室あり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('大穂交流センター', '茨城県つくば市筑穂1-10-4', 36.0735, 140.0633, '多目的トイレあり。スロープあり、授乳室あり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('宝篋山小田休憩所', '茨城県つくば市小田4544', 36.2076, 140.166, '多目的トイレあり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波山梅林休憩所トイレ', '茨城県つくば市沼田1435-56', 36.225, 140.0992, '多目的トイレあり。スロープあり。', 4, 'public', true, 'WHEELCHAIR', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('市営筑波山第1駐車場トイレ', '茨城県つくば市沼田1698番地1', 36.2301, 140.0976, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('市営筑波山第2駐車場トイレ', '茨城県つくば市筑波1222', 36.2247, 140.1014, '多目的トイレあり。スロープあり、オストメイト対応、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,OSTOMATE,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('市営筑波山第3駐車場トイレ', '茨城県つくば市筑波1108', 36.228, 140.1034, '多目的トイレあり。スロープあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波山御幸が原トイレ(女体山側)', '茨城県つくば市筑波1', 36.2209, 140.1086, '多目的トイレあり。スロープあり。', 4, 'public', true, 'WHEELCHAIR', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波山御幸が原トイレ(男体山側)', '茨城県つくば市筑波1', 36.2236, 140.1085, '多目的トイレあり。スロープあり、オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波山おもてなし館', '茨城県つくば市沼田1690-3', 36.2331, 140.1005, '多目的トイレあり。スロープあり、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('筑波窓口センター', '茨城県つくば市北条5060', 36.2243, 140.199, '多目的トイレあり。スロープあり、ベビーシートあり、障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('研究学園駅前公園', '茨城県つくば市学園南2丁目1', 36.0839, 140.0772, '多目的トイレあり。障害者駐車場あり。', 4, 'public', true, 'WHEELCHAIR,PARKING', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('つくば駅前広場', '茨城県つくば市吾妻1-121', 36.0792, 140.111, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21'),
+('研究学園駅前広場', '茨城県つくば市研究学園5-111', 36.083, 140.0822, '多目的トイレあり。オストメイト対応、ベビーシートあり。', 4, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE', 'つくば市バリアフリーマップ', 'https://www.city.tsukuba.lg.jp/', '2026-02-21');
+
+-- Equipment テーブルへの反映
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%WHEELCHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'DIAPER' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%DIAPER%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OSTOMATE' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%OSTOMATE%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%NURSING_ROOM%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'PARKING' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%PARKING%';
 
 COMMIT;
 </file>
@@ -2057,75 +2057,6 @@ afterAll(() => server.close());
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/dto/ToiletUpdateDto.java">
-package com.imatoilet.backend.dto;
-
-import com.fasterxml.jackson.annotation.JsonAlias;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import java.util.List;
-import java.time.LocalDate;
-
-/**
- * トイレ情報更新用DTO
- * 部分更新に対応するため、全てのフィールドにおける必須チェック(@NotNull, @NotBlank)を排除しています。
- * ただし、値が送信された場合の形式チェック(@Size, @Pattern等)は維持します。
- */
-@Data
-public class ToiletUpdateDto {
-
-    @Size(max = 100, message = "名前は100文字以内で入力してください")
-    private String name;
-
-    @DecimalMin(value = "-90.0", message = "緯度は-90以上である必要があります")
-    @DecimalMax(value = "90.0", message = "緯度は90以下である必要があります")
-    private Double lat;
-
-    @DecimalMin(value = "-180.0", message = "経度は-180以上である必要があります")
-    @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
-    private Double lng;
-
-    @Size(max = 200, message = "住所は200文字以内で入力してください")
-    private String address;
-
-    @Size(max = 500, message = "説明は500文字以内で入力してください")
-    private String description;
-
-    @Min(value = 1, message = "清潔度は1以上である必要があります")
-    @Max(value = 5, message = "清潔度は5以下である必要があります")
-    private Integer cleanliness;
-
-    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
-    
-    @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
-    private String image;
-
-    @Size(max = 100, message = "出典は100文字以内で入力してください")
-    private String source;
-
-    @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
-    private String sourceUrl;
-
-    private LocalDate lastVerified;
-
-    @Pattern(
-        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
-        message = "施設カテゴリの値が不正です"
-    )
-    private String facilityCategory;
-
-    // --- 設備情報 (JSONの "equipment" キーを受け取る) ---
-    @JsonAlias("equipment")
-    private List<String> equipment;
-
-    // --- その他の互換性フラグ ---
-    private Boolean publicUse;
-    private Boolean typePark;
-    private Boolean typeStation;
-    private Boolean typeMall;
-}
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Equipment.java">
 package com.imatoilet.backend;
 
@@ -2561,6 +2492,75 @@ public class SecurityConfig {
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/dto/ToiletUpdateDto.java">
+package com.imatoilet.backend.dto;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import java.util.List;
+import java.time.LocalDate;
+
+/**
+ * トイレ情報更新用DTO
+ * 部分更新に対応するため、全てのフィールドにおける必須チェック(@NotNull, @NotBlank)を排除しています。
+ * ただし、値が送信された場合の形式チェック(@Size, @Pattern等)は維持します。
+ */
+@Data
+public class ToiletUpdateDto {
+
+    @Size(max = 100, message = "名前は100文字以内で入力してください")
+    private String name;
+
+    @DecimalMin(value = "-90.0", message = "緯度は-90以上である必要があります")
+    @DecimalMax(value = "90.0", message = "緯度は90以下である必要があります")
+    private Double lat;
+
+    @DecimalMin(value = "-180.0", message = "経度は-180以上である必要があります")
+    @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
+    private Double lng;
+
+    @Size(max = 200, message = "住所は200文字以内で入力してください")
+    private String address;
+
+    @Size(max = 500, message = "説明は500文字以内で入力してください")
+    private String description;
+
+    @Min(value = 1, message = "清潔度は1以上である必要があります")
+    @Max(value = 5, message = "清潔度は5以下である必要があります")
+    private Integer cleanliness;
+
+    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    
+    @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
+    private String image;
+
+    @Size(max = 100, message = "出典は100文字以内で入力してください")
+    private String source;
+
+    @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
+    private String sourceUrl;
+
+    private LocalDate lastVerified;
+
+    @Pattern(
+        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
+        message = "施設カテゴリの値が不正です"
+    )
+    private String facilityCategory;
+
+    // --- 設備情報 (JSONの "equipment" キーを受け取る) ---
+    @JsonAlias("equipment")
+    private List<String> equipment;
+
+    // --- その他の互換性フラグ ---
+    private Boolean publicUse;
+    private Boolean typePark;
+    private Boolean typeStation;
+    private Boolean typeMall;
+}
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/exception/GlobalExceptionHandler.java">
 package com.imatoilet.backend.exception;
 
@@ -2654,37 +2654,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
-</file>
-
-<file path="backend/backend/src/main/resources/application-dev.properties">
-# ローカル開発用 H2データベース設定
-spring.datasource.url=jdbc:h2:mem:imatoiletdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
-spring.datasource.username=sa
-spring.datasource.password=
-spring.datasource.driver-class-name=org.h2.Driver
-
-# JPA / Hibernate 設定
-spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
-# 変更後（テーブル構造はそのままで、Flywayにデータだけを入れさせる）
-spring.jpa.hibernate.ddl-auto=validate
-spring.flyway.enabled=true
-
-# Flyway を有効化（SQLファイルからデータを投入する）
-spring.flyway.enabled=true
-
-# H2コンソール設定
-spring.h2.console.enabled=true
-spring.h2.console.path=/h2-console
-
-# CORS 設定
-app.cors.allowed-origins=http://localhost:4173,http://localhost:5173
-app.cors.allow-credentials=false
-
-server.port=8080
-spring.jpa.open-in-view=false
-
-# ローカル開発用トークン (本番と同じ値を使わないこと)
-app.admin.token=dev-admin-token-local
 </file>
 
 <file path="backend/backend/src/test/java/com/imatoilet/backend/BackendApplicationTests.java">
@@ -3822,6 +3791,37 @@ describe('utils.js (便利関数)', () => {
     });
   });
 });
+</file>
+
+<file path="backend/backend/src/main/resources/application-dev.properties">
+# ローカル開発用 H2データベース設定
+spring.datasource.url=jdbc:h2:mem:imatoiletdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+spring.datasource.username=sa
+spring.datasource.password=
+spring.datasource.driver-class-name=org.h2.Driver
+
+# JPA / Hibernate 設定
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+# 変更後（テーブル構造はそのままで、Flywayにデータだけを入れさせる）
+spring.jpa.hibernate.ddl-auto=validate
+spring.flyway.enabled=true
+
+# Flyway を有効化（SQLファイルからデータを投入する）
+spring.flyway.enabled=true
+
+# H2コンソール設定
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
+
+# CORS 設定
+app.cors.allowed-origins=http://localhost:4173,http://localhost:5173
+app.cors.allow-credentials=false
+
+server.port=8080
+spring.jpa.open-in-view=false
+
+# ローカル開発用トークン (本番と同じ値を使わないこと)
+app.admin.token=dev-admin-token-local
 </file>
 
 <file path="toilet-frontend/index.html">
@@ -6416,166 +6416,6 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java">
-package com.imatoilet.backend;
-
-import com.imatoilet.backend.exception.ResourceNotFoundException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-@Service
-@Transactional
-public class ToiletService {
-
-    private final ToiletRepository toiletRepository;
-
-    public ToiletService(ToiletRepository toiletRepository) {
-        this.toiletRepository = toiletRepository;
-    }
-
-    public Page<Toilet> searchToilets(
-            Double lat, Double lng, Double radius,
-            String facilityCategory, Integer minCleanliness,
-            String keyword, Boolean publicUse, List<String> equipment,
-            Pageable pageable
-    ) {
-        Page<Long> idPage;
-
-        List<EquipmentType> types = convertToEnumList(equipment);
-        Long typeCount = (types != null) ? (long) types.size() : 0L;
-        
-        List<String> typeStrs = (equipment != null && !equipment.isEmpty()) ? equipment : List.of("DUMMY_TYPE");
-        List<EquipmentType> safeTypes = (types != null && !types.isEmpty()) ? types : List.of(EquipmentType.WHEELCHAIR);
-
-        if (lat != null && lng != null) {
-            double r = (radius != null) ? radius : 5.0;
-            idPage = toiletRepository.findIdsWithinRadiusWithSpecs(
-                    lat, lng, r, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
-        } else {
-            idPage = toiletRepository.searchIdsBySpecs(
-                    facilityCategory, minCleanliness, keyword, publicUse, safeTypes, typeCount, pageable);
-        }
-
-        if (idPage.isEmpty()) {
-            return new PageImpl<>(new ArrayList<>(), pageable, idPage.getTotalElements());
-        }
-
-        List<Toilet> toilets = toiletRepository.findAllByIdWithEquipment(idPage.getContent());
-
-        Map<Long, Toilet> toiletMap = toilets.stream()
-                .collect(Collectors.toMap(Toilet::getId, Function.identity()));
-        List<Toilet> sortedToilets = idPage.getContent().stream()
-                .map(toiletMap::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(sortedToilets, pageable, idPage.getTotalElements());
-    }
-
-    public Toilet getToilet(Long id) {
-        Long safeId = Objects.requireNonNull(id, "ID must not be null");
-        return toiletRepository.findById(safeId)
-                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
-    }
-
-    public Toilet createToilet(Toilet toilet) {
-        if (toilet.getCleanliness() == null) {
-            toilet.setCleanliness(3);
-        }
-        
-        Toilet savedToilet = toiletRepository.save(toilet);
-        updateEquipmentList(savedToilet, toilet.getEquipmentInput());
-        return toiletRepository.save(savedToilet);
-    }
-
-    public Toilet updateToilet(Long id, Toilet details) {
-        Toilet toilet = getToilet(id);
-
-        Optional.ofNullable(details.getName()).filter(s -> !s.isBlank()).ifPresent(toilet::setName);
-        if (details.getAddress() != null) toilet.setAddress(details.getAddress());
-        if (details.getDescription() != null) toilet.setDescription(details.getDescription());
-        if (details.getImage() != null) toilet.setImage(details.getImage());
-        if (details.getFacilityCategory() != null) toilet.setFacilityCategory(details.getFacilityCategory());
-        if (details.getSource() != null) toilet.setSource(details.getSource());
-        if (details.getSourceUrl() != null) toilet.setSourceUrl(details.getSourceUrl());
-        if (details.getLastVerified() != null) toilet.setLastVerified(details.getLastVerified());
-        
-        Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
-        Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
-        Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
-
-        if (details.getEquipmentInput() != null) {
-            updateEquipmentList(toilet, details.getEquipmentInput());
-        }
-
-        Optional.ofNullable(details.getPublicUse()).ifPresent(toilet::setPublicUse);
-        Optional.ofNullable(details.getTypePark()).ifPresent(toilet::setTypePark);
-        Optional.ofNullable(details.getTypeStation()).ifPresent(toilet::setTypeStation);
-        Optional.ofNullable(details.getTypeMall()).ifPresent(toilet::setTypeMall);
-
-        return toiletRepository.save(toilet);
-    }
-
-    public void deleteToilet(Long id) {
-        Long safeId = Objects.requireNonNull(id, "ID must not be null");
-        if (!toiletRepository.existsById(safeId)) {
-            throw new ResourceNotFoundException("トイレ", "id", safeId);
-        }
-        toiletRepository.deleteById(safeId);
-    }
-
-    // ★修正: 重複エラーを防ぐための差分同期ロジック
-    private void updateEquipmentList(Toilet toilet, List<String> inputs) {
-        if (inputs == null) return;
-        
-        // 入力された文字列を Enum のリストに変換
-        List<EquipmentType> newTypes = new ArrayList<>();
-        for (String typeStr : inputs) {
-            try {
-                newTypes.add(EquipmentType.valueOf(typeStr));
-            } catch (IllegalArgumentException ignored) {}
-        }
-
-        // 1. 古いリストから、新リストに含まれないものを削除
-        toilet.getEquipmentList().removeIf(e -> !newTypes.contains(e.getType()));
-
-        // 2. 現在のリストに残っている設備の Type を抽出
-        List<EquipmentType> currentTypes = toilet.getEquipmentList().stream()
-                .map(Equipment::getType)
-                .collect(Collectors.toList());
-
-        // 3. 新リストのうち、まだ登録されていないものだけを追加
-        for (EquipmentType type : newTypes) {
-            if (!currentTypes.contains(type)) {
-                toilet.addEquipment(type);
-            }
-        }
-    }
-
-    private List<EquipmentType> convertToEnumList(List<String> inputs) {
-        if (inputs == null || inputs.isEmpty()) return null;
-        List<EquipmentType> list = new ArrayList<>();
-        for (String s : inputs) {
-            try {
-                list.add(EquipmentType.valueOf(s));
-            } catch (IllegalArgumentException ignored) { }
-        }
-        return list.isEmpty() ? null : list;
-    }
-}
-</file>
-
 <file path="toilet-frontend/src/pages/Edit.jsx">
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -6760,6 +6600,166 @@ function Edit() {
 export default Edit;
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class ToiletService {
+
+    private final ToiletRepository toiletRepository;
+
+    public ToiletService(ToiletRepository toiletRepository) {
+        this.toiletRepository = toiletRepository;
+    }
+
+    public Page<Toilet> searchToilets(
+            Double lat, Double lng, Double radius,
+            String facilityCategory, Integer minCleanliness,
+            String keyword, Boolean publicUse, List<String> equipment,
+            Pageable pageable
+    ) {
+        Page<Long> idPage;
+
+        List<EquipmentType> types = convertToEnumList(equipment);
+        Long typeCount = (types != null) ? (long) types.size() : 0L;
+        
+        List<String> typeStrs = (equipment != null && !equipment.isEmpty()) ? equipment : List.of("DUMMY_TYPE");
+        List<EquipmentType> safeTypes = (types != null && !types.isEmpty()) ? types : List.of(EquipmentType.WHEELCHAIR);
+
+        if (lat != null && lng != null) {
+            double r = (radius != null) ? radius : 5.0;
+            idPage = toiletRepository.findIdsWithinRadiusWithSpecs(
+                    lat, lng, r, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
+        } else {
+            idPage = toiletRepository.searchIdsBySpecs(
+                    facilityCategory, minCleanliness, keyword, publicUse, safeTypes, typeCount, pageable);
+        }
+
+        if (idPage.isEmpty()) {
+            return new PageImpl<>(new ArrayList<>(), pageable, idPage.getTotalElements());
+        }
+
+        List<Toilet> toilets = toiletRepository.findAllByIdWithEquipment(idPage.getContent());
+
+        Map<Long, Toilet> toiletMap = toilets.stream()
+                .collect(Collectors.toMap(Toilet::getId, Function.identity()));
+        List<Toilet> sortedToilets = idPage.getContent().stream()
+                .map(toiletMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(sortedToilets, pageable, idPage.getTotalElements());
+    }
+
+    public Toilet getToilet(Long id) {
+        Long safeId = Objects.requireNonNull(id, "ID must not be null");
+        return toiletRepository.findById(safeId)
+                .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", safeId));
+    }
+
+    public Toilet createToilet(Toilet toilet) {
+        if (toilet.getCleanliness() == null) {
+            toilet.setCleanliness(3);
+        }
+        
+        Toilet savedToilet = toiletRepository.save(toilet);
+        updateEquipmentList(savedToilet, toilet.getEquipmentInput());
+        return toiletRepository.save(savedToilet);
+    }
+
+    public Toilet updateToilet(Long id, Toilet details) {
+        Toilet toilet = getToilet(id);
+
+        Optional.ofNullable(details.getName()).filter(s -> !s.isBlank()).ifPresent(toilet::setName);
+        if (details.getAddress() != null) toilet.setAddress(details.getAddress());
+        if (details.getDescription() != null) toilet.setDescription(details.getDescription());
+        if (details.getImage() != null) toilet.setImage(details.getImage());
+        if (details.getFacilityCategory() != null) toilet.setFacilityCategory(details.getFacilityCategory());
+        if (details.getSource() != null) toilet.setSource(details.getSource());
+        if (details.getSourceUrl() != null) toilet.setSourceUrl(details.getSourceUrl());
+        if (details.getLastVerified() != null) toilet.setLastVerified(details.getLastVerified());
+        
+        Optional.ofNullable(details.getLat()).ifPresent(toilet::setLat);
+        Optional.ofNullable(details.getLng()).ifPresent(toilet::setLng);
+        Optional.ofNullable(details.getCleanliness()).ifPresent(toilet::setCleanliness);
+
+        if (details.getEquipmentInput() != null) {
+            updateEquipmentList(toilet, details.getEquipmentInput());
+        }
+
+        Optional.ofNullable(details.getPublicUse()).ifPresent(toilet::setPublicUse);
+        Optional.ofNullable(details.getTypePark()).ifPresent(toilet::setTypePark);
+        Optional.ofNullable(details.getTypeStation()).ifPresent(toilet::setTypeStation);
+        Optional.ofNullable(details.getTypeMall()).ifPresent(toilet::setTypeMall);
+
+        return toiletRepository.save(toilet);
+    }
+
+    public void deleteToilet(Long id) {
+        Long safeId = Objects.requireNonNull(id, "ID must not be null");
+        if (!toiletRepository.existsById(safeId)) {
+            throw new ResourceNotFoundException("トイレ", "id", safeId);
+        }
+        toiletRepository.deleteById(safeId);
+    }
+
+    // ★修正: 重複エラーを防ぐための差分同期ロジック
+    private void updateEquipmentList(Toilet toilet, List<String> inputs) {
+        if (inputs == null) return;
+        
+        // 入力された文字列を Enum のリストに変換
+        List<EquipmentType> newTypes = new ArrayList<>();
+        for (String typeStr : inputs) {
+            try {
+                newTypes.add(EquipmentType.valueOf(typeStr));
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        // 1. 古いリストから、新リストに含まれないものを削除
+        toilet.getEquipmentList().removeIf(e -> !newTypes.contains(e.getType()));
+
+        // 2. 現在のリストに残っている設備の Type を抽出
+        List<EquipmentType> currentTypes = toilet.getEquipmentList().stream()
+                .map(Equipment::getType)
+                .collect(Collectors.toList());
+
+        // 3. 新リストのうち、まだ登録されていないものだけを追加
+        for (EquipmentType type : newTypes) {
+            if (!currentTypes.contains(type)) {
+                toilet.addEquipment(type);
+            }
+        }
+    }
+
+    private List<EquipmentType> convertToEnumList(List<String> inputs) {
+        if (inputs == null || inputs.isEmpty()) return null;
+        List<EquipmentType> list = new ArrayList<>();
+        for (String s : inputs) {
+            try {
+                list.add(EquipmentType.valueOf(s));
+            } catch (IllegalArgumentException ignored) { }
+        }
+        return list.isEmpty() ? null : list;
+    }
+}
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
 package com.imatoilet.backend;
 
@@ -6858,96 +6858,6 @@ public class Toilet {
     public void addEquipment(EquipmentType type) {
         Equipment equipment = new Equipment(this, type);
         equipmentList.add(equipment);
-    }
-}
-</file>
-
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
-package com.imatoilet.backend;
-
-import com.imatoilet.backend.dto.ToiletUpdateDto;
-import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/toilets")
-public class ToiletApiController {
-
-    private final ToiletService toiletService;
-
-    public ToiletApiController(ToiletService toiletService) {
-        this.toiletService = toiletService;
-    }
-
-    @GetMapping
-    public ResponseEntity<Page<Toilet>> getToilets(
-            @RequestParam(required = false) Double lat,
-            @RequestParam(required = false) Double lng,
-            @RequestParam(required = false, defaultValue = "5.0") Double radius,
-            @RequestParam(required = false) String facilityCategory,
-            @RequestParam(required = false) Integer minCleanliness,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Boolean publicUse,
-            @RequestParam(required = false) List<String> equipment,
-            @PageableDefault(size = 50) Pageable pageable
-    ) {
-        Page<Toilet> results = toiletService.searchToilets(
-                lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
-        );
-        return ResponseEntity.ok(results);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
-        return ResponseEntity.ok(toiletService.getToilet(id));
-    }
-
-    @PostMapping
-    public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
-        Toilet saved = toiletService.createToilet(toilet);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
-    
-    @PutMapping("/{id}")
-    public ResponseEntity<Toilet> updateToilet(
-            @PathVariable Long id, 
-            @RequestBody @Valid ToiletUpdateDto dto) {
-        
-        Toilet toiletDetails = new Toilet();
-        toiletDetails.setName(dto.getName());
-        toiletDetails.setLat(dto.getLat());
-        toiletDetails.setLng(dto.getLng());
-        toiletDetails.setAddress(dto.getAddress());
-        toiletDetails.setDescription(dto.getDescription());
-        toiletDetails.setCleanliness(dto.getCleanliness());
-        toiletDetails.setImage(dto.getImage());
-        toiletDetails.setFacilityCategory(dto.getFacilityCategory());
-        toiletDetails.setEquipmentInput(dto.getEquipment());
-
-        toiletDetails.setSource(dto.getSource());
-        toiletDetails.setSourceUrl(dto.getSourceUrl());
-        toiletDetails.setLastVerified(dto.getLastVerified());
-
-        toiletDetails.setPublicUse(dto.getPublicUse());
-        toiletDetails.setTypePark(dto.getTypePark());
-        toiletDetails.setTypeStation(dto.getTypeStation());
-        toiletDetails.setTypeMall(dto.getTypeMall());
-
-        Toilet updated = toiletService.updateToilet(id, toiletDetails);
-        return ResponseEntity.ok(updated);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
-        toiletService.deleteToilet(id);
-        return ResponseEntity.noContent().build();
     }
 }
 </file>
@@ -7428,6 +7338,96 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
 export default MapPanel;
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.dto.ToiletUpdateDto;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/toilets")
+public class ToiletApiController {
+
+    private final ToiletService toiletService;
+
+    public ToiletApiController(ToiletService toiletService) {
+        this.toiletService = toiletService;
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<Toilet>> getToilets(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false, defaultValue = "5.0") Double radius,
+            @RequestParam(required = false) String facilityCategory,
+            @RequestParam(required = false) Integer minCleanliness,
+            @RequestParam(required = false, defaultValue = "") String keyword,
+            @RequestParam(required = false) Boolean publicUse,
+            @RequestParam(required = false) List<String> equipment,
+            @PageableDefault(size = 50) Pageable pageable
+    ) {
+        Page<Toilet> results = toiletService.searchToilets(
+                lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
+        );
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
+        return ResponseEntity.ok(toiletService.getToilet(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
+        Toilet saved = toiletService.createToilet(toilet);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<Toilet> updateToilet(
+            @PathVariable Long id, 
+            @RequestBody @Valid ToiletUpdateDto dto) {
+        
+        Toilet toiletDetails = new Toilet();
+        toiletDetails.setName(dto.getName());
+        toiletDetails.setLat(dto.getLat());
+        toiletDetails.setLng(dto.getLng());
+        toiletDetails.setAddress(dto.getAddress());
+        toiletDetails.setDescription(dto.getDescription());
+        toiletDetails.setCleanliness(dto.getCleanliness());
+        toiletDetails.setImage(dto.getImage());
+        toiletDetails.setFacilityCategory(dto.getFacilityCategory());
+        toiletDetails.setEquipmentInput(dto.getEquipment());
+
+        toiletDetails.setSource(dto.getSource());
+        toiletDetails.setSourceUrl(dto.getSourceUrl());
+        toiletDetails.setLastVerified(dto.getLastVerified());
+
+        toiletDetails.setPublicUse(dto.getPublicUse());
+        toiletDetails.setTypePark(dto.getTypePark());
+        toiletDetails.setTypeStation(dto.getTypeStation());
+        toiletDetails.setTypeMall(dto.getTypeMall());
+
+        Toilet updated = toiletService.updateToilet(id, toiletDetails);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
+        toiletService.deleteToilet(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
 <file path="toilet-frontend/src/hooks/useToiletSearch.js">
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -7629,7 +7629,7 @@ export const useToiletSearch = () => {
         if (currentLocation) {
           params.append('lat', currentLocation.lat);
           params.append('lng', currentLocation.lng);
-          params.append('radius', '5.0');
+          params.append('radius', '50.0');
         } else {
           if (currentPlaceQuery) params.append('keyword', currentPlaceQuery);
         }
@@ -7662,7 +7662,7 @@ export const useToiletSearch = () => {
         // ★追加・変更: ページネーションパラメータを明示的に付与
         // 現在は一覧に「さらに読み込む」ボタンがないため、一旦50件（十分な数）を取得します
         params.append('page', '0');
-        params.append('size', '50');
+        params.append('size', '50.0');
 
         const queryString = params.toString();
         const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
