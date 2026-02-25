@@ -19,7 +19,8 @@ function Search() {
     handleCurrentLocation,
     handleKeywordSearch,
     searchHistory,
-    handleHistorySearch
+    handleHistorySearch,
+    removeFromHistory
   } = useToiletSearch();
 
   return (
@@ -34,6 +35,7 @@ function Search() {
             handlePlaceSearch={handlePlaceSearch}
             searchHistory={searchHistory}
             handleHistorySearch={handleHistorySearch}
+            removeFromHistory={removeFromHistory}
           />
         </div>
 

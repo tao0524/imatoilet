@@ -82,6 +82,14 @@ export const useToiletSearch = () => {
     });
   };
 
+  const removeFromHistory = (queryToRemove) => {
+    setSearchHistory(prev => {
+      const newHistory = prev.filter(h => h !== queryToRemove);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+
   const handlePlaceSearch = (overrideQuery) => {
     const query = (typeof overrideQuery === 'string') ? overrideQuery : placeQuery;
     if (!query) return;
@@ -360,5 +368,6 @@ export const useToiletSearch = () => {
     handleKeywordSearch,
     searchHistory,
     handleHistorySearch,
+    removeFromHistory
   };
 };

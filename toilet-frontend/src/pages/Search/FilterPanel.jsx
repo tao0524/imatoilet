@@ -15,7 +15,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 
 function FilterPanel({
   placeQuery, setPlaceQuery, handleKeywordSearch, handleCurrentLocation,
-  handlePlaceSearch, searchHistory, handleHistorySearch
+  handlePlaceSearch, searchHistory, handleHistorySearch, removeFromHistory
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showHistory, setShowHistory] = useState(false);
@@ -76,18 +76,41 @@ function FilterPanel({
                   <span>過去の検索履歴</span>
                   <button className="history-close-btn" onClick={() => setShowHistory(false)}>✕</button>
                 </div>
+
                 <div className="history-list">
                   {searchHistory.map((hist, idx) => (
                     <div
                       key={idx}
                       className="history-item"
-                      onClick={() => { handleHistorySearch(hist); setShowHistory(false); }}
+                      style={{ display: 'flex', justifyContent: 'space-between', padding: '0' }}
                     >
-                      <HistoryIcon fontSize="small" color="action" />
-                      {hist}
+                      {/* 左側：クリックで検索実行 */}
+                      <div 
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '12px 14px' }}
+                        onClick={() => { handleHistorySearch(hist); setShowHistory(false); }}
+                      >
+                        <HistoryIcon fontSize="small" color="action" />
+                        {hist}
+                      </div>
+
+                      {/* 右側：削除ボタン */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // 親のクリックイベント（検索実行）を防ぐ
+                          removeFromHistory(hist);
+                        }}
+                        style={{
+                          background: 'transparent', border: 'none', color: '#ccc', cursor: 'pointer',
+                          padding: '0 14px', fontSize: '1.2rem'
+                        }}
+                        title="履歴を削除"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
+
                 <div className="history-footer desktop-only" onClick={() => setShowHistory(false)}>
                   閉じる
                 </div>
