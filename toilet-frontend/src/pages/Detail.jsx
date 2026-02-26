@@ -38,6 +38,10 @@ function Detail() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
+  const [reviews, setReviews] = useState([]);
+  const [reviewForm, setReviewForm] = useState({ nickname: '', rating: 5, comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   useEffect(() => {
     async function fetchToilet() {
       if (id.startsWith('u_')) {
@@ -63,9 +67,51 @@ function Detail() {
     }
     fetchToilet();
 
+    async function fetchReviews() {
+      if (id.startsWith('u_')) return; // ローカルデータは除外
+      try {
+        const res = await fetch(`${API_BASE_URL}/${id}/reviews`);
+        if (res.ok) {
+          setReviews(await res.json());
+        }
+      } catch (error) {
+        console.error('Review fetch error:', error);
+      }
+    }
+    fetchReviews();
+
     const favs = JSON.parse(localStorage.getItem('imatoilet_favorites') || '[]');
     setIsFavorite(favs.includes(id));
   }, [id]);
+
+  // --- ▼▼▼ ここから追加 (レビュー送信処理) ▼▼▼ ---
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (id.startsWith('u_')) return;
+    setSubmittingReview(true);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/${id}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewForm),
+      });
+
+      if (res.ok) {
+        const newReview = await res.json();
+        setReviews([newReview, ...reviews]); // 一番上に追加
+        setReviewForm({ nickname: '', rating: 5, comment: '' }); // フォームリセット
+        alert('レビューを投稿しました！');
+      } else {
+        alert('レビューの投稿に失敗しました。入力内容を確認してください。');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('通信エラーが発生しました。');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const toggleFavorite = () => {
     let favs = JSON.parse(localStorage.getItem('imatoilet_favorites') || '[]');
@@ -266,6 +312,7 @@ function Detail() {
               </div>
             )}
 
+            
             {/* 削除ボタン */}
             <div style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px', textAlign: 'center' }}>
               <button
@@ -281,6 +328,97 @@ function Detail() {
             </div>
           </div>
         </div>
+
+        {/* =========================================================
+            ▼ここから移動＆追加：レビューセクションを独立したカードにする▼ 
+            ========================================================= */}
+        {!id.startsWith('u_') && (
+          <div className="detail-card" style={{ marginTop: '24px' }}>
+            <div className="detail-content">
+              <h3>みんなのレビュー ({reviews.length}件)</h3>
+              
+              {/* レビュー投稿フォーム */}
+              <form onSubmit={handleReviewSubmit} style={{ background: '#f9f9f9', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #eee' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#555' }}>レビューを投稿する</h4>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#666' }}>評価</label>
+                  <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <div key={star} onClick={() => setReviewForm({ ...reviewForm, rating: star })}>
+                        {star <= reviewForm.rating 
+                          ? <StarIcon sx={{ color: '#ffb400', fontSize: 28 }} /> 
+                          : <StarBorderIcon sx={{ color: '#ccc', fontSize: 28 }} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#666' }}>ニックネーム (任意)</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="匿名"
+                    value={reviewForm.nickname} 
+                    onChange={(e) => setReviewForm({ ...reviewForm, nickname: e.target.value })}
+                    style={{ padding: '8px 12px', fontSize: '0.95rem' }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#666' }}>コメント (任意)</label>
+                  <textarea 
+                    className="textarea" 
+                    rows="3" 
+                    placeholder="清潔でした、混んでいました等"
+                    value={reviewForm.comment} 
+                    onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                    style={{ padding: '8px 12px', fontSize: '0.95rem' }}
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  disabled={submittingReview}
+                  style={{ padding: '10px', fontSize: '0.95rem', minHeight: 'auto' }}
+                >
+                  {submittingReview ? '送信中...' : '投稿する'}
+                </button>
+              </form>
+
+              {/* レビュー一覧表示 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {reviews.length === 0 ? (
+                  <p style={{ color: '#888', fontSize: '0.9rem', textAlign: 'center', padding: '20px 0' }}>まだレビューがありません。</p>
+                ) : (
+                  reviews.map((rev) => (
+                    <div key={rev.id} style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#333' }}>
+                          {rev.nickname}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', color: '#999' }}>
+                          {new Date(rev.createdAt).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+                      <div style={{ color: '#ffb400', fontSize: '1rem', marginBottom: '8px', letterSpacing: '1px' }}>
+                        {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
+                      </div>
+                      {rev.comment && (
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#555', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                          {rev.comment}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ▲ ここまで ▲ */}
       </div>
 
       {/* ライトボックス */}

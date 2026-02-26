@@ -80,6 +80,12 @@ public class Toilet {
     @EqualsAndHashCode.Exclude
     private List<Equipment> equipmentList = new ArrayList<>();
 
+    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Review> reviews = new ArrayList<>();
+
     @JsonProperty(value = "equipment", access = JsonProperty.Access.READ_ONLY)
     public List<String> getEquipmentNames() {
         if (equipmentList == null) return new ArrayList<>();
