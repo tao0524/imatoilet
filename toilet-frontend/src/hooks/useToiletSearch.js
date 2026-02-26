@@ -7,9 +7,7 @@ const HISTORY_KEY = 'imatoilet_search_history';
 
 export const useToiletSearch = () => {
   const [searchParams] = useSearchParams();
-
   const [filteredToilets, setFilteredToilets] = useState([]);
-
   const hasInitialized = useRef(false);
   const placeQueryRef = useRef('');
 
@@ -41,6 +39,9 @@ export const useToiletSearch = () => {
 
   const [searchHistory, setSearchHistory] = useState([]);
   const [searchTrigger, setSearchTrigger] = useState(0);
+  
+  // ★ここを追加：選択されたトイレのIDを管理
+  const [selectedToiletId, setSelectedToiletId] = useState(null); 
 
   useEffect(() => { placeQueryRef.current = placeQuery; }, [placeQuery]);
 
@@ -70,7 +71,6 @@ export const useToiletSearch = () => {
     if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
       handleCurrentLocation();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addToHistory = (query) => {
@@ -236,8 +236,6 @@ export const useToiletSearch = () => {
           }
         });
 
-        // ★追加・変更: ページネーションパラメータを明示的に付与
-        // 現在は一覧に「さらに読み込む」ボタンがないため、一旦50件（十分な数）を取得します
         params.append('page', '0');
         params.append('size', '100');
 
@@ -248,7 +246,6 @@ export const useToiletSearch = () => {
         
         if (res.ok) {
           const data = await res.json();
-          // ★修正: バックエンドが返す Page<Toilet> の中から .content (配列) を取り出す
           apiData = data.content || []; 
         } else {
           console.error('API Error');
@@ -257,7 +254,6 @@ export const useToiletSearch = () => {
         console.error('Fetch Error', e);
       }
 
-      // ローカルデータとのマージ
       const localAll = loadUserToilets();
       let localData = [];
       if (isLocationSearch && currentLocation) {
@@ -317,7 +313,6 @@ export const useToiletSearch = () => {
         return true;
       });
 
-      // キーワード絞り込み（ローカルデータ対象）
       if (isKeywordSearch && currentPlaceQuery) {
         const lowerQ = currentPlaceQuery.toLowerCase();
         result = result.filter(t =>
@@ -327,14 +322,12 @@ export const useToiletSearch = () => {
         );
       }
 
-      // 距離順ソート
       if (currentLocation) {
         result = result
           .map(t => ({ ...t, distance: calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng) }))
           .sort((a, b) => a.distance - b.distance);
       }
 
-      // 重複除去
       const seenIds = new Set();
       const uniqueResult = result.filter(item => {
         if (seenIds.has(item.id)) return false;
@@ -368,6 +361,8 @@ export const useToiletSearch = () => {
     handleKeywordSearch,
     searchHistory,
     handleHistorySearch,
-    removeFromHistory
+    removeFromHistory,
+    selectedToiletId,     // ★追加: 戻り値
+    setSelectedToiletId   // ★追加: 戻り値
   };
 };

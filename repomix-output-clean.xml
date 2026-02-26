@@ -147,11 +147,6 @@ update.json
 <files>
 This section contains the contents of the repository's files.
 
-<file path="backend/backend/powershell.cmd">
-@echo off
-pwsh %*
-</file>
-
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
 *.cmd text eol=crlf
@@ -191,12 +186,6 @@ build/
 
 ### VS Code ###
 .vscode/
-</file>
-
-<file path="backend/backend/.mvn/wrapper/maven-wrapper.properties">
-wrapperVersion=3.3.4
-distributionType=bin
-distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.12/apache-maven-3.9.12-bin.zip
 </file>
 
 <file path="backend/backend/mvnw">
@@ -687,6 +676,11 @@ try {
 }
 
 Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+</file>
+
+<file path="backend/backend/powershell.cmd">
+@echo off
+pwsh %*
 </file>
 
 <file path="backend/backend/src/main/java/com/imatoilet/backend/BackendApplication.java">
@@ -2653,6 +2647,12 @@ afterAll(() => server.close());
 }
 </file>
 
+<file path="backend/backend/.mvn/wrapper/maven-wrapper.properties">
+wrapperVersion=3.3.4
+distributionType=bin
+distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.12/apache-maven-3.9.12-bin.zip
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/Equipment.java">
 package com.imatoilet.backend;
 
@@ -3402,7 +3402,7 @@ app.admin.token=test-admin-token
 </file>
 
 <file path="toilet-frontend/src/App.jsx">
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Search from './pages/Search';
@@ -3410,18 +3410,21 @@ import Detail from './pages/Detail';
 import Favorites from './pages/Favorites';
 import Register from './pages/Register';
 import Conditions from './pages/Conditions';
-import Edit from './pages/Edit'; // ★追加
+import Edit from './pages/Edit';
 
 function App() {
+  const { pathname } = useLocation();
+  const isHome = pathname === '/';
+
   return (
     <>
-      <Header />
+      {isHome && <Header />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
         <Route path="/conditions" element={<Conditions />} />
         <Route path="/detail/:id" element={<Detail />} />
-        <Route path="/edit/:id" element={<Edit />} /> {/* ★追加 */}
+        <Route path="/edit/:id" element={<Edit />} />
         <Route path="/favorites" element={<Favorites />} />
         <Route path="/register" element={<Register />} />
       </Routes>
@@ -3789,323 +3792,6 @@ export default function ToiletForm({
       </div>
     </main>
   );
-}
-</file>
-
-<file path="toilet-frontend/src/index.css">
-/* =========================================
-   css/pages/index.css
-   トップページ専用スタイル（スマホ・PC共通）
-========================================= */
-
-/* --- 全体のレイアウト調整 --- */
-body {
-  background-color: #f9f9f9; /* 全体の背景色 */
-}
-
-.top-main {
-  padding: 30px 0 60px;
-  min-height: 80vh; /* 画面の高さを確保 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* --- 1. ヘッダー（ロゴ） --- */
-.site-header {
-  padding: 15px 0;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-}
-
-.logo {
-  font-weight: 800;
-  font-size: 1.4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center; /* スマホは中央寄せ */
-  color: #333;
-}
-
-.logo-icon {
-  font-size: 1.8rem;
-  margin: 0 4px;
-}
-.logo-now {
-  background-color: #1e88e5; 
-  color: #fff;               
-  font-size: 0.9em;          
-  padding: 2px 8px;          
-  border-radius: 6px;        
-  margin-right: 6px;         
-  transform: translateY(3px); 
-}
-.logo-main { color: #1e88e5; }
-
-
-/* --- 2. ヒーローエリア（キャッチコピー） --- */
-.hero {
-  text-align: center;
-  /* マージンやパディングも可変にして、狭い画面での圧迫感を減らす */
-  margin-bottom: clamp(20px, 4vw, 40px);
-  padding-top: clamp(10px, 3vw, 30px);
-}
-
-.catch {
-  /* スマホ 1.8rem -> PC 3.2rem まで滑らかに拡大 */
-  font-size: clamp(1.8rem, 5vw, 3.2rem);
-  font-weight: 800;
-  line-height: 1.4;
-  color: #1e88e5;
-  margin-bottom: clamp(16px, 3vw, 24px);
-}
-
-.sub {
-  /* スマホ 0.95rem -> PC 1.2rem まで滑らかに拡大 */
-  font-size: clamp(0.95rem, 2vw, 1.2rem);
-  color: #546e7a;
-  line-height: 1.6;
-  font-weight: bold;
-}
-
-.hero-img {
-  /* スマホ 120px -> PC 260px まで滑らかに拡大 */
-  width: clamp(120px, 20vw, 260px);
-  height: auto;
-  margin: 20px auto 0;
-  display: block;
-  opacity: 0.9;
-}
-
-
-/* --- 3. アクションエリア（ボタン群） --- */
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 400px;
-  margin: 0 auto; /* 中央寄せ */
-  width: 100%;
-}
-
-.btn-primary, .btn-secondary {
-  padding: 18px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  text-align: center;
-  border-radius: 12px;
-}
-
-.sub-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.sub-actions .btn {
-  flex: 1; /* 等幅にする */
-  font-size: 0.9rem;
-  padding: 12px;
-  text-align: center;
-}
-
-.btn.btn-register {
-  background-color: #fff;
-  color: #1e88e5;
-  border: 2px solid #1e88e5; 
-  margin-top: 10px;
-  text-align: center;
-}
-.register-note {
-  text-align: center;
-  font-size: 0.75rem;
-  color: #888;
-  margin-top: -10px; 
-  margin-bottom: 20px;
-}
-
-
-/* --- 4. 使い方エリア --- */
-.howto {
-  margin-top: 60px;
-  background: #fff;
-  padding: 40px 20px;
-  border-radius: 20px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-}
-
-.howto-title {
-  text-align: center;
-  font-size: 1.4rem;
-  color: #333;
-  margin-bottom: 30px;
-  font-weight: bold;
-}
-
-.howto-steps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.howto-steps li {
-  display: flex;
-  gap: 15px;
-  padding: 10px;
-  border-bottom: 1px solid #f0f0f0;
-}
-.howto-steps li:last-child {
-  border-bottom: none;
-}
-
-.step-num {
-  background: #e3f2fd;
-  color: #1e88e5;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  flex-shrink: 0; 
-}
-
-.step-head {
-  font-weight: bold;
-  margin-bottom: 4px;
-  color: #333;
-}
-.step-text {
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.5;
-}
-
-.howto-cta {
-  text-align: center;
-  margin-top: 30px;
-}
-.howto-toplink {
-  display: block;
-  margin-top: 20px;
-  color: #999;
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-.howto-note {
-  margin-top: 20px;
-  font-size: 0.8rem;
-  color: #aaa;
-  text-align: center;
-}
-
-
-/* =========================================
-   ★PC用レイアウト（画面幅900px以上）
-========================================= */
-@media (min-width: 900px) {
-
-  body {
-    background-color: #f0f4f8; 
-  }
-
-  .site-header .container {
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-  .logo {
-    justify-content: flex-start; 
-  }
-
-  .top-main .container {
-    display: grid;
-    grid-template-columns: 1fr 400px; 
-    gap: 60px;
-    align-items: center; 
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-
-  .hero {
-    grid-column: 1 / 2; 
-    text-align: left;   
-    padding-top: 0;
-    margin-bottom: 0;
-    
-    /* Flexboxで縦に並べつつ、配置を制御 */
-    display: flex;
-    flex-direction: column; 
-    align-items: flex-start; 
-  }
-
-  .catch {
-    width: 100%; 
-  }
-  
-  .sub {
-    max-width: 100%; 
-    margin-bottom: 20px;
-  }
-
-  .hero-img {
-    position: static; 
-    margin-top: 10px;
-    margin-left: auto; 
-    align-self: flex-end; 
-    opacity: 1;
-  }
-
-  .actions {
-    grid-column: 2 / 3; 
-    background: #fff;
-    padding: 40px;
-    border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(30, 136, 229, 0.15); 
-  }
-
-  .howto {
-    grid-column: 1 / -1; 
-    margin-top: 80px;
-    background: none;    
-    box-shadow: none;
-    padding: 0;
-  }
-
-  .howto-title {
-    font-size: 1.8rem;
-    margin-bottom: 40px;
-  }
-
-  .howto-steps {
-    flex-direction: row; 
-    gap: 20px;
-  }
-
-  .howto-steps li {
-    flex: 1; 
-    flex-direction: column; 
-    align-items: center;
-    text-align: center;
-    background: #fff;
-    padding: 30px 20px;
-    border-radius: 16px;
-    border: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  }
-
-  .step-num {
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-  }
-  
-  .howto-cta {
-    display: none; 
-  }
 }
 </file>
 
@@ -4883,6 +4569,331 @@ a:focus-visible {
 }
 </file>
 
+<file path="toilet-frontend/src/index.css">
+/* =========================================
+   css/pages/index.css
+   トップページ専用スタイル（スマホ・PC共通）
+========================================= */
+
+/* --- 全体のレイアウト調整 --- */
+body {
+  background-color: #f9f9f9; /* 全体の背景色 */
+}
+
+.top-main {
+  padding: 30px 0 60px;
+  min-height: 80vh; /* 画面の高さを確保 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* --- 1. ヘッダー（ロゴ） --- */
+.site-header {
+  padding: 15px 0;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* スマホは中央寄せ */
+  color: #333;
+}
+
+.logo-icon {
+  font-size: 1.8rem;
+  margin: 0 4px;
+}
+.logo-now {
+  background-color: #1e88e5; 
+  color: #fff;               
+  font-size: 0.9em;          
+  padding: 2px 8px;          
+  border-radius: 6px;        
+  margin-right: 6px;         
+  transform: translateY(3px); 
+}
+.logo-main { color: #1e88e5; }
+
+
+/* --- 2. ヒーローエリア（キャッチコピー） --- */
+.hero {
+  text-align: center;
+  /* マージンやパディングも可変にして、狭い画面での圧迫感を減らす */
+  margin-bottom: clamp(20px, 4vw, 40px);
+  padding-top: clamp(10px, 3vw, 30px);
+}
+
+.catch {
+  /* スマホ 1.8rem -> PC 3.2rem まで滑らかに拡大 */
+  font-size: clamp(1.8rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.4;
+  color: #1e88e5;
+  margin-bottom: clamp(16px, 3vw, 24px);
+}
+
+.sub {
+  /* スマホ 0.95rem -> PC 1.2rem まで滑らかに拡大 */
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+  color: #546e7a;
+  line-height: 1.6;
+  font-weight: bold;
+}
+
+.hero-img {
+  /* スマホ 120px -> PC 260px まで滑らかに拡大 */
+  width: clamp(120px, 20vw, 260px);
+  height: auto;
+  margin: 20px auto 0;
+  display: block;
+  opacity: 0.9;
+}
+
+
+/* --- 3. アクションエリア（ボタン群） --- */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+  margin: 0 auto; /* 中央寄せ */
+  width: 100%;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 18px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 12px;
+}
+
+.sub-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sub-actions .btn {
+  flex: 1; /* 等幅にする */
+  font-size: 0.9rem;
+  padding: 12px;
+  text-align: center;
+}
+
+.btn.btn-register {
+  background-color: #fff;
+  color: #1e88e5;
+  border: 2px solid #1e88e5; 
+  margin-top: 10px;
+  text-align: center;
+}
+.register-note {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: -10px; 
+  margin-bottom: 20px;
+}
+
+
+/* --- 4. 使い方エリア --- */
+.howto {
+  margin-top: 60px;
+  background: #fff;
+  padding: 40px 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.howto-title {
+  text-align: center;
+  font-size: 1.4rem;
+  color: #333;
+  margin-bottom: 30px;
+  font-weight: bold;
+}
+
+.howto-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.howto-steps li {
+  display: flex;
+  gap: 15px;
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.howto-steps li:last-child {
+  border-bottom: none;
+}
+
+.step-num {
+  background: #e3f2fd;
+  color: #1e88e5;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0; 
+}
+
+.step-head {
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #333;
+}
+.step-text {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.howto-cta {
+  text-align: center;
+  margin-top: 30px;
+}
+.howto-toplink {
+  display: block;
+  margin-top: 20px;
+  color: #999;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.howto-note {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: #aaa;
+  text-align: center;
+}
+
+
+/* =========================================
+   ★PC用レイアウト（画面幅900px以上）
+========================================= */
+@media (min-width: 900px) {
+
+  body {
+    background-color: #f0f4f8; 
+  }
+
+  .site-header .container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .logo {
+    justify-content: flex-start; 
+  }
+
+  .top-main .container {
+    display: grid;
+    grid-template-columns: 1fr 400px; 
+    gap: 60px;
+    align-items: center; 
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .hero {
+    grid-column: 1 / 2; 
+    text-align: left;   
+    padding-top: 0;
+    margin-bottom: 0;
+    
+    /* Flexboxで縦に並べつつ、配置を制御 */
+    display: flex;
+    flex-direction: column; 
+    align-items: flex-start; 
+  }
+
+  .catch {
+    width: 100%; 
+  }
+  
+  .sub {
+    max-width: 100%; 
+    margin-bottom: 20px;
+  }
+
+  .hero-img {
+    position: static; 
+    margin-top: 10px;
+    margin-left: auto; 
+    align-self: flex-end; 
+    opacity: 1;
+  }
+
+  .actions {
+    grid-column: 2 / 3; 
+    background: #fff;
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(30, 136, 229, 0.15); 
+  }
+
+  .howto {
+    grid-column: 1 / -1; 
+    margin-top: 80px;
+    background: none;    
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .howto-title {
+    font-size: 1.4rem;
+    margin-bottom: 24px;
+  }
+
+  .howto-steps {
+    flex-direction: row; 
+    gap: 16px;
+  }
+
+  .howto-steps li {
+    flex: 1; 
+    flex-direction: column; 
+    align-items: center;
+    text-align: center;
+    background: #fff;
+    padding: 20px 16px;
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+
+  .step-num {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  .step-head {
+    font-size: 0.95rem;
+  }
+  
+  .step-text {
+    font-size: 0.85rem;
+  }
+  
+  .howto-cta {
+    display: none; 
+  }
+}
+</file>
+
 <file path="toilet-frontend/src/pages/Conditions.jsx">
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -5282,255 +5293,6 @@ function Home() {
 export default Home;
 </file>
 
-<file path="toilet-frontend/src/pages/Search/FilterPanel.jsx">
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-
-import SearchIcon from '@mui/icons-material/Search';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
-import MapIcon from '@mui/icons-material/Map';
-import CheckIcon from '@mui/icons-material/Check';
-import HistoryIcon from '@mui/icons-material/History';
-import TrainIcon from '@mui/icons-material/Train';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import ParkIcon from '@mui/icons-material/Park';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import HotelIcon from '@mui/icons-material/Hotel';
-import CategoryIcon from '@mui/icons-material/Category';
-
-function FilterPanel({
-  placeQuery, setPlaceQuery, handleKeywordSearch, handleCurrentLocation,
-  handlePlaceSearch, searchHistory, handleHistorySearch
-}) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [showHistory, setShowHistory] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const historyRef = useRef(null);
-
-  // 履歴ポップアップの外クリック・Escで閉じる
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (historyRef.current && !historyRef.current.contains(e.target)) setShowHistory(false);
-    };
-    const handleKeyDown = (e) => { if (e.key === 'Escape') setShowHistory(false); };
-
-    if (showHistory) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showHistory]);
-
-  const updateParam = (key, value) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value === null || value === false || value === '') newParams.delete(key);
-    else newParams.set(key, String(value));
-    setSearchParams(newParams);
-  };
-
-  const getBoolParam = (key) => searchParams.get(key) === 'true';
-  const getStrParam  = (key) => searchParams.get(key) || '';
-
-  return (
-    <aside className="filter-panel">
-
-      {/* 1. キーワード・場所検索エリア */}
-      <section className="filter-section filter-section-top">
-        <h3 className="filter-title desktop-only">場所・キーワード</h3>
-
-        <div className="search-box-group" style={{ position: 'relative' }} ref={historyRef}>
-          <input
-            type="search"
-            className="input-search-side"
-            placeholder="場所や施設名を入力"
-            value={placeQuery}
-            onChange={(e) => setPlaceQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()}
-            onFocus={() => setShowHistory(true)}
-          />
-
-          {/* 履歴ポップアップ */}
-          {showHistory && searchHistory && searchHistory.length > 0 && (
-            <>
-              <div className="history-backdrop" onClick={() => setShowHistory(false)} />
-              <div className="history-popup">
-                <div className="history-popup-header">
-                  <span>過去の検索履歴</span>
-                  <button className="history-close-btn" onClick={() => setShowHistory(false)}>✕</button>
-                </div>
-                <div className="history-list">
-                  {searchHistory.map((hist, idx) => (
-                    <div
-                      key={idx}
-                      className="history-item"
-                      onClick={() => { handleHistorySearch(hist); setShowHistory(false); }}
-                    >
-                      <HistoryIcon fontSize="small" color="action" />
-                      {hist}
-                    </div>
-                  ))}
-                </div>
-                <div className="history-footer desktop-only" onClick={() => setShowHistory(false)}>
-                  閉じる
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="search-actions">
-            <button className="btn-icon-side desktop-only-btn" onClick={handleKeywordSearch} title="リスト内をキーワード検索">
-              <SearchIcon fontSize="small" />
-            </button>
-            <button className="btn-icon-side desktop-only-btn" onClick={handlePlaceSearch} title="地図移動">
-              <MapIcon fontSize="small" />
-            </button>
-            <button className="btn-icon-side btn-location" onClick={handleCurrentLocation} title="現在地">
-              <MyLocationIcon fontSize="small" className="loc-icon" />
-              <span className="loc-text">現在地</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* スマホ用アコーディオン開閉ボタン */}
-      <button className="mobile-toggle-btn" onClick={() => setIsOpen(!isOpen)}>
-        {isOpen ? '▲ 詳細条件を閉じる' : '▼ 詳細条件を開く'}
-      </button>
-
-      <div className={`accordion-content ${isOpen ? 'open' : ''}`}>
-
-        {/* 2. 施設タイプ */}
-        <section className="filter-section">
-          <h3 className="filter-title">詳細条件（施設）</h3>
-          <div className="radio-group-vertical">
-            <label className={`radio-row ${getStrParam('facilityCategory') === '' ? 'active' : ''}`}>
-              <input type="radio" name="cat" checked={getStrParam('facilityCategory') === ''} onChange={() => updateParam('facilityCategory', '')} />
-              <span className="radio-icon">🏠</span> 指定なし
-            </label>
-
-            {[
-              { val: 'station',       label: '駅・交通',  icon: <TrainIcon fontSize="inherit" /> },
-              { val: 'commercial',    label: '商業施設',  icon: <StorefrontIcon fontSize="inherit" /> },
-              { val: 'park',          label: '公園・屋外', icon: <ParkIcon fontSize="inherit" /> },
-              { val: 'public',        label: '公共施設',  icon: <CategoryIcon fontSize="inherit" /> },
-              { val: 'medical',       label: '医療・福祉', icon: <LocalHospitalIcon fontSize="inherit" /> },
-              { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="inherit" /> },
-            ].map(opt => (
-              <label key={opt.val} className={`radio-row ${getStrParam('facilityCategory') === opt.val ? 'active' : ''}`}>
-                <input type="radio" name="cat" checked={getStrParam('facilityCategory') === opt.val} onChange={() => updateParam('facilityCategory', opt.val)} />
-                <span className="radio-icon">{opt.icon}</span> {opt.label}
-              </label>
-            ))}
-          </div>
-        </section>
-
-        {/* 3. 設備・条件 */}
-        <section className="filter-section" style={{ borderBottom: 'none', marginBottom: 0 }}>
-          <div className="check-group-vertical">
-            <CheckRow label="オムツ交換台"   pKey="diaper"           icon="👶" checked={getBoolParam('diaper')}           onChange={updateParam} />
-            <CheckRow label="車椅子対応"     pKey="wheelchair"       icon="♿" checked={getBoolParam('wheelchair')}       onChange={updateParam} />
-            <CheckRow label="24時間営業"     pKey="open24h"          icon="🕒" checked={getBoolParam('open24h')}          onChange={updateParam} />
-            <CheckRow label="駐車場あり"     pKey="parking"          icon="🚗" checked={getBoolParam('parking')}          onChange={updateParam} />
-            <CheckRow label="オストメイト"   pKey="ostomate"         icon="➕" checked={getBoolParam('ostomate')}         onChange={updateParam} />
-            <CheckRow label="授乳室"         pKey="nursing_room"     icon="🍼" checked={getBoolParam('nursing_room')}     onChange={updateParam} />
-            {/* ★追加: ベビーチェア */}
-            <CheckRow label="ベビーチェア"   pKey="baby_chair"       icon="🪑" checked={getBoolParam('baby_chair')}       onChange={updateParam} />
-            <CheckRow label="ウォシュレット" pKey="washlet"          icon="🚽" checked={getBoolParam('washlet')}          onChange={updateParam} />
-            <CheckRow label="男女別"         pKey="gender_separated" icon="🚻" checked={getBoolParam('gender_separated')} onChange={updateParam} />
-            <CheckRow label="無料"           pKey="free"             icon="💰" checked={getBoolParam('free')}             onChange={updateParam} />
-          </div>
-        </section>
-
-        <button className="mobile-toggle-btn btn-bottom" onClick={() => setIsOpen(false)}>
-          ▲ 詳細条件を閉じる
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-function CheckRow({ label, pKey, icon, checked, onChange }) {
-  return (
-    <label className={`check-row ${checked ? 'checked' : ''}`}>
-      <div className="check-label-content">
-        {icon && <span className="check-icon">{icon}</span>}
-        <span className="check-text">{label}</span>
-      </div>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(pKey, e.target.checked)} />
-      <span className="toggle-switch" />
-    </label>
-  );
-}
-
-export default FilterPanel;
-</file>
-
-<file path="toilet-frontend/src/pages/Search/index.jsx">
-import { useNavigate } from 'react-router-dom';
-import { useToiletSearch } from '../../hooks/useToiletSearch';
-import MapPanel from './MapPanel';
-import ListPanel from './ListPanel';
-import FilterPanel from './FilterPanel';
-import '../../search.css';
-
-function Search() {
-  const navigate = useNavigate();
-  
-  const {
-    filteredToilets,
-    currentLocation,
-    realLocation, // ★追加: フックから受け取る
-    placeQuery,
-    setPlaceQuery,
-    searchStatus, 
-    handlePlaceSearch,
-    handleCurrentLocation,
-    handleKeywordSearch,
-    searchHistory,
-    handleHistorySearch
-  } = useToiletSearch();
-
-  return (
-    <main className="search-page-wrapper">
-      <div className="three-col-layout">
-        <div className="col-filter">
-          <FilterPanel 
-            placeQuery={placeQuery}
-            setPlaceQuery={setPlaceQuery}
-            handleKeywordSearch={handleKeywordSearch}
-            handleCurrentLocation={handleCurrentLocation}
-            handlePlaceSearch={handlePlaceSearch}
-            searchHistory={searchHistory}
-            handleHistorySearch={handleHistorySearch}
-          />
-        </div>
-
-        <div className="col-map">
-          {searchStatus && <div className="map-status-bar">{searchStatus}</div>}
-          <MapPanel 
-            filteredToilets={filteredToilets}
-            currentLocation={currentLocation}
-            realLocation={realLocation} // ★重要: MapPanelにこれを渡さないとGPS機能が動きません
-          />
-        </div>
-
-        <div className="col-list">
-          <ListPanel 
-            filteredToilets={filteredToilets}
-            currentLocation={currentLocation}
-          />
-        </div>
-      </div>
-    </main>
-  );
-}
-
-export default Search;
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/config/SecurityConfig.java">
 package com.imatoilet.backend.config;
 
@@ -5643,6 +5405,301 @@ app.admin.token=dev-admin-token-local
 spring.flyway.locations=classpath:db/migration-h2
 
 logging.level.org.flywaydb=INFO
+</file>
+
+<file path="toilet-frontend/src/pages/Search/FilterPanel.jsx">
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+import SearchIcon from '@mui/icons-material/Search';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import MapIcon from '@mui/icons-material/Map';
+import CheckIcon from '@mui/icons-material/Check';
+import HistoryIcon from '@mui/icons-material/History';
+import TrainIcon from '@mui/icons-material/Train';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ParkIcon from '@mui/icons-material/Park';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import HotelIcon from '@mui/icons-material/Hotel';
+import CategoryIcon from '@mui/icons-material/Category';
+
+function FilterPanel({
+  placeQuery, setPlaceQuery, handleKeywordSearch, handleCurrentLocation,
+  handlePlaceSearch, searchHistory, handleHistorySearch, removeFromHistory
+}) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showHistory, setShowHistory] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const historyRef = useRef(null);
+
+  // 履歴ポップアップの外クリック・Escで閉じる
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (historyRef.current && !historyRef.current.contains(e.target)) setShowHistory(false);
+    };
+    const handleKeyDown = (e) => { if (e.key === 'Escape') setShowHistory(false); };
+
+    if (showHistory) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showHistory]);
+
+  const updateParam = (key, value) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === null || value === false || value === '') newParams.delete(key);
+    else newParams.set(key, String(value));
+    setSearchParams(newParams);
+  };
+
+  const getBoolParam = (key) => searchParams.get(key) === 'true';
+  const getStrParam  = (key) => searchParams.get(key) || '';
+
+  return (
+    <aside className="filter-panel">
+
+      {/* 1. キーワード・場所検索エリア */}
+      <section className="filter-section filter-section-top">
+        <h3 className="filter-title desktop-only">場所・キーワード</h3>
+
+        <div className="search-box-group" style={{ position: 'relative' }} ref={historyRef}>
+          <input
+            type="search"
+            className="input-search-side"
+            placeholder="場所や施設名を入力"
+            value={placeQuery}
+            onChange={(e) => setPlaceQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()}
+            onFocus={() => setShowHistory(true)}
+          />
+
+          {/* 履歴ポップアップ */}
+          {showHistory && searchHistory && searchHistory.length > 0 && (
+            <>
+              <div className="history-backdrop" onClick={() => setShowHistory(false)} />
+              <div className="history-popup">
+                <div className="history-popup-header">
+                  <span>過去の検索履歴</span>
+                  <button className="history-close-btn" onClick={() => setShowHistory(false)}>✕</button>
+                </div>
+
+                <div className="history-list">
+                  {searchHistory.map((hist, idx) => (
+                    <div
+                      key={idx}
+                      className="history-item"
+                      style={{ display: 'flex', justifyContent: 'space-between', padding: '0' }}
+                    >
+                      {/* 左側：クリックで検索実行 */}
+                      <div 
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '12px 14px' }}
+                        onClick={() => { handleHistorySearch(hist); setShowHistory(false); }}
+                      >
+                        <HistoryIcon fontSize="small" color="action" />
+                        {hist}
+                      </div>
+
+                      {/* 右側：削除ボタン */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // 親のクリックイベント（検索実行）を防ぐ
+                          removeFromHistory(hist);
+                        }}
+                        style={{
+                          background: 'transparent', border: 'none', color: '#ccc', cursor: 'pointer',
+                          padding: '0 14px', fontSize: '1.2rem'
+                        }}
+                        title="履歴を削除"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="history-footer desktop-only" onClick={() => setShowHistory(false)}>
+                  閉じる
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="search-actions">
+            <button className="btn-icon-side desktop-only-btn" onClick={handleKeywordSearch} title="リスト内をキーワード検索">
+              <SearchIcon fontSize="small" />
+            </button>
+            <button className="btn-icon-side desktop-only-btn" onClick={handlePlaceSearch} title="地図移動">
+              <MapIcon fontSize="small" />
+            </button>
+            <button className="btn-icon-side btn-location" onClick={handleCurrentLocation} title="現在地">
+              <MyLocationIcon fontSize="small" className="loc-icon" />
+              <span className="loc-text">現在地</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* スマホ用アコーディオン開閉ボタン */}
+      <button className="mobile-toggle-btn" onClick={() => setIsOpen(!isOpen)}>
+        {isOpen ? '▲ 詳細条件を閉じる' : '▼ 詳細条件を開く'}
+      </button>
+
+      <div className={`accordion-content ${isOpen ? 'open' : ''}`}>
+
+        {/* 2. 施設タイプ */}
+        <section className="filter-section">
+          <h3 className="filter-title">詳細条件（施設）</h3>
+          <div className="radio-group-vertical">
+            <label className={`radio-row ${getStrParam('facilityCategory') === '' ? 'active' : ''}`}>
+              <input type="radio" name="cat" checked={getStrParam('facilityCategory') === ''} onChange={() => updateParam('facilityCategory', '')} />
+              <span className="radio-icon">🏠</span> 指定なし
+            </label>
+
+            {[
+              { val: 'station',       label: '駅・交通',  icon: <TrainIcon fontSize="inherit" /> },
+              { val: 'commercial',    label: '商業施設',  icon: <StorefrontIcon fontSize="inherit" /> },
+              { val: 'park',          label: '公園・屋外', icon: <ParkIcon fontSize="inherit" /> },
+              { val: 'public',        label: '公共施設',  icon: <CategoryIcon fontSize="inherit" /> },
+              { val: 'medical',       label: '医療・福祉', icon: <LocalHospitalIcon fontSize="inherit" /> },
+              { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="inherit" /> },
+            ].map(opt => (
+              <label key={opt.val} className={`radio-row ${getStrParam('facilityCategory') === opt.val ? 'active' : ''}`}>
+                <input type="radio" name="cat" checked={getStrParam('facilityCategory') === opt.val} onChange={() => updateParam('facilityCategory', opt.val)} />
+                <span className="radio-icon">{opt.icon}</span> {opt.label}
+              </label>
+            ))}
+          </div>
+        </section>
+
+        {/* 3. 設備・条件 */}
+        <section className="filter-section" style={{ borderBottom: 'none', marginBottom: 0 }}>
+          <div className="check-group-vertical">
+            <CheckRow label="オムツ交換台"   pKey="diaper"           icon="👶" checked={getBoolParam('diaper')}           onChange={updateParam} />
+            <CheckRow label="車椅子対応"     pKey="wheelchair"       icon="♿" checked={getBoolParam('wheelchair')}       onChange={updateParam} />
+            <CheckRow label="24時間営業"     pKey="open24h"          icon="🕒" checked={getBoolParam('open24h')}          onChange={updateParam} />
+            <CheckRow label="駐車場あり"     pKey="parking"          icon="🚗" checked={getBoolParam('parking')}          onChange={updateParam} />
+            <CheckRow label="オストメイト"   pKey="ostomate"         icon="➕" checked={getBoolParam('ostomate')}         onChange={updateParam} />
+            <CheckRow label="授乳室"         pKey="nursing_room"     icon="🍼" checked={getBoolParam('nursing_room')}     onChange={updateParam} />
+            {/* ★追加: ベビーチェア */}
+            <CheckRow label="ベビーチェア"   pKey="baby_chair"       icon="🪑" checked={getBoolParam('baby_chair')}       onChange={updateParam} />
+            <CheckRow label="ウォシュレット" pKey="washlet"          icon="🚽" checked={getBoolParam('washlet')}          onChange={updateParam} />
+            <CheckRow label="男女別"         pKey="gender_separated" icon="🚻" checked={getBoolParam('gender_separated')} onChange={updateParam} />
+            <CheckRow label="無料"           pKey="free"             icon="💰" checked={getBoolParam('free')}             onChange={updateParam} />
+          </div>
+        </section>
+
+        <button className="mobile-toggle-btn btn-bottom" onClick={() => setIsOpen(false)}>
+          ▲ 詳細条件を閉じる
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function CheckRow({ label, pKey, icon, checked, onChange }) {
+  return (
+    <label className={`check-row ${checked ? 'checked' : ''}`}>
+      <div className="check-label-content">
+        {icon && <span className="check-icon">{icon}</span>}
+        <span className="check-text">{label}</span>
+      </div>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(pKey, e.target.checked)} />
+      <span className="toggle-switch" />
+    </label>
+  );
+}
+
+export default FilterPanel;
+</file>
+
+<file path="toilet-frontend/src/pages/Search/index.jsx">
+import { useNavigate } from 'react-router-dom';
+import { useToiletSearch } from '../../hooks/useToiletSearch';
+import MapPanel from './MapPanel';
+import ListPanel from './ListPanel';
+import FilterPanel from './FilterPanel';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import '../../search.css';
+
+function Search() {
+  const navigate = useNavigate();
+  
+  const {
+    filteredToilets,
+    currentLocation,
+    realLocation,
+    placeQuery,
+    setPlaceQuery,
+    searchStatus, 
+    handlePlaceSearch,
+    handleCurrentLocation,
+    handleKeywordSearch,
+    searchHistory,
+    handleHistorySearch,
+    removeFromHistory,
+    selectedToiletId,      // ★追加
+    setSelectedToiletId    // ★追加
+  } = useToiletSearch();
+
+  return (
+    <main className="search-page-wrapper">
+
+      <div className="search-back-bar">
+        <button
+          className="search-back-btn"
+          onClick={() => navigate('/')}
+        >
+          <ArrowBackIcon fontSize="small" />
+          <span>トップに戻る</span>
+        </button>
+      </div>
+
+      {/* ★ ピン選択時は map-only-mode になる */}
+      <div className={`three-col-layout ${selectedToiletId ? 'map-only-mode' : ''}`}>
+        
+        {/* ピンが選択されている時は隠す */}
+        <div className={`col-filter ${selectedToiletId ? 'hidden' : ''}`}>
+          <FilterPanel 
+            placeQuery={placeQuery}
+            setPlaceQuery={setPlaceQuery}
+            handleKeywordSearch={handleKeywordSearch}
+            handleCurrentLocation={handleCurrentLocation}
+            handlePlaceSearch={handlePlaceSearch}
+            searchHistory={searchHistory}
+            handleHistorySearch={handleHistorySearch}
+            removeFromHistory={removeFromHistory}
+          />
+        </div>
+
+        <div className="col-map">
+          {/* ピンが選択されている時はステータスバーを隠す */}
+          {!selectedToiletId && searchStatus && <div className="map-status-bar">{searchStatus}</div>}
+          <MapPanel 
+            filteredToilets={filteredToilets}
+            currentLocation={currentLocation}
+            realLocation={realLocation}
+            selectedToiletId={selectedToiletId}     // ★追加
+            setSelectedToiletId={setSelectedToiletId} // ★追加
+          />
+        </div>
+
+        {/* ピンが選択されている時はリストを隠す */}
+        <div className={`col-list ${selectedToiletId ? 'hidden' : ''}`}>
+          <ListPanel 
+            filteredToilets={filteredToilets}
+            currentLocation={currentLocation}
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default Search;
 </file>
 
 <file path="toilet-frontend/package.json">
@@ -6755,6 +6812,83 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
   background: #e8f5e9;
   color: #2e7d32;
 }
+
+/* =========================================================
+   追記: ヘッダー削除に伴う高さ修正と戻るボタンバー
+========================================================= */
+
+/* ── ヘッダー分 (64px) のマイナスを解除し、画面全体を使用 ── */
+.search-page-wrapper {
+  height: 100vh !important; /* スマホのアドレスバー対策のため後に100dvhで上書き */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── カラムエリアは「戻るバー(40px)」の分だけ引く ── */
+.three-col-layout {
+  height: calc(100% - 40px) !important;
+}
+
+/* ── 新設した「戻るボタンバー」のスタイル ── */
+.search-back-bar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.search-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.search-back-btn:hover {
+  background: #f0f2f5;
+  color: #1e88e5;
+}
+
+/* スマホブラウザでの見切れ（アドレスバーの伸縮）対策 */
+@media (max-width: 768px) {
+  .search-page-wrapper {
+    height: 100dvh !important;
+  }
+}
+
+/* =========================================================
+   追記: ピン選択時に地図を全画面にするスタイル
+========================================================= */
+
+/* ピンが選択されている時はカラムの分割を解除し、地図だけに全振りする */
+.three-col-layout.map-only-mode {
+  grid-template-columns: 1fr !important;
+}
+
+/* 隠すよう指示されたパネルを完全に非表示にする */
+.col-filter.hidden, .col-list.hidden {
+  display: none !important;
+}
+
+/* スマホ表示時にリストが消えて下が白く空いてしまう現象を防ぐ */
+@media (max-width: 900px) {
+  .three-col-layout.map-only-mode .col-map {
+    height: 100% !important;
+    flex: 1 !important;
+  }
+}
 </file>
 
 <file path="toilet-frontend/src/utils.js">
@@ -7780,21 +7914,15 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import { SafeGoogleMap } from '../../components/SafeGoogleMap';
 import { Link } from 'react-router-dom';
-import { normalizeEquipment } from '../../utils'; // ★追加
+import { normalizeEquipment } from '../../utils'; 
 
 // アイコン
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
-import MapIcon from '@mui/icons-material/Map';
 
 const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
 const CONTAINER_STYLE = { width: '100%', height: '100%' };
 
-// =========================================================================
-// SVGピンアイコン生成関数
-// ★修正: utils.normalizeEquipment() を使用し、配列・CSV・旧フラグを一括処理
-// =========================================================================
 const getPinIcon = (toilet) => {
   let color = '#757575';
   let text = '🚽';
@@ -7808,7 +7936,6 @@ const getPinIcon = (toilet) => {
     default: break;
   }
 
-  // ★修正: normalizeEquipment() で配列・CSV文字列・旧フラグを一括正規化
   const eqSet = normalizeEquipment(toilet);
 
   const wheelchairBadge = eqSet.has('WHEELCHAIR') ? `
@@ -7827,9 +7954,6 @@ const getPinIcon = (toilet) => {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
-// =========================================================================
-// AdvancedMarkerElement を安全に呼び出すカスタムコンポーネント
-// =========================================================================
 const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
   const onClickRef = useRef(onClick);
 
@@ -7846,6 +7970,19 @@ const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocatio
       img.style.width = '44px';
       img.style.height = '52px';
       img.style.cursor = 'pointer';
+      img.style.pointerEvents = 'auto'; // ★クリックを確実に拾わせる設定
+
+      // ★DOMレベルでの直接クリック判定（スマホ対応強化）
+      img.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (onClickRef.current) onClickRef.current();
+      });
+      img.addEventListener('touchend', (e) => {
+        e.stopPropagation();
+        e.preventDefault(); // スクロール等の重複動作を防止
+        if (onClickRef.current) onClickRef.current();
+      });
+
       contentEl.appendChild(img);
     } else if (isCenter) {
       Object.assign(contentEl.style, {
@@ -7860,9 +7997,14 @@ const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocatio
     }
 
     const marker = new window.google.maps.marker.AdvancedMarkerElement({
-      map, position, title, content: contentEl,
+      map, 
+      position, 
+      title, 
+      content: contentEl,
+      gmpClickable: true // ★これがないとGoogle Maps APIがクリックを無視する
     });
 
+    // API経由でのクリックイベントも念のため監視
     const listener = marker.addListener('gmp-click', () => {
       if (onClickRef.current) onClickRef.current();
     });
@@ -7876,26 +8018,18 @@ const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocatio
   return null;
 };
 
-// =========================================================================
-// MapPanel 本体
-// =========================================================================
-function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
-  const [selectedToiletId, setSelectedToiletId] = useState(null);
+function MapPanel({ filteredToilets = [], currentLocation, realLocation, selectedToiletId, setSelectedToiletId }) {
   const [directionsResponse, setDirectionsResponse] = useState(null);
   const [routeInfo, setRouteInfo] = useState('');
   const [travelMode, setTravelMode] = useState('WALKING');
-  const [originMode, setOriginMode] = useState(realLocation ? 'GPS' : 'CENTER');
-
   const [map, setMap] = useState(null);
-
-  useEffect(() => { if (realLocation) setOriginMode('GPS'); }, [realLocation]);
 
   useEffect(() => {
     setSelectedToiletId(null);
     setDirectionsResponse(null);
     setRouteInfo('');
     setTravelMode('WALKING');
-  }, [currentLocation]);
+  }, [currentLocation, setSelectedToiletId]);
 
   const center = useMemo(() => {
     return currentLocation ? { lat: currentLocation.lat, lng: currentLocation.lng } : DEFAULT_CENTER;
@@ -7904,29 +8038,26 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
   const onMapLoad = useCallback((mapInstance) => { setMap(mapInstance); }, []);
 
   useEffect(() => {
-    if (map && currentLocation) {
+    if (map && currentLocation && !selectedToiletId) {
       map.panTo({ lat: currentLocation.lat, lng: currentLocation.lng });
     }
-  }, [currentLocation, map]);
+  }, [currentLocation, map, selectedToiletId]);
 
   const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
 
-  // フリーズ対策：トイレのピン生成数を制限
   const MARKER_LIMIT = 50;
   const markerToilets = useMemo(() => {
     if (!Array.isArray(filteredToilets)) return [];
     return filteredToilets.slice(0, MARKER_LIMIT);
   }, [filteredToilets]);
 
-  // ★InfoWindow用: 選択中トイレのequipmentを正規化 (selectedToilet変化時のみ再計算)
   const selectedEqSet = useMemo(() => {
     if (!selectedToilet) return new Set();
     return normalizeEquipment(selectedToilet);
   }, [selectedToilet]);
 
-  // --- ルート検索ロジック ---
   useEffect(() => {
-    const startPoint = (originMode === 'GPS' && realLocation) ? realLocation : currentLocation;
+    const startPoint = realLocation || currentLocation;
 
     if (selectedToilet && startPoint && window.google) {
       const directionsService = new window.google.maps.DirectionsService();
@@ -7964,53 +8095,13 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
       setDirectionsResponse(null);
       setRouteInfo('');
     }
-  }, [selectedToiletId, realLocation, selectedToilet, travelMode, originMode]);
+  }, [selectedToiletId, realLocation, currentLocation, selectedToilet, travelMode]);
 
   return (
     <section className="panel panel--map">
-      <header className="panel-head">
-        <h2 className="panel-title">地図</h2>
-      </header>
-
       <div className="map-area" style={{ position: 'relative' }}>
-
-        {selectedToilet && (
-          <div className="map-controls-overlay">
-            <div className="map-controls-row">
-              <button
-                className={`map-ctrl-btn ${travelMode === 'WALKING' ? 'active-walk' : ''}`}
-                onClick={() => setTravelMode('WALKING')}
-              >
-                <DirectionsWalkIcon fontSize="small" /> 徒歩
-              </button>
-              <button
-                className={`map-ctrl-btn ${travelMode === 'DRIVING' ? 'active-drive' : ''}`}
-                onClick={() => setTravelMode('DRIVING')}
-              >
-                <DirectionsCarIcon fontSize="small" /> 車
-              </button>
-            </div>
-            <div className="map-controls-row">
-              <button
-                className={`map-ctrl-btn ${originMode === 'GPS' ? 'active-gps' : ''}`}
-                disabled={!realLocation}
-                onClick={() => setOriginMode('GPS')}
-              >
-                <MyLocationIcon fontSize="small" /> 現在地から
-              </button>
-              <button
-                className={`map-ctrl-btn ${originMode === 'CENTER' ? 'active-center' : ''}`}
-                onClick={() => setOriginMode('CENTER')}
-              >
-                <MapIcon fontSize="small" /> 地図中心から
-              </button>
-            </div>
-          </div>
-        )}
-
         <SafeGoogleMap center={center} zoom={14} style={CONTAINER_STYLE} onLoad={onMapLoad}>
 
-          {/* 検索中心のピン */}
           {currentLocation && (
             <AdvancedMarker
               map={map}
@@ -8020,7 +8111,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
             />
           )}
 
-          {/* 現在地のピン */}
           {realLocation && (
             <AdvancedMarker
               map={map}
@@ -8030,7 +8120,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
             />
           )}
 
-          {/* ルート表示 */}
           {directionsResponse && (
             <DirectionsRenderer
               options={{
@@ -8045,7 +8134,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
             />
           )}
 
-          {/* トイレのピン */}
           {markerToilets.map((t) => (
             <AdvancedMarker
               key={t.id}
@@ -8057,40 +8145,59 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
             />
           ))}
 
-          {/* InfoWindow */}
           {selectedToilet && (
             <InfoWindow
               position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
               onCloseClick={() => setSelectedToiletId(null)}
               options={{ pixelOffset: new window.google.maps.Size(0, -52) }}
             >
-              <div style={{ padding: '4px', maxWidth: '220px' }}>
-                <b style={{ fontSize: '1rem', display: 'block', marginBottom: '4px' }}>
+              <div style={{ padding: '4px', maxWidth: '240px' }}>
+                <b style={{ fontSize: '1rem', display: 'block', marginBottom: '10px', textAlign: 'center' }}>
                   {selectedToilet.name}
                 </b>
 
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                  <button
+                    onClick={() => setTravelMode('WALKING')}
+                    style={{
+                      flex: 1, padding: '6px 0', border: '1px solid #1976d2', 
+                      background: travelMode === 'WALKING' ? '#1976d2' : '#fff',
+                      color: travelMode === 'WALKING' ? '#fff' : '#1976d2',
+                      borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                      fontWeight: 'bold', fontSize: '0.9rem'
+                    }}
+                  >
+                    <DirectionsWalkIcon fontSize="small" /> 徒歩
+                  </button>
+                  <button
+                    onClick={() => setTravelMode('DRIVING')}
+                    style={{
+                      flex: 1, padding: '6px 0', border: '1px solid #c62828', 
+                      background: travelMode === 'DRIVING' ? '#c62828' : '#fff',
+                      color: travelMode === 'DRIVING' ? '#fff' : '#c62828',
+                      borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                      fontWeight: 'bold', fontSize: '0.9rem'
+                    }}
+                  >
+                    <DirectionsCarIcon fontSize="small" /> 車
+                  </button>
+                </div>
+
                 {routeInfo && (
                   <div style={{
-                    background: travelMode === 'WALKING' ? '#e3f2fd' : '#ffebee',
-                    color: travelMode === 'WALKING' ? '#0d47a1' : '#c62828',
-                    padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem',
-                    fontWeight: 'bold', marginBottom: '8px',
-                    display: 'flex', alignItems: 'center', gap: '4px'
+                    background: '#f5f5f5', color: '#333',
+                    padding: '6px 8px', borderRadius: '4px', fontSize: '0.85rem',
+                    fontWeight: 'bold', marginBottom: '10px', textAlign: 'center'
                   }}>
-                    {travelMode === 'WALKING'
-                      ? <DirectionsWalkIcon fontSize="small" />
-                      : <DirectionsCarIcon fontSize="small" />
-                    }
-                    {routeInfo}
+                    ルート所要時間: {routeInfo}
                   </div>
                 )}
 
                 <div style={{ margin: '6px 0', fontSize: '0.85rem', color: '#444' }}>
-                  {'⭐'.repeat(selectedToilet.cleanliness || 3)}
+                  清潔度: {'⭐'.repeat(selectedToilet.cleanliness || 3)}
                 </div>
 
-                {/* ★修正: selectedEqSet (utils.normalizeEquipment) で全設備を統合表示 */}
-                <div style={{ marginBottom: '8px' }}>
+                <div style={{ marginBottom: '12px' }}>
                   {selectedEqSet.has('WHEELCHAIR')       && <span title="車椅子"        style={{ marginRight: 4 }}>♿</span>}
                   {selectedEqSet.has('DIAPER')           && <span title="オムツ"        style={{ marginRight: 4 }}>👶</span>}
                   {selectedEqSet.has('OPEN_24H')         && <span title="24時間"        style={{ marginRight: 4 }}>🕒</span>}
@@ -8106,23 +8213,12 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation }) {
                   to={`/detail/${selectedToilet.id}`}
                   style={{
                     display: 'block', textAlign: 'center', background: '#1e88e5',
-                    color: 'white', padding: '8px', borderRadius: '6px',
-                    textDecoration: 'none', fontSize: '0.9rem', fontWeight: 'bold'
+                    color: 'white', padding: '10px', borderRadius: '6px',
+                    textDecoration: 'none', fontSize: '0.95rem', fontWeight: 'bold'
                   }}
                 >
                   詳細を見る
                 </Link>
-
-                <a
-                  href={`https://www.google.com/maps?q=${selectedToilet.lat},${selectedToilet.lng}`}
-                  target="_blank" rel="noreferrer"
-                  style={{
-                    display: 'block', textAlign: 'center', marginTop: '8px',
-                    fontSize: '0.75rem', color: '#666', textDecoration: 'underline'
-                  }}
-                >
-                  Googleマップアプリで開く
-                </a>
               </div>
             </InfoWindow>
           )}
@@ -8265,9 +8361,7 @@ const HISTORY_KEY = 'imatoilet_search_history';
 
 export const useToiletSearch = () => {
   const [searchParams] = useSearchParams();
-
   const [filteredToilets, setFilteredToilets] = useState([]);
-
   const hasInitialized = useRef(false);
   const placeQueryRef = useRef('');
 
@@ -8299,6 +8393,9 @@ export const useToiletSearch = () => {
 
   const [searchHistory, setSearchHistory] = useState([]);
   const [searchTrigger, setSearchTrigger] = useState(0);
+  
+  // ★ここを追加：選択されたトイレのIDを管理
+  const [selectedToiletId, setSelectedToiletId] = useState(null); 
 
   useEffect(() => { placeQueryRef.current = placeQuery; }, [placeQuery]);
 
@@ -8328,13 +8425,20 @@ export const useToiletSearch = () => {
     if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
       handleCurrentLocation();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addToHistory = (query) => {
     if (!query) return;
     setSearchHistory(prev => {
       const newHistory = [query, ...prev.filter(h => h !== query)].slice(0, 5);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+
+  const removeFromHistory = (queryToRemove) => {
+    setSearchHistory(prev => {
+      const newHistory = prev.filter(h => h !== queryToRemove);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
       return newHistory;
     });
@@ -8486,8 +8590,6 @@ export const useToiletSearch = () => {
           }
         });
 
-        // ★追加・変更: ページネーションパラメータを明示的に付与
-        // 現在は一覧に「さらに読み込む」ボタンがないため、一旦50件（十分な数）を取得します
         params.append('page', '0');
         params.append('size', '100');
 
@@ -8498,7 +8600,6 @@ export const useToiletSearch = () => {
         
         if (res.ok) {
           const data = await res.json();
-          // ★修正: バックエンドが返す Page<Toilet> の中から .content (配列) を取り出す
           apiData = data.content || []; 
         } else {
           console.error('API Error');
@@ -8507,7 +8608,6 @@ export const useToiletSearch = () => {
         console.error('Fetch Error', e);
       }
 
-      // ローカルデータとのマージ
       const localAll = loadUserToilets();
       let localData = [];
       if (isLocationSearch && currentLocation) {
@@ -8567,7 +8667,6 @@ export const useToiletSearch = () => {
         return true;
       });
 
-      // キーワード絞り込み（ローカルデータ対象）
       if (isKeywordSearch && currentPlaceQuery) {
         const lowerQ = currentPlaceQuery.toLowerCase();
         result = result.filter(t =>
@@ -8577,14 +8676,12 @@ export const useToiletSearch = () => {
         );
       }
 
-      // 距離順ソート
       if (currentLocation) {
         result = result
           .map(t => ({ ...t, distance: calcDistance(currentLocation.lat, currentLocation.lng, t.lat, t.lng) }))
           .sort((a, b) => a.distance - b.distance);
       }
 
-      // 重複除去
       const seenIds = new Set();
       const uniqueResult = result.filter(item => {
         if (seenIds.has(item.id)) return false;
@@ -8618,6 +8715,9 @@ export const useToiletSearch = () => {
     handleKeywordSearch,
     searchHistory,
     handleHistorySearch,
+    removeFromHistory,
+    selectedToiletId,     // ★追加: 戻り値
+    setSelectedToiletId   // ★追加: 戻り値
   };
 };
 </file>

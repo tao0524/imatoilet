@@ -834,3 +834,80 @@
   background: #e8f5e9;
   color: #2e7d32;
 }
+
+/* =========================================================
+   追記: ヘッダー削除に伴う高さ修正と戻るボタンバー
+========================================================= */
+
+/* ── ヘッダー分 (64px) のマイナスを解除し、画面全体を使用 ── */
+.search-page-wrapper {
+  height: 100vh !important; /* スマホのアドレスバー対策のため後に100dvhで上書き */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── カラムエリアは「戻るバー(40px)」の分だけ引く ── */
+.three-col-layout {
+  height: calc(100% - 40px) !important;
+}
+
+/* ── 新設した「戻るボタンバー」のスタイル ── */
+.search-back-bar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.search-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.search-back-btn:hover {
+  background: #f0f2f5;
+  color: #1e88e5;
+}
+
+/* スマホブラウザでの見切れ（アドレスバーの伸縮）対策 */
+@media (max-width: 768px) {
+  .search-page-wrapper {
+    height: 100dvh !important;
+  }
+}
+
+/* =========================================================
+   追記: ピン選択時に地図を全画面にするスタイル
+========================================================= */
+
+/* ピンが選択されている時はカラムの分割を解除し、地図だけに全振りする */
+.three-col-layout.map-only-mode {
+  grid-template-columns: 1fr !important;
+}
+
+/* 隠すよう指示されたパネルを完全に非表示にする */
+.col-filter.hidden, .col-list.hidden {
+  display: none !important;
+}
+
+/* スマホ表示時にリストが消えて下が白く空いてしまう現象を防ぐ */
+@media (max-width: 900px) {
+  .three-col-layout.map-only-mode .col-map {
+    height: 100% !important;
+    flex: 1 !important;
+  }
+}

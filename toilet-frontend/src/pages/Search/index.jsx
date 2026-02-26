@@ -3,6 +3,7 @@ import { useToiletSearch } from '../../hooks/useToiletSearch';
 import MapPanel from './MapPanel';
 import ListPanel from './ListPanel';
 import FilterPanel from './FilterPanel';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import '../../search.css';
 
 function Search() {
@@ -11,7 +12,7 @@ function Search() {
   const {
     filteredToilets,
     currentLocation,
-    realLocation, // ★追加: フックから受け取る
+    realLocation,
     placeQuery,
     setPlaceQuery,
     searchStatus, 
@@ -20,13 +21,29 @@ function Search() {
     handleKeywordSearch,
     searchHistory,
     handleHistorySearch,
-    removeFromHistory
+    removeFromHistory,
+    selectedToiletId,      // ★追加
+    setSelectedToiletId    // ★追加
   } = useToiletSearch();
 
   return (
     <main className="search-page-wrapper">
-      <div className="three-col-layout">
-        <div className="col-filter">
+
+      <div className="search-back-bar">
+        <button
+          className="search-back-btn"
+          onClick={() => navigate('/')}
+        >
+          <ArrowBackIcon fontSize="small" />
+          <span>トップに戻る</span>
+        </button>
+      </div>
+
+      {/* ★ ピン選択時は map-only-mode になる */}
+      <div className={`three-col-layout ${selectedToiletId ? 'map-only-mode' : ''}`}>
+        
+        {/* ピンが選択されている時は隠す */}
+        <div className={`col-filter ${selectedToiletId ? 'hidden' : ''}`}>
           <FilterPanel 
             placeQuery={placeQuery}
             setPlaceQuery={setPlaceQuery}
@@ -40,15 +57,19 @@ function Search() {
         </div>
 
         <div className="col-map">
-          {searchStatus && <div className="map-status-bar">{searchStatus}</div>}
+          {/* ピンが選択されている時はステータスバーを隠す */}
+          {!selectedToiletId && searchStatus && <div className="map-status-bar">{searchStatus}</div>}
           <MapPanel 
             filteredToilets={filteredToilets}
             currentLocation={currentLocation}
-            realLocation={realLocation} // ★重要: MapPanelにこれを渡さないとGPS機能が動きません
+            realLocation={realLocation}
+            selectedToiletId={selectedToiletId}     // ★追加
+            setSelectedToiletId={setSelectedToiletId} // ★追加
           />
         </div>
 
-        <div className="col-list">
+        {/* ピンが選択されている時はリストを隠す */}
+        <div className={`col-list ${selectedToiletId ? 'hidden' : ''}`}>
           <ListPanel 
             filteredToilets={filteredToilets}
             currentLocation={currentLocation}
