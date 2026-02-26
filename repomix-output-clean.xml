@@ -3401,40 +3401,6 @@ app.cors.allowed-origins=*
 app.admin.token=test-admin-token
 </file>
 
-<file path="toilet-frontend/src/App.jsx">
-import { Routes, Route, useLocation } from 'react-router-dom';
-import Header from './components/Header';
-import Home from './pages/Home';
-import Search from './pages/Search';
-import Detail from './pages/Detail';
-import Favorites from './pages/Favorites';
-import Register from './pages/Register';
-import Conditions from './pages/Conditions';
-import Edit from './pages/Edit';
-
-function App() {
-  const { pathname } = useLocation();
-  const isHome = pathname === '/';
-
-  return (
-    <>
-      {isHome && <Header />}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/conditions" element={<Conditions />} />
-        <Route path="/detail/:id" element={<Detail />} />
-        <Route path="/edit/:id" element={<Edit />} />
-        <Route path="/favorites" element={<Favorites />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
-    </>
-  );
-}
-
-export default App;
-</file>
-
 <file path="toilet-frontend/src/components/ToiletForm.jsx">
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { uploadToCloudinary } from '../utils';
@@ -4217,6 +4183,40 @@ describe('utils.js (便利関数)', () => {
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+</file>
+
+<file path="toilet-frontend/src/App.jsx">
+import { Routes, Route, useLocation } from 'react-router-dom';
+import Header from './components/Header';
+import Home from './pages/Home';
+import Search from './pages/Search';
+import Detail from './pages/Detail';
+import Favorites from './pages/Favorites';
+import Register from './pages/Register';
+import Conditions from './pages/Conditions';
+import Edit from './pages/Edit';
+
+function App() {
+  const { pathname } = useLocation();
+  const isHome = pathname === '/';
+
+  return (
+    <>
+      {isHome && <Header />}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/conditions" element={<Conditions />} />
+        <Route path="/detail/:id" element={<Detail />} />
+        <Route path="/edit/:id" element={<Edit />} />
+        <Route path="/favorites" element={<Favorites />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    </>
+  );
+}
+
+export default App;
 </file>
 
 <file path="toilet-frontend/src/base.css">
@@ -5616,92 +5616,6 @@ function CheckRow({ label, pKey, icon, checked, onChange }) {
 export default FilterPanel;
 </file>
 
-<file path="toilet-frontend/src/pages/Search/index.jsx">
-import { useNavigate } from 'react-router-dom';
-import { useToiletSearch } from '../../hooks/useToiletSearch';
-import MapPanel from './MapPanel';
-import ListPanel from './ListPanel';
-import FilterPanel from './FilterPanel';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import '../../search.css';
-
-function Search() {
-  const navigate = useNavigate();
-  
-  const {
-    filteredToilets,
-    currentLocation,
-    realLocation,
-    placeQuery,
-    setPlaceQuery,
-    searchStatus, 
-    handlePlaceSearch,
-    handleCurrentLocation,
-    handleKeywordSearch,
-    searchHistory,
-    handleHistorySearch,
-    removeFromHistory,
-    selectedToiletId,      // ★追加
-    setSelectedToiletId    // ★追加
-  } = useToiletSearch();
-
-  return (
-    <main className="search-page-wrapper">
-
-      <div className="search-back-bar">
-        <button
-          className="search-back-btn"
-          onClick={() => navigate('/')}
-        >
-          <ArrowBackIcon fontSize="small" />
-          <span>トップに戻る</span>
-        </button>
-      </div>
-
-      {/* ★ ピン選択時は map-only-mode になる */}
-      <div className={`three-col-layout ${selectedToiletId ? 'map-only-mode' : ''}`}>
-        
-        {/* ピンが選択されている時は隠す */}
-        <div className={`col-filter ${selectedToiletId ? 'hidden' : ''}`}>
-          <FilterPanel 
-            placeQuery={placeQuery}
-            setPlaceQuery={setPlaceQuery}
-            handleKeywordSearch={handleKeywordSearch}
-            handleCurrentLocation={handleCurrentLocation}
-            handlePlaceSearch={handlePlaceSearch}
-            searchHistory={searchHistory}
-            handleHistorySearch={handleHistorySearch}
-            removeFromHistory={removeFromHistory}
-          />
-        </div>
-
-        <div className="col-map">
-          {/* ピンが選択されている時はステータスバーを隠す */}
-          {!selectedToiletId && searchStatus && <div className="map-status-bar">{searchStatus}</div>}
-          <MapPanel 
-            filteredToilets={filteredToilets}
-            currentLocation={currentLocation}
-            realLocation={realLocation}
-            selectedToiletId={selectedToiletId}     // ★追加
-            setSelectedToiletId={setSelectedToiletId} // ★追加
-          />
-        </div>
-
-        {/* ピンが選択されている時はリストを隠す */}
-        <div className={`col-list ${selectedToiletId ? 'hidden' : ''}`}>
-          <ListPanel 
-            filteredToilets={filteredToilets}
-            currentLocation={currentLocation}
-          />
-        </div>
-      </div>
-    </main>
-  );
-}
-
-export default Search;
-</file>
-
 <file path="toilet-frontend/package.json">
 {
   "name": "toilet-frontend",
@@ -5865,6 +5779,92 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
 };
 </file>
 
+<file path="toilet-frontend/src/pages/Search/index.jsx">
+import { useNavigate } from 'react-router-dom';
+import { useToiletSearch } from '../../hooks/useToiletSearch';
+import MapPanel from './MapPanel';
+import ListPanel from './ListPanel';
+import FilterPanel from './FilterPanel';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import '../../search.css';
+
+function Search() {
+  const navigate = useNavigate();
+  
+  const {
+    filteredToilets,
+    currentLocation,
+    realLocation,
+    placeQuery,
+    setPlaceQuery,
+    searchStatus, 
+    handlePlaceSearch,
+    handleCurrentLocation,
+    handleKeywordSearch,
+    searchHistory,
+    handleHistorySearch,
+    removeFromHistory,
+    selectedToiletId,      // ★追加
+    setSelectedToiletId    // ★追加
+  } = useToiletSearch();
+
+  return (
+    <main className="search-page-wrapper">
+
+      <div className="search-back-bar">
+        <button
+          className="search-back-btn"
+          onClick={() => navigate('/')}
+        >
+          <ArrowBackIcon fontSize="small" />
+          <span>トップに戻る</span>
+        </button>
+      </div>
+
+      {/* ★ ピン選択時は map-only-mode になる */}
+      <div className={`three-col-layout ${selectedToiletId ? 'map-only-mode' : ''}`}>
+        
+        {/* ピンが選択されている時は隠す */}
+        <div className={`col-filter ${selectedToiletId ? 'hidden' : ''}`}>
+          <FilterPanel 
+            placeQuery={placeQuery}
+            setPlaceQuery={setPlaceQuery}
+            handleKeywordSearch={handleKeywordSearch}
+            handleCurrentLocation={handleCurrentLocation}
+            handlePlaceSearch={handlePlaceSearch}
+            searchHistory={searchHistory}
+            handleHistorySearch={handleHistorySearch}
+            removeFromHistory={removeFromHistory}
+          />
+        </div>
+
+        <div className="col-map">
+          {/* ピンが選択されている時はステータスバーを隠す */}
+          {!selectedToiletId && searchStatus && <div className="map-status-bar">{searchStatus}</div>}
+          <MapPanel 
+            filteredToilets={filteredToilets}
+            currentLocation={currentLocation}
+            realLocation={realLocation}
+            selectedToiletId={selectedToiletId}     // ★追加
+            setSelectedToiletId={setSelectedToiletId} // ★追加
+          />
+        </div>
+
+        {/* ピンが選択されている時はリストを隠す */}
+        <div className={`col-list ${selectedToiletId ? 'hidden' : ''}`}>
+          <ListPanel 
+            filteredToilets={filteredToilets}
+            currentLocation={currentLocation}
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default Search;
+</file>
+
 <file path="backend/backend/pom.xml">
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -5973,6 +5973,379 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
   </build>
 
 </project>
+</file>
+
+<file path="toilet-frontend/src/utils.js">
+// toilet-frontend/src/utils.js
+export const STORAGE_KEY = "imatoilet_user_toilets_v1";
+
+// ユーザー登録データを読み込む
+export function loadUserToilets() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// ユーザー登録データを保存する
+export function saveUserToilets(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+
+// ID生成
+export function makeId() {
+  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
+}
+
+// 現在日付 (YYYY-MM-DD)
+export function nowISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// 2点間の距離計算 (Haversine formula)
+export function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Cloudinaryへの画像アップロード関数
+export async function uploadToCloudinary(file) {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
+  }
+
+  const data = await res.json();
+  return data.secure_url;
+}
+
+/**
+ * フロントエンドのconditionsキー → バックエンドのEnum名 マッピング
+ * ★追加: baby_chair → BABY_CHAIR
+ *
+ * 新しい設備を追加するときはここだけ編集すればよい。
+ */
+const CONDITION_MAP = {
+  wheelchair:       'WHEELCHAIR',
+  diaper:           'DIAPER',
+  open24h:          'OPEN_24H',
+  ostomate:         'OSTOMATE',
+  nursing_room:     'NURSING_ROOM',
+  baby_chair:       'BABY_CHAIR',
+  washlet:          'WASHLET',
+  gender_separated: 'GENDER_SEPARATED',
+  free:             'FREE',
+  parking:          'PARKING',
+};
+
+// conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
+export function buildEquipmentArray(conditions) {
+  return Object.keys(conditions)
+    .filter(key => conditions[key])
+    .map(key => {
+      const enumName = CONDITION_MAP[key];
+      if (!enumName) {
+        console.warn(`[buildEquipmentArray] CONDITION_MAPに未登録のキー: "${key}"`);
+        return null;
+      }
+      return enumName;
+    })
+    .filter(Boolean);
+}
+
+/**
+ * トイレオブジェクトから設備情報の Set を生成する (正規化)
+ *
+ * 以下の2パターンを統一して扱う:
+ *   1. 新形式: equipment が文字列配列  ["WHEELCHAIR", "OPEN_24H"]
+ *   2. 旧形式: equipment が CSV文字列  "wheelchair,open_24h"
+ *
+ * ※ パターン3（toilet.wheelchair 等のbooleanフラグ）はV7マイグレーション適用後に廃止済み
+ *
+ * @param {Object} toilet - APIレスポンスまたはローカルストレージのトイレオブジェクト
+ * @returns {Set<string>} 大文字の設備名セット (例: Set{"WHEELCHAIR", "OPEN_24H"})
+ */
+export function normalizeEquipment(toilet) {
+  const eqSet = new Set();
+
+  // 1. 配列形式 (新形式)
+  if (Array.isArray(toilet.equipment)) {
+    toilet.equipment.forEach(e => eqSet.add(e.toUpperCase()));
+  // 2. CSV文字列形式 (旧形式)
+  } else if (typeof toilet.equipment === 'string' && toilet.equipment.length > 0) {
+    toilet.equipment.split(',').forEach(e => eqSet.add(e.trim().toUpperCase()));
+  }
+
+  return eqSet;
+}
+</file>
+
+<file path="backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java">
+package com.imatoilet.backend;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+@ActiveProfiles("test")
+public class ToiletApiControllerTest {
+
+    private static final String VALID_TOKEN   = "test-admin-token";
+    private static final String INVALID_TOKEN = "wrong-token";
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ToiletRepository toiletRepository;
+
+    @BeforeEach
+    void setUp() {
+        toiletRepository.deleteAll();
+    }
+
+    // --- GET: 一覧取得 ---
+    @Test
+    void shouldReturnListOfToilets() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Test Toilet");
+        toilet.setLat(35.0);
+        toilet.setLng(139.0);
+        toilet.setAddress("Test Address");
+        toilet.setDescription("Test Description");
+        toilet.setCleanliness(5);
+        
+        toilet.addEquipment(EquipmentType.WHEELCHAIR);
+        toilet.addEquipment(EquipmentType.DIAPER);
+        
+        toiletRepository.save(toilet);
+
+        // ★修正: ページネーション対応のため、$.content の中身を検証するように変更
+        mockMvc.perform(get("/api/toilets"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("Test Toilet")))
+                .andExpect(jsonPath("$.content[0].equipment", hasItem("WHEELCHAIR")))
+                .andExpect(jsonPath("$.content[0].equipment", hasItem("DIAPER")));
+    }
+
+    // --- GET: ID指定取得 ---
+    @Test
+    void shouldReturnToiletById() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Detail Test");
+        toilet.setLat(36.0);
+        toilet.setLng(140.0);
+        toilet.addEquipment(EquipmentType.OPEN_24H); 
+        
+        Toilet saved = toiletRepository.save(toilet);
+
+        mockMvc.perform(get("/api/toilets/" + saved.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("Detail Test")))
+                .andExpect(jsonPath("$.equipment", hasItem("OPEN_24H")));
+    }
+
+    // --- POST: 新規登録 ---
+    @Test
+    void shouldCreateToilet() throws Exception {
+        String toiletJson = """
+            {
+                "name": "New Toilet",
+                "lat": 35.123,
+                "lng": 139.456,
+                "address": "New Address",
+                "description": "New Desc",
+                "cleanliness": 4,
+                "facilityCategory": "park",
+                "equipment": ["WHEELCHAIR", "OPEN_24H"], 
+                "image": "http://example.com/img.jpg"
+            }
+        """;
+
+        mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(toiletJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("New Toilet")))
+                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OPEN_24H")));
+    }
+
+    // --- PUT: 更新 ---
+    @Test
+    void shouldUpdateToilet() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Old Name");
+        toilet.setLat(35.0);
+        toilet.setLng(139.0);
+        toilet.addEquipment(EquipmentType.DIAPER); 
+        Toilet saved = toiletRepository.save(toilet);
+
+        String updateJson = """
+            {
+                "name": "Updated Name",
+                "lat": 35.0,
+                "lng": 139.0,
+                "equipment": ["WHEELCHAIR", "OSTOMATE"]
+            }
+        """;
+
+        mockMvc.perform(put("/api/toilets/" + saved.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson)
+                .header("X-Admin-Token", VALID_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("Updated Name")))
+                .andExpect(jsonPath("$.equipment", hasSize(2)))
+                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OSTOMATE")));
+    }
+
+    // --- DELETE: 削除 ---
+    @Test
+    void shouldDeleteToilet() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("To Delete");
+        toilet.setLat(0.0);
+        toilet.setLng(0.0);
+        Toilet saved = toiletRepository.save(toilet);
+
+        mockMvc.perform(delete("/api/toilets/" + saved.getId())
+                .header("X-Admin-Token", VALID_TOKEN))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/toilets/" + saved.getId()))
+                .andExpect(status().isNotFound());
+    }
+
+    // --- PUT に認証なし → 401 ---
+    @Test
+    void shouldReturn401WhenUpdatingWithoutToken() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Auth Test");
+        toilet.setLat(35.0);
+        toilet.setLng(139.0);
+        Toilet saved = toiletRepository.save(toilet);
+
+        String updateJson = """
+            { "name": "Hacked", "lat": 35.0, "lng": 139.0 }
+        """;
+
+        mockMvc.perform(put("/api/toilets/" + saved.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- DELETE に不正トークン → 401 ---
+    @Test
+    void shouldReturn401WhenDeletingWithInvalidToken() throws Exception {
+        Toilet toilet = new Toilet();
+        toilet.setName("Auth Test");
+        toilet.setLat(35.0);
+        toilet.setLng(139.0);
+        Toilet saved = toiletRepository.save(toilet);
+
+        mockMvc.perform(delete("/api/toilets/" + saved.getId())
+                .header("X-Admin-Token", INVALID_TOKEN))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturn404ForNonExistentId() throws Exception {
+        mockMvc.perform(get("/api/toilets/9999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn400WhenNameIsBlank() throws Exception {
+        String invalidJson = """
+            { "name": "", "lat": 35.0, "lng": 139.0 }
+        """;
+
+        mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturn400WhenLatIsNull() throws Exception {
+        String invalidJson = """
+            { "name": "Valid Name", "lng": 139.0 }
+        """;
+
+        mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldAcceptMultipleImageUrls() throws Exception {
+        String json = """
+            {
+                "name": "Multi Image",
+                "lat": 35.0,
+                "lng": 139.0,
+                "image": "https://example.com/1.jpg,https://example.com/2.jpg"
+            }
+        """;
+
+        mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.image", is("https://example.com/1.jpg,https://example.com/2.jpg")));
+    }
+
+    @Test
+    void shouldReturn404WhenDeletingNonExistent() throws Exception {
+        mockMvc.perform(delete("/api/toilets/9999")
+                .header("X-Admin-Token", VALID_TOKEN))
+                .andExpect(status().isNotFound());
+    }
+}
 </file>
 
 <file path="toilet-frontend/src/search.css">
@@ -6891,379 +7264,6 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
 }
 </file>
 
-<file path="toilet-frontend/src/utils.js">
-// toilet-frontend/src/utils.js
-export const STORAGE_KEY = "imatoilet_user_toilets_v1";
-
-// ユーザー登録データを読み込む
-export function loadUserToilets() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-// ユーザー登録データを保存する
-export function saveUserToilets(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-}
-
-// ID生成
-export function makeId() {
-  return "u_" + Date.now() + "_" + Math.random().toString(16).slice(2, 8);
-}
-
-// 現在日付 (YYYY-MM-DD)
-export function nowISO() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-// 2点間の距離計算 (Haversine formula)
-export function calcDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// Cloudinaryへの画像アップロード関数
-export async function uploadToCloudinary(file) {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Cloudinaryの設定（Cloud Name または Upload Preset）が .env に見つかりません。");
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
-
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: formData
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error?.message || "画像のアップロードに失敗しました");
-  }
-
-  const data = await res.json();
-  return data.secure_url;
-}
-
-/**
- * フロントエンドのconditionsキー → バックエンドのEnum名 マッピング
- * ★追加: baby_chair → BABY_CHAIR
- *
- * 新しい設備を追加するときはここだけ編集すればよい。
- */
-const CONDITION_MAP = {
-  wheelchair:       'WHEELCHAIR',
-  diaper:           'DIAPER',
-  open24h:          'OPEN_24H',
-  ostomate:         'OSTOMATE',
-  nursing_room:     'NURSING_ROOM',
-  baby_chair:       'BABY_CHAIR',
-  washlet:          'WASHLET',
-  gender_separated: 'GENDER_SEPARATED',
-  free:             'FREE',
-  parking:          'PARKING',
-};
-
-// conditions オブジェクト → Enum名の配列 (POST/PUT送信用)
-export function buildEquipmentArray(conditions) {
-  return Object.keys(conditions)
-    .filter(key => conditions[key])
-    .map(key => {
-      const enumName = CONDITION_MAP[key];
-      if (!enumName) {
-        console.warn(`[buildEquipmentArray] CONDITION_MAPに未登録のキー: "${key}"`);
-        return null;
-      }
-      return enumName;
-    })
-    .filter(Boolean);
-}
-
-/**
- * トイレオブジェクトから設備情報の Set を生成する (正規化)
- *
- * 以下の2パターンを統一して扱う:
- *   1. 新形式: equipment が文字列配列  ["WHEELCHAIR", "OPEN_24H"]
- *   2. 旧形式: equipment が CSV文字列  "wheelchair,open_24h"
- *
- * ※ パターン3（toilet.wheelchair 等のbooleanフラグ）はV7マイグレーション適用後に廃止済み
- *
- * @param {Object} toilet - APIレスポンスまたはローカルストレージのトイレオブジェクト
- * @returns {Set<string>} 大文字の設備名セット (例: Set{"WHEELCHAIR", "OPEN_24H"})
- */
-export function normalizeEquipment(toilet) {
-  const eqSet = new Set();
-
-  // 1. 配列形式 (新形式)
-  if (Array.isArray(toilet.equipment)) {
-    toilet.equipment.forEach(e => eqSet.add(e.toUpperCase()));
-  // 2. CSV文字列形式 (旧形式)
-  } else if (typeof toilet.equipment === 'string' && toilet.equipment.length > 0) {
-    toilet.equipment.split(',').forEach(e => eqSet.add(e.trim().toUpperCase()));
-  }
-
-  return eqSet;
-}
-</file>
-
-<file path="backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java">
-package com.imatoilet.backend;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
-
-import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@SpringBootTest
-@AutoConfigureMockMvc
-@Transactional
-@ActiveProfiles("test")
-public class ToiletApiControllerTest {
-
-    private static final String VALID_TOKEN   = "test-admin-token";
-    private static final String INVALID_TOKEN = "wrong-token";
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ToiletRepository toiletRepository;
-
-    @BeforeEach
-    void setUp() {
-        toiletRepository.deleteAll();
-    }
-
-    // --- GET: 一覧取得 ---
-    @Test
-    void shouldReturnListOfToilets() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Test Toilet");
-        toilet.setLat(35.0);
-        toilet.setLng(139.0);
-        toilet.setAddress("Test Address");
-        toilet.setDescription("Test Description");
-        toilet.setCleanliness(5);
-        
-        toilet.addEquipment(EquipmentType.WHEELCHAIR);
-        toilet.addEquipment(EquipmentType.DIAPER);
-        
-        toiletRepository.save(toilet);
-
-        // ★修正: ページネーション対応のため、$.content の中身を検証するように変更
-        mockMvc.perform(get("/api/toilets"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].name", is("Test Toilet")))
-                .andExpect(jsonPath("$.content[0].equipment", hasItem("WHEELCHAIR")))
-                .andExpect(jsonPath("$.content[0].equipment", hasItem("DIAPER")));
-    }
-
-    // --- GET: ID指定取得 ---
-    @Test
-    void shouldReturnToiletById() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Detail Test");
-        toilet.setLat(36.0);
-        toilet.setLng(140.0);
-        toilet.addEquipment(EquipmentType.OPEN_24H); 
-        
-        Toilet saved = toiletRepository.save(toilet);
-
-        mockMvc.perform(get("/api/toilets/" + saved.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("Detail Test")))
-                .andExpect(jsonPath("$.equipment", hasItem("OPEN_24H")));
-    }
-
-    // --- POST: 新規登録 ---
-    @Test
-    void shouldCreateToilet() throws Exception {
-        String toiletJson = """
-            {
-                "name": "New Toilet",
-                "lat": 35.123,
-                "lng": 139.456,
-                "address": "New Address",
-                "description": "New Desc",
-                "cleanliness": 4,
-                "facilityCategory": "park",
-                "equipment": ["WHEELCHAIR", "OPEN_24H"], 
-                "image": "http://example.com/img.jpg"
-            }
-        """;
-
-        mockMvc.perform(post("/api/toilets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(toiletJson))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name", is("New Toilet")))
-                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OPEN_24H")));
-    }
-
-    // --- PUT: 更新 ---
-    @Test
-    void shouldUpdateToilet() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Old Name");
-        toilet.setLat(35.0);
-        toilet.setLng(139.0);
-        toilet.addEquipment(EquipmentType.DIAPER); 
-        Toilet saved = toiletRepository.save(toilet);
-
-        String updateJson = """
-            {
-                "name": "Updated Name",
-                "lat": 35.0,
-                "lng": 139.0,
-                "equipment": ["WHEELCHAIR", "OSTOMATE"]
-            }
-        """;
-
-        mockMvc.perform(put("/api/toilets/" + saved.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateJson)
-                .header("X-Admin-Token", VALID_TOKEN))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("Updated Name")))
-                .andExpect(jsonPath("$.equipment", hasSize(2)))
-                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OSTOMATE")));
-    }
-
-    // --- DELETE: 削除 ---
-    @Test
-    void shouldDeleteToilet() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("To Delete");
-        toilet.setLat(0.0);
-        toilet.setLng(0.0);
-        Toilet saved = toiletRepository.save(toilet);
-
-        mockMvc.perform(delete("/api/toilets/" + saved.getId())
-                .header("X-Admin-Token", VALID_TOKEN))
-                .andExpect(status().isNoContent());
-
-        mockMvc.perform(get("/api/toilets/" + saved.getId()))
-                .andExpect(status().isNotFound());
-    }
-
-    // --- PUT に認証なし → 401 ---
-    @Test
-    void shouldReturn401WhenUpdatingWithoutToken() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Auth Test");
-        toilet.setLat(35.0);
-        toilet.setLng(139.0);
-        Toilet saved = toiletRepository.save(toilet);
-
-        String updateJson = """
-            { "name": "Hacked", "lat": 35.0, "lng": 139.0 }
-        """;
-
-        mockMvc.perform(put("/api/toilets/" + saved.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateJson))
-                .andExpect(status().isUnauthorized());
-    }
-
-    // --- DELETE に不正トークン → 401 ---
-    @Test
-    void shouldReturn401WhenDeletingWithInvalidToken() throws Exception {
-        Toilet toilet = new Toilet();
-        toilet.setName("Auth Test");
-        toilet.setLat(35.0);
-        toilet.setLng(139.0);
-        Toilet saved = toiletRepository.save(toilet);
-
-        mockMvc.perform(delete("/api/toilets/" + saved.getId())
-                .header("X-Admin-Token", INVALID_TOKEN))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void shouldReturn404ForNonExistentId() throws Exception {
-        mockMvc.perform(get("/api/toilets/9999"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void shouldReturn400WhenNameIsBlank() throws Exception {
-        String invalidJson = """
-            { "name": "", "lat": 35.0, "lng": 139.0 }
-        """;
-
-        mockMvc.perform(post("/api/toilets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void shouldReturn400WhenLatIsNull() throws Exception {
-        String invalidJson = """
-            { "name": "Valid Name", "lng": 139.0 }
-        """;
-
-        mockMvc.perform(post("/api/toilets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void shouldAcceptMultipleImageUrls() throws Exception {
-        String json = """
-            {
-                "name": "Multi Image",
-                "lat": 35.0,
-                "lng": 139.0,
-                "image": "https://example.com/1.jpg,https://example.com/2.jpg"
-            }
-        """;
-
-        mockMvc.perform(post("/api/toilets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.image", is("https://example.com/1.jpg,https://example.com/2.jpg")));
-    }
-
-    @Test
-    void shouldReturn404WhenDeletingNonExistent() throws Exception {
-        mockMvc.perform(delete("/api/toilets/9999")
-                .header("X-Admin-Token", VALID_TOKEN))
-                .andExpect(status().isNotFound());
-    }
-}
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
 // backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java
 package com.imatoilet.backend;
@@ -7909,6 +7909,96 @@ function Register() {
 export default Register;
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.dto.ToiletUpdateDto;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/toilets")
+public class ToiletApiController {
+
+    private final ToiletService toiletService;
+
+    public ToiletApiController(ToiletService toiletService) {
+        this.toiletService = toiletService;
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<Toilet>> getToilets(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false, defaultValue = "5.0") Double radius,
+            @RequestParam(required = false) String facilityCategory,
+            @RequestParam(required = false) Integer minCleanliness,
+            @RequestParam(required = false, defaultValue = "") String keyword,
+            @RequestParam(required = false) Boolean publicUse,
+            @RequestParam(required = false) List<String> equipment,
+            @PageableDefault(size = 50) Pageable pageable
+    ) {
+        Page<Toilet> results = toiletService.searchToilets(
+                lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
+        );
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
+        return ResponseEntity.ok(toiletService.getToilet(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
+        Toilet saved = toiletService.createToilet(toilet);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<Toilet> updateToilet(
+            @PathVariable Long id, 
+            @RequestBody @Valid ToiletUpdateDto dto) {
+        
+        Toilet toiletDetails = new Toilet();
+        toiletDetails.setName(dto.getName());
+        toiletDetails.setLat(dto.getLat());
+        toiletDetails.setLng(dto.getLng());
+        toiletDetails.setAddress(dto.getAddress());
+        toiletDetails.setDescription(dto.getDescription());
+        toiletDetails.setCleanliness(dto.getCleanliness());
+        toiletDetails.setImage(dto.getImage());
+        toiletDetails.setFacilityCategory(dto.getFacilityCategory());
+        toiletDetails.setEquipmentInput(dto.getEquipment());
+
+        toiletDetails.setSource(dto.getSource());
+        toiletDetails.setSourceUrl(dto.getSourceUrl());
+        toiletDetails.setLastVerified(dto.getLastVerified());
+
+        toiletDetails.setPublicUse(dto.getPublicUse());
+        toiletDetails.setTypePark(dto.getTypePark());
+        toiletDetails.setTypeStation(dto.getTypeStation());
+        toiletDetails.setTypeMall(dto.getTypeMall());
+
+        Toilet updated = toiletService.updateToilet(id, toiletDetails);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
+        toiletService.deleteToilet(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+</file>
+
 <file path="toilet-frontend/src/pages/Search/MapPanel.jsx">
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
@@ -7923,7 +8013,8 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
 const CONTAINER_STYLE = { width: '100%', height: '100%' };
 
-const getPinIcon = (toilet) => {
+// ★引数に isFavorite を追加
+const getPinIcon = (toilet, isFavorite) => {
   let color = '#757575';
   let text = '🚽';
   switch (toilet.facilityCategory) {
@@ -7938,9 +8029,16 @@ const getPinIcon = (toilet) => {
 
   const eqSet = normalizeEquipment(toilet);
 
+  // 右上の車椅子バッジ
   const wheelchairBadge = eqSet.has('WHEELCHAIR') ? `
     <circle cx="32" cy="10" r="9" fill="#1976d2" stroke="white" stroke-width="1.5" />
     <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
+  ` : '';
+
+  // ★追加：左上のお気に入りバッジ（黄色い星）
+  const favBadge = isFavorite ? `
+    <circle cx="12" cy="10" r="10" fill="#FFC107" stroke="white" stroke-width="1.5" />
+    <text x="12" y="14" font-size="12" text-anchor="middle" fill="white" font-family="sans-serif">★</text>
   ` : '';
 
   const svg = `
@@ -7949,6 +8047,7 @@ const getPinIcon = (toilet) => {
       <circle cx="20" cy="22" r="14" fill="white" opacity="0.3" />
       <text x="20" y="29" font-size="20" text-anchor="middle" fill="white" font-family="Segoe UI, sans-serif">${text}</text>
       ${wheelchairBadge}
+      ${favBadge}
     </svg>
   `.trim();
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
@@ -7970,20 +8069,11 @@ const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocatio
       img.style.width = '44px';
       img.style.height = '52px';
       img.style.cursor = 'pointer';
-      img.style.pointerEvents = 'auto'; // ★クリックを確実に拾わせる設定
-
-      // ★DOMレベルでの直接クリック判定（スマホ対応強化）
-      img.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (onClickRef.current) onClickRef.current();
-      });
-      img.addEventListener('touchend', (e) => {
-        e.stopPropagation();
-        e.preventDefault(); // スクロール等の重複動作を防止
-        if (onClickRef.current) onClickRef.current();
-      });
-
+      
+      // ★修正: Google Mapsの内部処理と衝突する pointerEvents, click, touchend の直接付与を全削除し、
+      // API公式の gmp-click イベントに完全に任せます。
       contentEl.appendChild(img);
+      
     } else if (isCenter) {
       Object.assign(contentEl.style, {
         width: '16px', height: '16px', backgroundColor: '#FF9800',
@@ -8001,10 +8091,10 @@ const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocatio
       position, 
       title, 
       content: contentEl,
-      gmpClickable: true // ★これがないとGoogle Maps APIがクリックを無視する
+      gmpClickable: true // ★ これにより公式機能としてクリック可能になります
     });
 
-    // API経由でのクリックイベントも念のため監視
+    // API公式のクリックイベントを監視
     const listener = marker.addListener('gmp-click', () => {
       if (onClickRef.current) onClickRef.current();
     });
@@ -8023,6 +8113,15 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
   const [routeInfo, setRouteInfo] = useState('');
   const [travelMode, setTravelMode] = useState('WALKING');
   const [map, setMap] = useState(null);
+
+  // ★これを追加：お気に入りリストを保持する
+  const [favorites, setFavorites] = useState([]);
+
+  // ★これを追加：コンポーネントが読み込まれた時にお気に入りを取得
+  useEffect(() => {
+    const favs = JSON.parse(localStorage.getItem('imatoilet_favorites') || '[]');
+    setFavorites(favs);
+  }, [filteredToilets]); // 検索結果が変わるたびに最新のお気に入りを反映
 
   useEffect(() => {
     setSelectedToiletId(null);
@@ -8134,16 +8233,22 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
             />
           )}
 
-          {markerToilets.map((t) => (
-            <AdvancedMarker
-              key={t.id}
-              map={map}
-              position={{ lat: t.lat, lng: t.lng }}
-              title={t.name}
-              iconSrc={getPinIcon(t)}
-              onClick={() => setSelectedToiletId(t.id)}
-            />
-          ))}
+          {markerToilets
+            .filter(t => selectedToiletId ? t.id === selectedToiletId : true)
+            .map((t) => {
+              // ★ここでお気に入りかどうかを判定（IDは文字列で比較すると安全です）
+              const isFav = favorites.includes(String(t.id));
+              return (
+                <AdvancedMarker
+                  key={t.id}
+                  map={map}
+                  position={{ lat: t.lat, lng: t.lng }}
+                  title={t.name}
+                  iconSrc={getPinIcon(t, isFav)} // ★isFav を渡す
+                  onClick={() => setSelectedToiletId(t.id)}
+                />
+              );
+          })}
 
           {selectedToilet && (
             <InfoWindow
@@ -8229,96 +8334,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
 }
 
 export default MapPanel;
-</file>
-
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
-package com.imatoilet.backend;
-
-import com.imatoilet.backend.dto.ToiletUpdateDto;
-import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/toilets")
-public class ToiletApiController {
-
-    private final ToiletService toiletService;
-
-    public ToiletApiController(ToiletService toiletService) {
-        this.toiletService = toiletService;
-    }
-
-    @GetMapping
-    public ResponseEntity<Page<Toilet>> getToilets(
-            @RequestParam(required = false) Double lat,
-            @RequestParam(required = false) Double lng,
-            @RequestParam(required = false, defaultValue = "5.0") Double radius,
-            @RequestParam(required = false) String facilityCategory,
-            @RequestParam(required = false) Integer minCleanliness,
-            @RequestParam(required = false, defaultValue = "") String keyword,
-            @RequestParam(required = false) Boolean publicUse,
-            @RequestParam(required = false) List<String> equipment,
-            @PageableDefault(size = 50) Pageable pageable
-    ) {
-        Page<Toilet> results = toiletService.searchToilets(
-                lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
-        );
-        return ResponseEntity.ok(results);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Toilet> getToiletById(@PathVariable Long id) {
-        return ResponseEntity.ok(toiletService.getToilet(id));
-    }
-
-    @PostMapping
-    public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
-        Toilet saved = toiletService.createToilet(toilet);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
-    
-    @PutMapping("/{id}")
-    public ResponseEntity<Toilet> updateToilet(
-            @PathVariable Long id, 
-            @RequestBody @Valid ToiletUpdateDto dto) {
-        
-        Toilet toiletDetails = new Toilet();
-        toiletDetails.setName(dto.getName());
-        toiletDetails.setLat(dto.getLat());
-        toiletDetails.setLng(dto.getLng());
-        toiletDetails.setAddress(dto.getAddress());
-        toiletDetails.setDescription(dto.getDescription());
-        toiletDetails.setCleanliness(dto.getCleanliness());
-        toiletDetails.setImage(dto.getImage());
-        toiletDetails.setFacilityCategory(dto.getFacilityCategory());
-        toiletDetails.setEquipmentInput(dto.getEquipment());
-
-        toiletDetails.setSource(dto.getSource());
-        toiletDetails.setSourceUrl(dto.getSourceUrl());
-        toiletDetails.setLastVerified(dto.getLastVerified());
-
-        toiletDetails.setPublicUse(dto.getPublicUse());
-        toiletDetails.setTypePark(dto.getTypePark());
-        toiletDetails.setTypeStation(dto.getTypeStation());
-        toiletDetails.setTypeMall(dto.getTypeMall());
-
-        Toilet updated = toiletService.updateToilet(id, toiletDetails);
-        return ResponseEntity.ok(updated);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
-        toiletService.deleteToilet(id);
-        return ResponseEntity.noContent().build();
-    }
-}
 </file>
 
 <file path="backend/backend/src/main/resources/application.properties">
@@ -8907,15 +8922,19 @@ function Detail() {
               onClick={toggleFavorite}
               style={{
                 position: 'absolute', top: '10px', right: '10px',
-                background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%',
-                width: '44px', height: '44px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(255,255,255,0.9)', border: 'none',
+                borderRadius: '24px', padding: '8px 16px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                color: isFavorite ? '#ffc107' : '#bdbdbd'
+                color: isFavorite ? '#ffc107' : '#757575',
+                fontWeight: 'bold', fontSize: '0.9rem'
               }}
               title="お気に入りに追加"
             >
-              {isFavorite ? <StarIcon fontSize="medium" /> : <StarBorderIcon fontSize="medium" />}
+              {isFavorite ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
+              <span style={{ color: '#333' }}>
+                {isFavorite ? '保存済み' : 'お気に入りに追加'}
+              </span>
             </button>
           </div>
 

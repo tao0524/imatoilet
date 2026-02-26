@@ -11,7 +11,8 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
 const CONTAINER_STYLE = { width: '100%', height: '100%' };
 
-const getPinIcon = (toilet) => {
+// ★引数に isFavorite を追加
+const getPinIcon = (toilet, isFavorite) => {
   let color = '#757575';
   let text = '🚽';
   switch (toilet.facilityCategory) {
@@ -26,9 +27,16 @@ const getPinIcon = (toilet) => {
 
   const eqSet = normalizeEquipment(toilet);
 
+  // 右上の車椅子バッジ
   const wheelchairBadge = eqSet.has('WHEELCHAIR') ? `
     <circle cx="32" cy="10" r="9" fill="#1976d2" stroke="white" stroke-width="1.5" />
     <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
+  ` : '';
+
+  // ★追加：左上のお気に入りバッジ（黄色い星）
+  const favBadge = isFavorite ? `
+    <circle cx="12" cy="10" r="10" fill="#FFC107" stroke="white" stroke-width="1.5" />
+    <text x="12" y="14" font-size="12" text-anchor="middle" fill="white" font-family="sans-serif">★</text>
   ` : '';
 
   const svg = `
@@ -37,6 +45,7 @@ const getPinIcon = (toilet) => {
       <circle cx="20" cy="22" r="14" fill="white" opacity="0.3" />
       <text x="20" y="29" font-size="20" text-anchor="middle" fill="white" font-family="Segoe UI, sans-serif">${text}</text>
       ${wheelchairBadge}
+      ${favBadge}
     </svg>
   `.trim();
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
@@ -102,6 +111,15 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
   const [routeInfo, setRouteInfo] = useState('');
   const [travelMode, setTravelMode] = useState('WALKING');
   const [map, setMap] = useState(null);
+
+  // ★これを追加：お気に入りリストを保持する
+  const [favorites, setFavorites] = useState([]);
+
+  // ★これを追加：コンポーネントが読み込まれた時にお気に入りを取得
+  useEffect(() => {
+    const favs = JSON.parse(localStorage.getItem('imatoilet_favorites') || '[]');
+    setFavorites(favs);
+  }, [filteredToilets]); // 検索結果が変わるたびに最新のお気に入りを反映
 
   useEffect(() => {
     setSelectedToiletId(null);
@@ -215,16 +233,20 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
 
           {markerToilets
             .filter(t => selectedToiletId ? t.id === selectedToiletId : true)
-            .map((t) => (
-              <AdvancedMarker
-                key={t.id}
-                map={map}
-                position={{ lat: t.lat, lng: t.lng }}
-                title={t.name}
-                iconSrc={getPinIcon(t)}
-                onClick={() => setSelectedToiletId(t.id)}
-              />
-          ))}
+            .map((t) => {
+              // ★ここでお気に入りかどうかを判定（IDは文字列で比較すると安全です）
+              const isFav = favorites.includes(String(t.id));
+              return (
+                <AdvancedMarker
+                  key={t.id}
+                  map={map}
+                  position={{ lat: t.lat, lng: t.lng }}
+                  title={t.name}
+                  iconSrc={getPinIcon(t, isFav)} // ★isFav を渡す
+                  onClick={() => setSelectedToiletId(t.id)}
+                />
+              );
+          })}
 
           {selectedToilet && (
             <InfoWindow

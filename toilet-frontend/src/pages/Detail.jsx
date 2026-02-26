@@ -182,15 +182,19 @@ function Detail() {
               onClick={toggleFavorite}
               style={{
                 position: 'absolute', top: '10px', right: '10px',
-                background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%',
-                width: '44px', height: '44px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(255,255,255,0.9)', border: 'none',
+                borderRadius: '24px', padding: '8px 16px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                color: isFavorite ? '#ffc107' : '#bdbdbd'
+                color: isFavorite ? '#ffc107' : '#757575',
+                fontWeight: 'bold', fontSize: '0.9rem'
               }}
               title="お気に入りに追加"
             >
-              {isFavorite ? <StarIcon fontSize="medium" /> : <StarBorderIcon fontSize="medium" />}
+              {isFavorite ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
+              <span style={{ color: '#333' }}>
+                {isFavorite ? '保存済み' : 'お気に入りに追加'}
+              </span>
             </button>
           </div>
 
