@@ -1,0 +1,75 @@
+-- V12__fix_coordinates.sql
+-- 座標修正マイグレーション (自動生成)
+-- 対象件数: 64件
+
+BEGIN;
+
+UPDATE toilet SET lat = 36.08171, lng = 140.11276 WHERE name = 'BiViつくば 2Fトイレ';
+UPDATE toilet SET lat = 36.085458, lng = 140.08392 WHERE name = 'イーアスつくば フードコート横';
+UPDATE toilet SET lat = 36.074072, lng = 140.104609 WHERE name = 'LALAガーデンつくば 東館';
+UPDATE toilet SET lat = 36.08544, lng = 140.110315 WHERE name = 'つくば中央公園 トイレ';
+UPDATE toilet SET lat = 36.061454, lng = 140.121276 WHERE name = '洞峰公園 管理棟トイレ';
+UPDATE toilet SET lat = 36.092174, lng = 140.108406 WHERE name = '松見公園 公衆トイレ';
+UPDATE toilet SET lat = 36.092074, lng = 140.106403 WHERE name = '筑波メディカルセンター病院';
+UPDATE toilet SET lat = 36.083583, lng = 140.076231 WHERE name = 'つくば市役所 本庁舎';
+UPDATE toilet SET lat = 36.082107, lng = 140.114134 WHERE name = 'ホテル日航つくば ロビー';
+UPDATE toilet SET lat = 36.082085, lng = 140.113162 WHERE name = 'オークラフロンティア ホテル';
+UPDATE toilet SET lat = 36.088257, lng = 140.109949 WHERE name = 'セブンイレブン つくば吾妻店';
+UPDATE toilet SET lat = 36.079669, lng = 140.115733 WHERE name = 'ENEOS つくば学園SS';
+UPDATE toilet SET lat = 35.986681, lng = 140.117078 WHERE name = 'ローソンつくば小茎店';
+UPDATE toilet SET lat = 36.131746, lng = 140.078049 WHERE name = 'ローソンつくば筑穂二丁目';
+UPDATE toilet SET lat = 36.091469, lng = 140.114467 WHERE name = 'ローソン新つくば妻木店';
+UPDATE toilet SET lat = 36.100612, lng = 140.080419 WHERE name = 'ローソンつくば東新井店';
+UPDATE toilet SET lat = 36.082425, lng = 140.081428 WHERE name = 'ホテルベストランド';
+UPDATE toilet SET lat = 36.082955, lng = 140.084353 WHERE name = 'ホテルマークワンつくば研究学園';
+UPDATE toilet SET lat = 36.078637, lng = 140.107741 WHERE name = 'ホテルグランド東雲';
+UPDATE toilet SET lat = 36.080674, lng = 140.117179 WHERE name = 'ヨークベニマル つくば竹園店';
+UPDATE toilet SET lat = 36.085458, lng = 140.08392 WHERE name = 'イーアスつくば';
+UPDATE toilet SET lat = 36.081653, lng = 140.111716 WHERE name = 'つくばクレオスクエア';
+UPDATE toilet SET lat = 36.07221, lng = 140.109949 WHERE name = 'ＬＡＬＡガーデンつくば';
+UPDATE toilet SET lat = 36.08414, lng = 140.084323 WHERE name = 'とりせん研究学園店';
+UPDATE toilet SET lat = 36.17897, lng = 140.0866 WHERE name = 'カスミ 筑波店';
+UPDATE toilet SET lat = 36.076967, lng = 140.119187 WHERE name = 'カスミ フードスクエア学園店';
+UPDATE toilet SET lat = 36.110734, lng = 140.113162 WHERE name = 'カスミ テクノパーク桜店';
+UPDATE toilet SET lat = 36.031398, lng = 140.054271 WHERE name = 'カスミ みどりの駅前店';
+UPDATE toilet SET lat = 36.059686, lng = 140.057025 WHERE name = 'カスミ 万博記念公園駅前店';
+UPDATE toilet SET lat = 36.100775, lng = 140.077728 WHERE name = 'カスミ フードスクエア学園の森店';
+UPDATE toilet SET lat = 36.099279, lng = 140.103431 WHERE name = 'カスミ 筑波大学店';
+UPDATE toilet SET lat = 36.081653, lng = 140.111716 WHERE name = 'カスミ プルシェつくばキュート店';
+UPDATE toilet SET lat = 36.082696, lng = 140.111636 WHERE name = 'つくば駅';
+UPDATE toilet SET lat = 36.082334, lng = 140.082818 WHERE name = '研究学園駅';
+UPDATE toilet SET lat = 36.058374, lng = 140.059419 WHERE name = '万博記念公園駅';
+UPDATE toilet SET lat = 36.029908, lng = 140.056141 WHERE name = 'みどりの駅';
+UPDATE toilet SET lat = 36.082636, lng = 140.109996 WHERE name = '北１駐車場';
+UPDATE toilet SET lat = 36.083264, lng = 140.114295 WHERE name = '南２駐車場';
+UPDATE toilet SET lat = 36.0813, lng = 140.110807 WHERE name = '南１駐車場';
+UPDATE toilet SET lat = 36.084695, lng = 140.112519 WHERE name = 'つくば文化会館アルス（中央図書館）';
+UPDATE toilet SET lat = 36.083583, lng = 140.076231 WHERE name = 'つくば市役所';
+UPDATE toilet SET lat = 36.136513, lng = 140.082008 WHERE name = '大穂窓口センター';
+UPDATE toilet SET lat = 35.987496, lng = 140.116737 WHERE name = '茎崎窓口センター';
+UPDATE toilet SET lat = 36.036965, lng = 140.074687 WHERE name = '谷田部保健センター';
+UPDATE toilet SET lat = 36.094113, lng = 140.127824 WHERE name = '桜保健センター';
+UPDATE toilet SET lat = 36.079017, lng = 140.115893 WHERE name = 'つくばカピオ';
+UPDATE toilet SET lat = 36.036227, lng = 140.075134 WHERE name = '市民ホールやたべ';
+UPDATE toilet SET lat = 36.174086, lng = 140.087582 WHERE name = '筑波交流センター';
+UPDATE toilet SET lat = 36.062865, lng = 140.103996 WHERE name = '松代交流センター';
+UPDATE toilet SET lat = 36.080269, lng = 140.125378 WHERE name = '竹園交流センター';
+UPDATE toilet SET lat = 36.060937, lng = 140.118384 WHERE name = '二の宮交流センター';
+UPDATE toilet SET lat = 36.136513, lng = 140.082008 WHERE name = '大穂交流センター';
+UPDATE toilet SET lat = 36.151533, lng = 140.116375 WHERE name = '宝篋山小田休憩所';
+UPDATE toilet SET lat = 36.213341, lng = 140.088812 WHERE name = '筑波山梅林休憩所トイレ';
+UPDATE toilet SET lat = 36.212178, lng = 140.09238 WHERE name = '市営筑波山第1駐車場トイレ';
+UPDATE toilet SET lat = 36.212271, lng = 140.096114 WHERE name = '市営筑波山第2駐車場トイレ';
+UPDATE toilet SET lat = 36.220701, lng = 140.106093 WHERE name = '市営筑波山第3駐車場トイレ';
+UPDATE toilet SET lat = 36.024121, lng = 140.114447 WHERE name = '筑波山御幸が原トイレ(女体山側)';
+UPDATE toilet SET lat = 36.024121, lng = 140.114447 WHERE name = '筑波山御幸が原トイレ(男体山側)';
+UPDATE toilet SET lat = 36.212982, lng = 140.090926 WHERE name = '筑波山おもてなし館';
+UPDATE toilet SET lat = 36.174086, lng = 140.087582 WHERE name = '筑波窓口センター';
+UPDATE toilet SET lat = 36.079296, lng = 140.08168 WHERE name = '研究学園駅前公園';
+UPDATE toilet SET lat = 36.08275, lng = 140.112068 WHERE name = 'つくば駅前広場';
+UPDATE toilet SET lat = 36.084903, lng = 140.084249 WHERE name = '研究学園駅前広場';
+UPDATE toilet SET lat = 36.08277, lng = 140.11157, name = 'つくば駅 トイレ', address = '〒305-0031 茨城県つくば市吾妻２丁目１２８', description = 'TXつくば駅改札内、改札を入って奥に進み、ホームへ降りるエレベーターの左側にあります。' WHERE name = 'つくば駅 多目的トイレ';
+UPDATE toilet SET lat = 36.08252, lng = 140.11314, name = 'つくば駅前広場公衆トイレ', address = '〒305-0031 茨城県つくば市吾妻１丁目８', description = 'バスターミナル近く。24時間利用可能。' WHERE name = 'つくば駅 北口公衆トイレ';
+UPDATE toilet SET lat = 36.08223, lng = 140.08235, name = '研究学園駅トイレ', address = '〒305-0817 茨城県つくば市研究学園５丁目', description = '改札を入って正面奥(階段裏)にあります。' WHERE name = '研究学園駅 バリアフリートイレ';
+
+COMMIT;

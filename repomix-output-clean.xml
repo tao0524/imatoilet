@@ -51,6 +51,7 @@ backend/backend/powershell.cmd
 backend/backend/src/main/java/com/imatoilet/backend/BackendApplication.java
 backend/backend/src/main/java/com/imatoilet/backend/config/AdminTokenFilter.java
 backend/backend/src/main/java/com/imatoilet/backend/config/SecurityConfig.java
+backend/backend/src/main/java/com/imatoilet/backend/dto/ReviewRequestDto.java
 backend/backend/src/main/java/com/imatoilet/backend/dto/ToiletUpdateDto.java
 backend/backend/src/main/java/com/imatoilet/backend/Equipment.java
 backend/backend/src/main/java/com/imatoilet/backend/EquipmentRepository.java
@@ -58,6 +59,10 @@ backend/backend/src/main/java/com/imatoilet/backend/EquipmentType.java
 backend/backend/src/main/java/com/imatoilet/backend/exception/ErrorResponse.java
 backend/backend/src/main/java/com/imatoilet/backend/exception/GlobalExceptionHandler.java
 backend/backend/src/main/java/com/imatoilet/backend/exception/ResourceNotFoundException.java
+backend/backend/src/main/java/com/imatoilet/backend/Review.java
+backend/backend/src/main/java/com/imatoilet/backend/ReviewApiController.java
+backend/backend/src/main/java/com/imatoilet/backend/ReviewRepository.java
+backend/backend/src/main/java/com/imatoilet/backend/ReviewService.java
 backend/backend/src/main/java/com/imatoilet/backend/Toilet.java
 backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java
 backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java
@@ -66,6 +71,7 @@ backend/backend/src/main/resources/application-dev.properties
 backend/backend/src/main/resources/application.properties
 backend/backend/src/main/resources/db/migration-h2/V1__init_schema.sql
 backend/backend/src/main/resources/db/migration-h2/V10__fix_midorino_location.sql
+backend/backend/src/main/resources/db/migration-h2/V11__add_review_table.sql
 backend/backend/src/main/resources/db/migration-h2/V2__add_equipment_table.sql
 backend/backend/src/main/resources/db/migration-h2/V3__add_search_indexes.sql
 backend/backend/src/main/resources/db/migration-h2/V4__insert_sample_data.sql
@@ -76,6 +82,7 @@ backend/backend/src/main/resources/db/migration-h2/V8__add_source_columns.sql
 backend/backend/src/main/resources/db/migration-h2/V9__insert_open_data.sql
 backend/backend/src/main/resources/db/migration/V1__init_schema.sql
 backend/backend/src/main/resources/db/migration/V10__fix_midorino_location.sql
+backend/backend/src/main/resources/db/migration/V11__add_review_table.sql
 backend/backend/src/main/resources/db/migration/V2__add_equipment_table.sql
 backend/backend/src/main/resources/db/migration/V3__add_search_indexes.sql
 backend/backend/src/main/resources/db/migration/V4__insert_sample_data.sql
@@ -755,6 +762,28 @@ public class AdminTokenFilter extends OncePerRequestFilter {
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/dto/ReviewRequestDto.java">
+package com.imatoilet.backend.dto;
+
+import jakarta.validation.constraints.*;
+import lombok.Data;
+
+@Data
+public class ReviewRequestDto {
+
+    @Size(max = 100, message = "ニックネームは100文字以内で入力してください")
+    private String nickname;
+
+    @NotNull(message = "評価は必須です")
+    @Min(value = 1, message = "評価は1以上である必要があります")
+    @Max(value = 5, message = "評価は5以下である必要があります")
+    private Integer rating;
+
+    @Size(max = 1000, message = "コメントは1000文字以内で入力してください")
+    private String comment;
+}
+</file>
+
 <file path="backend/backend/src/main/java/com/imatoilet/backend/EquipmentRepository.java">
 package com.imatoilet.backend;
 
@@ -814,6 +843,160 @@ public class ResourceNotFoundException extends RuntimeException {
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/Review.java">
+package com.imatoilet.backend;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "review")
+@Data
+@NoArgsConstructor
+public class Review {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // トイレとのリレーション (N:1)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "toilet_id", nullable = false)
+    @JsonIgnore             // 親(Toilet)に戻らない（JSON無限ループ防止）
+    @ToString.Exclude       // Lombokの無限ループ防止
+    @EqualsAndHashCode.Exclude
+    private Toilet toilet;
+
+    @Size(max = 100, message = "ニックネームは100文字以内で入力してください")
+    private String nickname;
+
+    @NotNull(message = "評価は必須です")
+    @Min(value = 1, message = "評価は1以上である必要があります")
+    @Max(value = 5, message = "評価は5以下である必要があります")
+    private Integer rating;
+
+    @Size(max = 1000, message = "コメントは1000文字以内で入力してください")
+    private String comment;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    // 登録時に自動で現在時刻をセットする
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ReviewApiController.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.dto.ReviewRequestDto;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/toilets/{id}/reviews")
+public class ReviewApiController {
+
+    private final ReviewService reviewService;
+
+    public ReviewApiController(ReviewService reviewService) {
+        this.reviewService = reviewService;
+    }
+
+    // レビュー一覧の取得 (GET /api/toilets/{id}/reviews)
+    @GetMapping
+    public ResponseEntity<List<Review>> getReviews(@PathVariable Long id) {
+        List<Review> reviews = reviewService.getReviewsByToiletId(id);
+        return ResponseEntity.ok(reviews);
+    }
+
+    // 新規レビューの投稿 (POST /api/toilets/{id}/reviews)
+    // ※ SecurityConfig および AdminTokenFilter の設定上、POSTリクエストは一般公開（トークン不要）となります。
+    @PostMapping
+    public ResponseEntity<Review> createReview(
+            @PathVariable Long id,
+            @RequestBody @Valid ReviewRequestDto dto) {
+        
+        Review saved = reviewService.addReview(id, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ReviewRepository.java">
+package com.imatoilet.backend;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ReviewRepository extends JpaRepository<Review, Long> {
+    // 特定のトイレのレビューを、作成日時の降順（新しい順）で取得する
+    List<Review> findByToiletIdOrderByCreatedAtDesc(Long toiletId);
+}
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ReviewService.java">
+package com.imatoilet.backend;
+
+import com.imatoilet.backend.dto.ReviewRequestDto;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@Transactional
+public class ReviewService {
+
+    private final ReviewRepository reviewRepository;
+    private final ToiletService toiletService; // 既存のServiceを再利用してトイレの存在確認を行う
+
+    public ReviewService(ReviewRepository reviewRepository, ToiletService toiletService) {
+        this.reviewRepository = reviewRepository;
+        this.toiletService = toiletService;
+    }
+
+    public List<Review> getReviewsByToiletId(Long toiletId) {
+        // 対象のトイレが存在するか確認（存在しなければ ResourceNotFoundException が飛ぶ）
+        toiletService.getToilet(toiletId);
+        return reviewRepository.findByToiletIdOrderByCreatedAtDesc(toiletId);
+    }
+
+    public Review addReview(Long toiletId, ReviewRequestDto dto) {
+        // 対象のトイレを取得
+        Toilet toilet = toiletService.getToilet(toiletId);
+
+        Review review = new Review();
+        review.setToilet(toilet);
+        
+        // ニックネームが空の場合は「匿名」をセット
+        String nickname = (dto.getNickname() == null || dto.getNickname().isBlank()) ? "匿名" : dto.getNickname();
+        review.setNickname(nickname);
+        
+        review.setRating(dto.getRating());
+        review.setComment(dto.getComment());
+
+        return reviewRepository.save(review);
+    }
+}
+</file>
+
 <file path="backend/backend/src/main/resources/db/migration-h2/V1__init_schema.sql">
 -- V1__init_schema.sql
 BEGIN;
@@ -851,6 +1034,26 @@ WHERE name = 'カスミ　みどりの駅前店';
 UPDATE toilet
 SET lat = 36.0320
 WHERE name = 'みどりの駅';
+COMMIT;
+</file>
+
+<file path="backend/backend/src/main/resources/db/migration-h2/V11__add_review_table.sql">
+-- V11__add_review_table.sql (H2用)
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS review (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    toilet_id BIGINT NOT NULL,
+    nickname VARCHAR(100),
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_review_toilet
+        FOREIGN KEY (toilet_id) REFERENCES toilet(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_toilet_id ON review (toilet_id);
+
 COMMIT;
 </file>
 
@@ -1194,6 +1397,27 @@ WHERE name = 'カスミ　みどりの駅前店';
 UPDATE toilet
 SET lat = 36.0320
 WHERE name = 'みどりの駅';
+COMMIT;
+</file>
+
+<file path="backend/backend/src/main/resources/db/migration/V11__add_review_table.sql">
+-- V11__add_review_table.sql (PostgreSQL用)
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS review (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    toilet_id BIGINT NOT NULL,
+    nickname VARCHAR(100),
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_review_toilet
+        FOREIGN KEY (toilet_id) REFERENCES toilet(id) ON DELETE CASCADE
+);
+
+-- 特定のトイレのレビューを高速に取得するためのインデックス
+CREATE INDEX IF NOT EXISTS idx_review_toilet_id ON review (toilet_id);
+
 COMMIT;
 </file>
 
@@ -7691,108 +7915,6 @@ public class ToiletService {
 }
 </file>
 
-<file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
-package com.imatoilet.backend;
-
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonAlias;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
-@Entity
-@Table(name = "toilet")
-@Data
-public class Toilet {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @NotBlank(message = "名前は必須です")
-    @Size(max = 100, message = "名前は100文字以内で入力してください")
-    private String name;
-
-    @NotNull(message = "緯度は必須です")
-    @DecimalMin(value = "-90.0", message = "緯度は-90以上である必要があります")
-    @DecimalMax(value = "90.0", message = "緯度は90以下である必要があります")
-    private Double lat;
-
-    @NotNull(message = "経度は必須です")
-    @DecimalMin(value = "-180.0", message = "経度は-180以上である必要があります")
-    @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
-    private Double lng;
-
-    @Size(max = 200, message = "住所は200文字以内で入力してください")
-    private String address;
-
-    // --- 旧フラグ完全廃止 ---
-    private Boolean publicUse;
-    private Boolean typePark;
-    private Boolean typeStation;
-    private Boolean typeMall;
-
-    @Size(max = 500, message = "説明は500文字以内で入力してください")
-    private String description;
-    
-    @Pattern(
-        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
-        message = "施設カテゴリの値が不正です"
-    )
-    private String facilityCategory;
-    
-    private String locationCategory;
-    private String usageConditions;
-    private String atmosphere;
-
-    @Min(value = 1, message = "清潔度は1以上である必要があります")
-    @Max(value = 5, message = "清潔度は5以下である必要があります")
-    private Integer cleanliness;
-
-    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
-    @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
-    private String image;
-
-    @Size(max = 100, message = "出典は100文字以内で入力してください")
-    private String source;
-
-    @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
-    private String sourceUrl;
-
-    private LocalDate lastVerified;
-
-    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Equipment> equipmentList = new ArrayList<>();
-
-    @JsonProperty(value = "equipment", access = JsonProperty.Access.READ_ONLY)
-    public List<String> getEquipmentNames() {
-        if (equipmentList == null) return new ArrayList<>();
-        return equipmentList.stream()
-                .map(e -> e.getType().name())
-                .collect(Collectors.toList());
-    }
-
-    @Transient
-    @JsonProperty(value = "equipment", access = JsonProperty.Access.WRITE_ONLY)
-    private List<String> equipmentInput;
-
-    public void addEquipment(EquipmentType type) {
-        Equipment equipment = new Equipment(this, type);
-        equipmentList.add(equipment);
-    }
-}
-</file>
-
 <file path="toilet-frontend/src/pages/Register.jsx">
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7907,6 +8029,114 @@ function Register() {
 }
 
 export default Register;
+</file>
+
+<file path="backend/backend/src/main/java/com/imatoilet/backend/Toilet.java">
+package com.imatoilet.backend;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+@Entity
+@Table(name = "toilet")
+@Data
+public class Toilet {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank(message = "名前は必須です")
+    @Size(max = 100, message = "名前は100文字以内で入力してください")
+    private String name;
+
+    @NotNull(message = "緯度は必須です")
+    @DecimalMin(value = "-90.0", message = "緯度は-90以上である必要があります")
+    @DecimalMax(value = "90.0", message = "緯度は90以下である必要があります")
+    private Double lat;
+
+    @NotNull(message = "経度は必須です")
+    @DecimalMin(value = "-180.0", message = "経度は-180以上である必要があります")
+    @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
+    private Double lng;
+
+    @Size(max = 200, message = "住所は200文字以内で入力してください")
+    private String address;
+
+    // --- 旧フラグ完全廃止 ---
+    private Boolean publicUse;
+    private Boolean typePark;
+    private Boolean typeStation;
+    private Boolean typeMall;
+
+    @Size(max = 500, message = "説明は500文字以内で入力してください")
+    private String description;
+    
+    @Pattern(
+        regexp = "^(station|commercial|convenience|park|public|medical|hotel_tourism|other)?$",
+        message = "施設カテゴリの値が不正です"
+    )
+    private String facilityCategory;
+    
+    private String locationCategory;
+    private String usageConditions;
+    private String atmosphere;
+
+    @Min(value = 1, message = "清潔度は1以上である必要があります")
+    @Max(value = 5, message = "清潔度は5以下である必要があります")
+    private Integer cleanliness;
+
+    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
+    private String image;
+
+    @Size(max = 100, message = "出典は100文字以内で入力してください")
+    private String source;
+
+    @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
+    private String sourceUrl;
+
+    private LocalDate lastVerified;
+
+    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Equipment> equipmentList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Review> reviews = new ArrayList<>();
+
+    @JsonProperty(value = "equipment", access = JsonProperty.Access.READ_ONLY)
+    public List<String> getEquipmentNames() {
+        if (equipmentList == null) return new ArrayList<>();
+        return equipmentList.stream()
+                .map(e -> e.getType().name())
+                .collect(Collectors.toList());
+    }
+
+    @Transient
+    @JsonProperty(value = "equipment", access = JsonProperty.Access.WRITE_ONLY)
+    private List<String> equipmentInput;
+
+    public void addEquipment(EquipmentType type) {
+        Equipment equipment = new Equipment(this, type);
+        equipmentList.add(equipment);
+    }
+}
 </file>
 
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletApiController.java">
@@ -8778,6 +9008,10 @@ function Detail() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
+  const [reviews, setReviews] = useState([]);
+  const [reviewForm, setReviewForm] = useState({ nickname: '', rating: 5, comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   useEffect(() => {
     async function fetchToilet() {
       if (id.startsWith('u_')) {
@@ -8803,9 +9037,51 @@ function Detail() {
     }
     fetchToilet();
 
+    async function fetchReviews() {
+      if (id.startsWith('u_')) return; // ローカルデータは除外
+      try {
+        const res = await fetch(`${API_BASE_URL}/${id}/reviews`);
+        if (res.ok) {
+          setReviews(await res.json());
+        }
+      } catch (error) {
+        console.error('Review fetch error:', error);
+      }
+    }
+    fetchReviews();
+
     const favs = JSON.parse(localStorage.getItem('imatoilet_favorites') || '[]');
     setIsFavorite(favs.includes(id));
   }, [id]);
+
+  // --- ▼▼▼ ここから追加 (レビュー送信処理) ▼▼▼ ---
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (id.startsWith('u_')) return;
+    setSubmittingReview(true);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/${id}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewForm),
+      });
+
+      if (res.ok) {
+        const newReview = await res.json();
+        setReviews([newReview, ...reviews]); // 一番上に追加
+        setReviewForm({ nickname: '', rating: 5, comment: '' }); // フォームリセット
+        alert('レビューを投稿しました！');
+      } else {
+        alert('レビューの投稿に失敗しました。入力内容を確認してください。');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('通信エラーが発生しました。');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const toggleFavorite = () => {
     let favs = JSON.parse(localStorage.getItem('imatoilet_favorites') || '[]');
@@ -9006,6 +9282,7 @@ function Detail() {
               </div>
             )}
 
+            
             {/* 削除ボタン */}
             <div style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px', textAlign: 'center' }}>
               <button
@@ -9021,6 +9298,97 @@ function Detail() {
             </div>
           </div>
         </div>
+
+        {/* =========================================================
+            ▼ここから移動＆追加：レビューセクションを独立したカードにする▼ 
+            ========================================================= */}
+        {!id.startsWith('u_') && (
+          <div className="detail-card" style={{ marginTop: '24px' }}>
+            <div className="detail-content">
+              <h3>みんなのレビュー ({reviews.length}件)</h3>
+              
+              {/* レビュー投稿フォーム */}
+              <form onSubmit={handleReviewSubmit} style={{ background: '#f9f9f9', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid #eee' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#555' }}>レビューを投稿する</h4>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#666' }}>評価</label>
+                  <div style={{ display: 'flex', gap: '4px', cursor: 'pointer' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <div key={star} onClick={() => setReviewForm({ ...reviewForm, rating: star })}>
+                        {star <= reviewForm.rating 
+                          ? <StarIcon sx={{ color: '#ffb400', fontSize: 28 }} /> 
+                          : <StarBorderIcon sx={{ color: '#ccc', fontSize: 28 }} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#666' }}>ニックネーム (任意)</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="匿名"
+                    value={reviewForm.nickname} 
+                    onChange={(e) => setReviewForm({ ...reviewForm, nickname: e.target.value })}
+                    style={{ padding: '8px 12px', fontSize: '0.95rem' }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#666' }}>コメント (任意)</label>
+                  <textarea 
+                    className="textarea" 
+                    rows="3" 
+                    placeholder="清潔でした、混んでいました等"
+                    value={reviewForm.comment} 
+                    onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                    style={{ padding: '8px 12px', fontSize: '0.95rem' }}
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  disabled={submittingReview}
+                  style={{ padding: '10px', fontSize: '0.95rem', minHeight: 'auto' }}
+                >
+                  {submittingReview ? '送信中...' : '投稿する'}
+                </button>
+              </form>
+
+              {/* レビュー一覧表示 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {reviews.length === 0 ? (
+                  <p style={{ color: '#888', fontSize: '0.9rem', textAlign: 'center', padding: '20px 0' }}>まだレビューがありません。</p>
+                ) : (
+                  reviews.map((rev) => (
+                    <div key={rev.id} style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#333' }}>
+                          {rev.nickname}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', color: '#999' }}>
+                          {new Date(rev.createdAt).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+                      <div style={{ color: '#ffb400', fontSize: '1rem', marginBottom: '8px', letterSpacing: '1px' }}>
+                        {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
+                      </div>
+                      {rev.comment && (
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#555', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                          {rev.comment}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ▲ ここまで ▲ */}
       </div>
 
       {/* ライトボックス */}
