@@ -1,3 +1,4 @@
+// toilet-frontend/src/hooks/useToiletSearch.js
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { loadUserToilets, calcDistance, normalizeEquipment } from '../utils'; 
@@ -40,8 +41,11 @@ export const useToiletSearch = () => {
   const [searchHistory, setSearchHistory] = useState([]);
   const [searchTrigger, setSearchTrigger] = useState(0);
   
-  // ★ここを追加：選択されたトイレのIDを管理
+  // 選択されたトイレのIDを管理
   const [selectedToiletId, setSelectedToiletId] = useState(null); 
+  
+  // ★今回追加：地図の表示領域（Bounding Box）を管理
+  const [mapBounds, setMapBounds] = useState(null);
 
   useEffect(() => { placeQueryRef.current = placeQuery; }, [placeQuery]);
 
@@ -194,19 +198,26 @@ export const useToiletSearch = () => {
   useEffect(() => {
     async function fetchData() {
       const currentPlaceQuery = placeQueryRef.current;
-      if (!currentLocation && !currentPlaceQuery && searchTrigger === 0) return;
+      // ★修正: mapBoundsが存在する場合もフェッチを実行するように条件を緩和
+      if (!currentLocation && !currentPlaceQuery && searchTrigger === 0 && !mapBounds) return;
 
       let apiData = [];
-      const isLocationSearch = !!currentLocation;
-      const isKeywordSearch = !currentLocation;
+      const isLocationSearch = !!currentLocation || !!mapBounds; // ★追加: bounds検索時もロケーション検索として扱う
+      const isKeywordSearch = !currentLocation && !mapBounds;
 
       try {
         const params = new URLSearchParams();
 
-        if (currentLocation) {
+        // ★修正: mapBoundsがある場合は表示領域検索、ない場合は従来の現在地検索
+        if (mapBounds) {
+          params.append('minLat', mapBounds.minLat);
+          params.append('maxLat', mapBounds.maxLat);
+          params.append('minLng', mapBounds.minLng);
+          params.append('maxLng', mapBounds.maxLng);
+        } else if (currentLocation) {
           params.append('lat', currentLocation.lat);
           params.append('lng', currentLocation.lng);
-          params.append('radius', '50.0');
+          params.append('radius', '50.0'); // 初回ロード等、boundsが取得できるまでのフォールバック
         } else {
           if (currentPlaceQuery) params.append('keyword', currentPlaceQuery);
         }
@@ -237,7 +248,8 @@ export const useToiletSearch = () => {
         });
 
         params.append('page', '0');
-        params.append('size', '100');
+        // ★修正: 全国スケール対応のため取得上限を増やします（フロントの負荷を考慮し一旦1000件程度に）
+        params.append('size', '1000');
 
         const queryString = params.toString();
         const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
@@ -256,7 +268,14 @@ export const useToiletSearch = () => {
 
       const localAll = loadUserToilets();
       let localData = [];
-      if (isLocationSearch && currentLocation) {
+      
+      // ★修正: ユーザーが追加したローカルデータも、boundsがあれば画面内に絞り込む
+      if (mapBounds) {
+        localData = localAll.filter(t => 
+          t.lat >= mapBounds.minLat && t.lat <= mapBounds.maxLat &&
+          t.lng >= mapBounds.minLng && t.lng <= mapBounds.maxLng
+        );
+      } else if (isLocationSearch && currentLocation) {
         const cLat = currentLocation.lat;
         const cLng = currentLocation.lng;
         localData = localAll.filter(t => calcDistance(cLat, cLng, t.lat, t.lng) <= 5.0);
@@ -347,7 +366,8 @@ export const useToiletSearch = () => {
     }
 
     fetchData();
-  }, [searchParams, currentLocation, searchTrigger]);
+  // ★修正: mapBounds が変わったときにも再フェッチが走るように依存配列に追加
+  }, [searchParams, currentLocation, searchTrigger, mapBounds]);
 
   return {
     filteredToilets,
@@ -362,7 +382,10 @@ export const useToiletSearch = () => {
     searchHistory,
     handleHistorySearch,
     removeFromHistory,
-    selectedToiletId,     // ★追加: 戻り値
-    setSelectedToiletId   // ★追加: 戻り値
+    selectedToiletId,
+    setSelectedToiletId,
+    // ★追加: 戻り値としてエクスポート
+    mapBounds,
+    setMapBounds
   };
 };

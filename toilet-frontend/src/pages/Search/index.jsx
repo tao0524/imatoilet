@@ -1,3 +1,4 @@
+// toilet-frontend/src/pages/Search/index.jsx
 import { useNavigate } from 'react-router-dom';
 import { useToiletSearch } from '../../hooks/useToiletSearch';
 import MapPanel from './MapPanel';
@@ -22,8 +23,9 @@ function Search() {
     searchHistory,
     handleHistorySearch,
     removeFromHistory,
-    selectedToiletId,      // ★追加
-    setSelectedToiletId    // ★追加
+    selectedToiletId,      
+    setSelectedToiletId,
+    setMapBounds           // ★追加: 先ほどフックに追加した関数を取得
   } = useToiletSearch();
 
   return (
@@ -39,10 +41,8 @@ function Search() {
         </button>
       </div>
 
-      {/* ★ ピン選択時は map-only-mode になる */}
       <div className={`three-col-layout ${selectedToiletId ? 'map-only-mode' : ''}`}>
         
-        {/* ピンが選択されている時は隠す */}
         <div className={`col-filter ${selectedToiletId ? 'hidden' : ''}`}>
           <FilterPanel 
             placeQuery={placeQuery}
@@ -57,18 +57,17 @@ function Search() {
         </div>
 
         <div className="col-map">
-          {/* ピンが選択されている時はステータスバーを隠す */}
           {!selectedToiletId && searchStatus && <div className="map-status-bar">{searchStatus}</div>}
           <MapPanel 
             filteredToilets={filteredToilets}
             currentLocation={currentLocation}
             realLocation={realLocation}
-            selectedToiletId={selectedToiletId}     // ★追加
-            setSelectedToiletId={setSelectedToiletId} // ★追加
+            selectedToiletId={selectedToiletId}
+            setSelectedToiletId={setSelectedToiletId}
+            setMapBounds={setMapBounds} // ★追加: MapPanel に関数を渡す
           />
         </div>
 
-        {/* ピンが選択されている時はリストを隠す */}
         <div className={`col-list ${selectedToiletId ? 'hidden' : ''}`}>
           <ListPanel 
             filteredToilets={filteredToilets}

@@ -21,8 +21,13 @@ public class ToiletApiController {
         this.toiletService = toiletService;
     }
 
+    // ★修正: Bounding Box用の4つのパラメータを追加
     @GetMapping
     public ResponseEntity<Page<Toilet>> getToilets(
+            @RequestParam(required = false) Double minLat,
+            @RequestParam(required = false) Double maxLat,
+            @RequestParam(required = false) Double minLng,
+            @RequestParam(required = false) Double maxLng,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
             @RequestParam(required = false, defaultValue = "5.0") Double radius,
@@ -34,7 +39,8 @@ public class ToiletApiController {
             @PageableDefault(size = 50) Pageable pageable
     ) {
         Page<Toilet> results = toiletService.searchToilets(
-                lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
+                minLat, maxLat, minLng, maxLng, lat, lng, radius, 
+                facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
         );
         return ResponseEntity.ok(results);
     }

@@ -74,6 +74,8 @@ backend/backend/src/main/resources/db/migration-h2/V10__fix_midorino_location.sq
 backend/backend/src/main/resources/db/migration-h2/V11__add_review_table.sql
 backend/backend/src/main/resources/db/migration-h2/V12__fix_coordinates.sql
 backend/backend/src/main/resources/db/migration-h2/V13__add_tokyo_dense_toilets.sql
+backend/backend/src/main/resources/db/migration-h2/V14__add_tourist_spot_toilets.sql
+backend/backend/src/main/resources/db/migration-h2/V15__add_national_scale_toilets.sql
 backend/backend/src/main/resources/db/migration-h2/V2__add_equipment_table.sql
 backend/backend/src/main/resources/db/migration-h2/V3__add_search_indexes.sql
 backend/backend/src/main/resources/db/migration-h2/V4__insert_sample_data.sql
@@ -87,6 +89,8 @@ backend/backend/src/main/resources/db/migration/V10__fix_midorino_location.sql
 backend/backend/src/main/resources/db/migration/V11__add_review_table.sql
 backend/backend/src/main/resources/db/migration/V12__fix_coordinates.sql
 backend/backend/src/main/resources/db/migration/V13__add_tokyo_dense_toilets.sql
+backend/backend/src/main/resources/db/migration/V14__add_tourist_spot_toilets.sql
+backend/backend/src/main/resources/db/migration/V15__add_national_scale_toilets.sql
 backend/backend/src/main/resources/db/migration/V2__add_equipment_table.sql
 backend/backend/src/main/resources/db/migration/V3__add_search_indexes.sql
 backend/backend/src/main/resources/db/migration/V4__insert_sample_data.sql
@@ -158,6 +162,102 @@ update.json
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="backend/backend/src/main/resources/db/migration-h2/V15__add_national_scale_toilets.sql">
+-- V15__add_national_scale_toilets.sql
+-- アプリの全国スケール展開（ズームアウト時のクラスタリングや長距離検索）を検証するための遠方データ（北海道・福岡）
+
+BEGIN;
+
+INSERT INTO toilet (
+  name, address, lat, lng, description, cleanliness,
+  facility_category, public_use, equipment,
+  source, source_url, last_verified
+) VALUES
+-- 北海道エリア
+('札幌駅 南口公衆トイレ', '北海道札幌市北区北6条西4丁目', 43.068600, 141.350800, '寒冷地仕様で二重扉になっています。広くて清潔です。', 4, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28'),
+('道の駅 サーモンパーク千歳 トイレ', '北海道千歳市花園2丁目4-2', 42.837800, 141.662700, '長距離ドライブの休憩に最適。広大な駐車場と24時間利用可能な清潔なトイレがあります。', 5, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING,OPEN_24H', '全国スケールテストデータ', NULL, '2026-02-28'),
+
+-- 福岡エリア
+('福岡空港 国内線ターミナル トイレ', '福岡県福岡市博多区下臼井778-1', 33.585500, 130.448500, '多言語対応の案内板あり。旅行者や出張者に優しい最新設備が揃っています。', 5, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET,NURSING_ROOM,BABY_CHAIR', '全国スケールテストデータ', NULL, '2026-02-28'),
+('JR博多駅 筑紫口公衆トイレ', '福岡県福岡市博多区博多駅中央街1-1', 33.589800, 130.422000, '九州の玄関口。利用者が多いですが、定期的に清掃が行き届いています。', 4, 'station', true, 'WHEELCHAIR,DIAPER,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28');
+
+
+-- Equipment テーブルへの反映（バックエンドの検索機能用）
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WHEELCHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'DIAPER' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%DIAPER%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OSTOMATE' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OSTOMATE%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%NURSING_ROOM%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%BABY_CHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WASHLET' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WASHLET%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'PARKING' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%PARKING%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OPEN_24H' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OPEN_24H%';
+
+COMMIT;
+</file>
+
+<file path="backend/backend/src/main/resources/db/migration/V15__add_national_scale_toilets.sql">
+-- V15__add_national_scale_toilets.sql
+-- アプリの全国スケール展開（ズームアウト時のクラスタリングや長距離検索）を検証するための遠方データ（北海道・福岡）
+
+BEGIN;
+
+INSERT INTO toilet (
+  name, address, lat, lng, description, cleanliness,
+  facility_category, public_use, equipment,
+  source, source_url, last_verified
+) VALUES
+-- 北海道エリア
+('札幌駅 南口公衆トイレ', '北海道札幌市北区北6条西4丁目', 43.068600, 141.350800, '寒冷地仕様で二重扉になっています。広くて清潔です。', 4, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28'),
+('道の駅 サーモンパーク千歳 トイレ', '北海道千歳市花園2丁目4-2', 42.837800, 141.662700, '長距離ドライブの休憩に最適。広大な駐車場と24時間利用可能な清潔なトイレがあります。', 5, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING,OPEN_24H', '全国スケールテストデータ', NULL, '2026-02-28'),
+
+-- 福岡エリア
+('福岡空港 国内線ターミナル トイレ', '福岡県福岡市博多区下臼井778-1', 33.585500, 130.448500, '多言語対応の案内板あり。旅行者や出張者に優しい最新設備が揃っています。', 5, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET,NURSING_ROOM,BABY_CHAIR', '全国スケールテストデータ', NULL, '2026-02-28'),
+('JR博多駅 筑紫口公衆トイレ', '福岡県福岡市博多区博多駅中央街1-1', 33.589800, 130.422000, '九州の玄関口。利用者が多いですが、定期的に清掃が行き届いています。', 4, 'station', true, 'WHEELCHAIR,DIAPER,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28');
+
+
+-- Equipment テーブルへの反映（バックエンドの検索機能用）
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WHEELCHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'DIAPER' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%DIAPER%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OSTOMATE' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OSTOMATE%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%NURSING_ROOM%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%BABY_CHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WASHLET' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WASHLET%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'PARKING' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%PARKING%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OPEN_24H' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OPEN_24H%';
+
+COMMIT;
+</file>
 
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
@@ -1183,6 +1283,53 @@ SELECT id, 'GENDER_SEPARATED' FROM toilet WHERE source = 'テストデータ（�
 COMMIT;
 </file>
 
+<file path="backend/backend/src/main/resources/db/migration-h2/V14__add_tourist_spot_toilets.sql">
+-- V14__add_tourist_spot_toilets.sql
+-- 観光地（浅草、京都、鎌倉）のテストデータ追加
+-- 多様なユーザー層（家族連れ、高齢者、外国人など）の検索ユースケース検証用
+
+BEGIN;
+
+INSERT INTO toilet (
+  name, address, lat, lng, description, cleanliness,
+  facility_category, public_use, equipment,
+  source, source_url, last_verified
+) VALUES
+('浅草文化観光センター', '東京都台東区雷門2-18-9', 35.710600, 139.796600, '雷門の目の前。授乳室やおむつ替え台があり、赤ちゃん連れに非常に便利です。多言語対応。', 5, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,BABY_CHAIR,WASHLET', '観光地テストデータ', NULL, '2026-02-28'),
+('浅草寺 境内公衆トイレ', '東京都台東区浅草2-3-1', 35.714700, 139.796700, '境内にある公衆トイレ。車椅子対応ですが、休日は非常に混雑します。', 3, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,WASHLET,GENDER_SEPARATED', '観光地テストデータ', NULL, '2026-02-28'),
+('京都駅 中央口公衆トイレ', '京都府京都市下京区烏丸通塩小路下ル東塩小路町', 34.985400, 135.757700, '新幹線や各線の乗り換え前に便利。24時間利用可能で設備が充実しています。', 4, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET,OPEN_24H,BABY_CHAIR', '観光地テストデータ', NULL, '2026-02-28'),
+('清水寺 参道公衆トイレ', '京都府京都市東山区清水1-294', 34.994800, 135.785000, '清水の舞台へ向かう途中にあります。和式と洋式が混在しています。', 3, 'hotel_tourism', true, 'WHEELCHAIR,GENDER_SEPARATED', '観光地テストデータ', NULL, '2026-02-28'),
+('鶴岡八幡宮 参拝者休憩所トイレ', '神奈川県鎌倉市雪ノ下2-1-31', 35.326000, 139.556400, '境内の休憩所に併設されています。ベビーチェア完備で家族連れも安心。', 4, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,BABY_CHAIR,GENDER_SEPARATED', '観光地テストデータ', NULL, '2026-02-28'),
+('鎌倉駅 東口公衆トイレ', '神奈川県鎌倉市小町1-1-1', 35.319000, 139.550400, '観光の拠点。多目的トイレがありますが、観光シーズンは行列ができます。', 3, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE', '観光地テストデータ', NULL, '2026-02-28');
+
+-- Equipment テーブルへの反映（バックエンドの検索機能用）
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%WHEELCHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'DIAPER' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%DIAPER%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OSTOMATE' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%OSTOMATE%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%NURSING_ROOM%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%BABY_CHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WASHLET' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%WASHLET%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'GENDER_SEPARATED' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%GENDER_SEPARATED%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OPEN_24H' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%OPEN_24H%';
+
+COMMIT;
+</file>
+
 <file path="backend/backend/src/main/resources/db/migration-h2/V2__add_equipment_table.sql">
 -- V2__add_equipment_table.sql (H2用)
 -- H2はDO $$ ... END $$（PL/pgSQL）非対応のため書き直し。
@@ -1664,6 +1811,53 @@ SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = 'テストデータ（密集�
 
 INSERT INTO equipment (toilet_id, type)
 SELECT id, 'GENDER_SEPARATED' FROM toilet WHERE source = 'テストデータ（密集検証用）' AND equipment LIKE '%GENDER_SEPARATED%';
+
+COMMIT;
+</file>
+
+<file path="backend/backend/src/main/resources/db/migration/V14__add_tourist_spot_toilets.sql">
+-- V14__add_tourist_spot_toilets.sql
+-- 観光地（浅草、京都、鎌倉）のテストデータ追加
+-- 多様なユーザー層（家族連れ、高齢者、外国人など）の検索ユースケース検証用
+
+BEGIN;
+
+INSERT INTO toilet (
+  name, address, lat, lng, description, cleanliness,
+  facility_category, public_use, equipment,
+  source, source_url, last_verified
+) VALUES
+('浅草文化観光センター', '東京都台東区雷門2-18-9', 35.710600, 139.796600, '雷門の目の前。授乳室やおむつ替え台があり、赤ちゃん連れに非常に便利です。多言語対応。', 5, 'public', true, 'WHEELCHAIR,DIAPER,OSTOMATE,NURSING_ROOM,BABY_CHAIR,WASHLET', '観光地テストデータ', NULL, '2026-02-28'),
+('浅草寺 境内公衆トイレ', '東京都台東区浅草2-3-1', 35.714700, 139.796700, '境内にある公衆トイレ。車椅子対応ですが、休日は非常に混雑します。', 3, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,WASHLET,GENDER_SEPARATED', '観光地テストデータ', NULL, '2026-02-28'),
+('京都駅 中央口公衆トイレ', '京都府京都市下京区烏丸通塩小路下ル東塩小路町', 34.985400, 135.757700, '新幹線や各線の乗り換え前に便利。24時間利用可能で設備が充実しています。', 4, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET,OPEN_24H,BABY_CHAIR', '観光地テストデータ', NULL, '2026-02-28'),
+('清水寺 参道公衆トイレ', '京都府京都市東山区清水1-294', 34.994800, 135.785000, '清水の舞台へ向かう途中にあります。和式と洋式が混在しています。', 3, 'hotel_tourism', true, 'WHEELCHAIR,GENDER_SEPARATED', '観光地テストデータ', NULL, '2026-02-28'),
+('鶴岡八幡宮 参拝者休憩所トイレ', '神奈川県鎌倉市雪ノ下2-1-31', 35.326000, 139.556400, '境内の休憩所に併設されています。ベビーチェア完備で家族連れも安心。', 4, 'hotel_tourism', true, 'WHEELCHAIR,DIAPER,BABY_CHAIR,GENDER_SEPARATED', '観光地テストデータ', NULL, '2026-02-28'),
+('鎌倉駅 東口公衆トイレ', '神奈川県鎌倉市小町1-1-1', 35.319000, 139.550400, '観光の拠点。多目的トイレがありますが、観光シーズンは行列ができます。', 3, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE', '観光地テストデータ', NULL, '2026-02-28');
+
+-- Equipment テーブルへの反映（バックエンドの検索機能用）
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%WHEELCHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'DIAPER' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%DIAPER%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OSTOMATE' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%OSTOMATE%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%NURSING_ROOM%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%BABY_CHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WASHLET' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%WASHLET%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'GENDER_SEPARATED' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%GENDER_SEPARATED%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OPEN_24H' FROM toilet WHERE source = '観光地テストデータ' AND equipment LIKE '%OPEN_24H%';
 
 COMMIT;
 </file>
@@ -5716,253 +5910,6 @@ body {
 }
 </file>
 
-<file path="toilet-frontend/src/pages/Conditions.jsx">
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import '../base.css';
-import '../components.css';
-import '../search.css';
-
-// アイコン
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import SearchIcon from '@mui/icons-material/Search';
-import CheckIcon from '@mui/icons-material/Check';
-
-// カテゴリアイコン
-import TrainIcon from '@mui/icons-material/Train';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import ParkIcon from '@mui/icons-material/Park';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import HotelIcon from '@mui/icons-material/Hotel';
-import CategoryIcon from '@mui/icons-material/Category';
-
-function Conditions() {
-  const navigate = useNavigate();
-
-  // --- 状態管理 ---
-  // 旧仕様フィルター (wheelchair/diaper/open24hはAPIの互換フラグとして残す)
-  // ★修正: babyChair を削除（newConditions の baby_chair に統合）
-  const [filters, setFilters] = useState({
-    wheelchair: false,
-    diaper:     false,
-    open24h:    false,
-    public:     false,
-  });
-
-  // 新仕様のカテゴリー
-  const [facilityCategory, setFacilityCategory] = useState('');
-
-  // 新仕様の設備条件 (EquipmentType enum に対応するキーで管理)
-  // ★修正: baby_chair を追加 (EquipmentType.BABY_CHAIR に対応)
-  const [newConditions, setNewConditions] = useState({
-    parking:          false,
-    ostomate:         false,
-    nursing_room:     false,
-    baby_chair:       false, // ★追加
-    washlet:          false,
-    visual_support:   false,
-    gender_separated: false,
-    unisex:           false,
-    free:             false,
-    paid:             false,
-  });
-
-  // --- ハンドラ ---
-  const handleFilterChange = (e) => {
-    const { name, checked } = e.target;
-    setFilters(prev => ({ ...prev, [name]: checked }));
-  };
-
-  const handleNewConditionChange = (e) => {
-    const { name, checked } = e.target;
-    setNewConditions(prev => ({ ...prev, [name]: checked }));
-  };
-
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-
-    // 旧フラグ (wheelchair, diaper, open24h, public)
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) params.append(key, 'true');
-    });
-
-    // 施設カテゴリ
-    if (facilityCategory) {
-      params.append('facilityCategory', facilityCategory);
-    }
-
-    // 新設備条件 (baby_chairも含む)
-    Object.keys(newConditions).forEach(key => {
-      if (newConditions[key]) params.append(key, 'true');
-    });
-
-    navigate(`/search?${params.toString()}`);
-  };
-
-  // 施設カテゴリオプション定義
-  const categoryOptions = [
-    { val: 'station',       label: '駅・交通',  icon: <TrainIcon fontSize="small" /> },
-    { val: 'commercial',    label: '商業施設',  icon: <StorefrontIcon fontSize="small" /> },
-    { val: 'park',          label: '公園・屋外', icon: <ParkIcon fontSize="small" /> },
-    { val: 'public',        label: '公共施設',  icon: <CategoryIcon fontSize="small" /> },
-    { val: 'medical',       label: '医療・福祉', icon: <LocalHospitalIcon fontSize="small" /> },
-    { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="small" /> },
-  ];
-
-  return (
-    <main className="container" style={{ padding: '20px 16px', maxWidth: '800px' }}>
-
-      {/* ヘッダー */}
-      <div style={{ marginBottom: '24px' }}>
-        <Link to="/" className="back-link">
-          <ArrowBackIcon fontSize="small" /> トップに戻る
-        </Link>
-        <h1 style={{ marginTop: '12px', fontSize: '1.6rem' }}>条件を指定して探す</h1>
-        <p style={{ color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
-          探しているトイレの条件を選択してください。
-        </p>
-      </div>
-
-      {/* フォーム全体 */}
-      <div style={{ display: 'grid', gap: '24px' }}>
-
-        <section className="panel" style={{ padding: '20px' }}>
-          <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckIcon color="primary" /> 設備・特徴
-            <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>（複数選択可）</span>
-          </h3>
-
-          <div className="filters" style={{ border: 'none', padding: 0, gap: '10px' }}>
-
-            {/* よく使う条件（highlight） */}
-            <FilterChip label="🚗 駐車場あり"   name="parking"    checked={newConditions.parking}    onChange={handleNewConditionChange} highlight />
-            <FilterChip label="♿ 車椅子対応"   name="wheelchair" checked={filters.wheelchair}       onChange={handleFilterChange}       highlight />
-            <FilterChip label="👶 オムツ替え"   name="diaper"     checked={filters.diaper}           onChange={handleFilterChange}       highlight />
-            <FilterChip label="➕ オストメイト" name="ostomate"   checked={newConditions.ostomate}   onChange={handleNewConditionChange} highlight />
-
-            {/* その他の条件 */}
-            <FilterChip label="🕒 24時間利用"    name="open24h"          checked={filters.open24h}                  onChange={handleFilterChange} />
-            <FilterChip label="🍼 授乳室"        name="nursing_room"     checked={newConditions.nursing_room}       onChange={handleNewConditionChange} />
-            {/* ★修正: babyChair (URLパラメータに送られるだけで未機能) を
-                        baby_chair (EquipmentType.BABY_CHAIR に対応) に変更 */}
-            <FilterChip label="🪑 ベビーチェア"  name="baby_chair"       checked={newConditions.baby_chair}         onChange={handleNewConditionChange} />
-            <FilterChip label="🚽 ウォシュレット" name="washlet"         checked={newConditions.washlet}            onChange={handleNewConditionChange} />
-            <FilterChip label="🚻 男女別"        name="gender_separated" checked={newConditions.gender_separated}   onChange={handleNewConditionChange} />
-            <FilterChip label="💰 無料"          name="free"             checked={newConditions.free}               onChange={handleNewConditionChange} />
-            <FilterChip label="誰でも利用可"      name="public"           checked={filters.public}                   onChange={handleFilterChange} />
-          </div>
-        </section>
-
-        <section className="panel" style={{ padding: '20px' }}>
-          <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CategoryIcon color="primary" /> 施設の種類
-            <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>（1つ選択）</span>
-          </h3>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-            <label
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                padding: '12px', borderRadius: '12px', border: '1px solid #ddd', cursor: 'pointer',
-                backgroundColor: facilityCategory === '' ? '#e3f2fd' : '#fff',
-                borderColor:     facilityCategory === '' ? '#1e88e5' : '#eee',
-                transition: 'all 0.2s'
-              }}
-            >
-              <input
-                type="radio" name="facilityCategory" value=""
-                checked={facilityCategory === ''}
-                onChange={(e) => setFacilityCategory(e.target.value)}
-                style={{ display: 'none' }}
-              />
-              <span style={{ fontWeight: 'bold', color: facilityCategory === '' ? '#1e88e5' : '#666' }}>指定なし</span>
-            </label>
-
-            {categoryOptions.map(opt => (
-              <label
-                key={opt.val}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  padding: '12px', borderRadius: '12px', border: '1px solid #ddd', cursor: 'pointer',
-                  backgroundColor: facilityCategory === opt.val ? '#e3f2fd' : '#fff',
-                  borderColor:     facilityCategory === opt.val ? '#1e88e5' : '#eee',
-                  color:           facilityCategory === opt.val ? '#1e88e5' : '#555',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                }}
-              >
-                <input
-                  type="radio" name="facilityCategory" value={opt.val}
-                  checked={facilityCategory === opt.val}
-                  onChange={(e) => setFacilityCategory(e.target.value)}
-                  style={{ display: 'none' }}
-                />
-                <div style={{ marginBottom: '4px' }}>{opt.icon}</div>
-                <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{opt.label}</span>
-              </label>
-            ))}
-          </div>
-        </section>
-
-      </div>
-
-      <div style={{ marginTop: '40px', textAlign: 'center', position: 'sticky', bottom: '20px', zIndex: 10 }}>
-        <button
-          className="btn btn-primary"
-          onClick={handleSearch}
-          style={{
-            maxWidth: '400px',
-            boxShadow: '0 8px 25px rgba(30,136,229,0.4)',
-            height: '56px',
-            fontSize: '1.1rem'
-          }}
-        >
-          <SearchIcon sx={{ mr: 1 }} />
-          この条件で検索する
-        </button>
-      </div>
-
-    </main>
-  );
-}
-
-function FilterChip({ label, name, checked, onChange, highlight }) {
-  return (
-    <label
-      className="chip"
-      style={{
-        backgroundColor: checked ? (highlight ? '#e3f2fd' : '#f0f4f8') : '#fff',
-        borderColor:  checked ? '#1e88e5' : '#ddd',
-        color:        checked ? '#1e88e5' : '#444',
-        fontWeight:   checked ? 'bold' : 'normal',
-        padding: '10px 16px',
-        margin: '0',
-        borderRadius: '99px',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px'
-      }}
-    >
-      <input
-        type="checkbox"
-        name={name}
-        checked={checked}
-        onChange={onChange}
-        style={{ display: 'none' }}
-      />
-      {checked && <CheckIcon fontSize="inherit" />}
-      <span>{label}</span>
-    </label>
-  );
-}
-
-export default Conditions;
-</file>
-
 <file path="toilet-frontend/src/pages/Home.jsx">
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -6266,6 +6213,259 @@ function App() {
 }
 
 export default App;
+</file>
+
+<file path="toilet-frontend/src/pages/Conditions.jsx">
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import '../base.css';
+import '../components.css';
+import '../search.css';
+
+// アイコン
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SearchIcon from '@mui/icons-material/Search';
+import CheckIcon from '@mui/icons-material/Check';
+
+// カテゴリアイコン
+import TrainIcon from '@mui/icons-material/Train';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ParkIcon from '@mui/icons-material/Park';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import HotelIcon from '@mui/icons-material/Hotel';
+import CategoryIcon from '@mui/icons-material/Category';
+
+function Conditions() {
+  const navigate = useNavigate();
+
+  // --- 状態管理 ---
+  // 旧仕様フィルター (wheelchair/diaper/open24hはAPIの互換フラグとして残す)
+  // ★修正: babyChair を削除（newConditions の baby_chair に統合）
+  const [filters, setFilters] = useState({
+    wheelchair: false,
+    diaper:     false,
+    open24h:    false,
+    public:     false,
+  });
+
+  // 新仕様のカテゴリー
+  const [facilityCategory, setFacilityCategory] = useState('');
+
+  // 新仕様の設備条件 (EquipmentType enum に対応するキーで管理)
+  // ★修正: baby_chair を追加 (EquipmentType.BABY_CHAIR に対応)
+  const [newConditions, setNewConditions] = useState({
+    parking:          false,
+    ostomate:         false,
+    nursing_room:     false,
+    baby_chair:       false, // ★追加
+    washlet:          false,
+    visual_support:   false,
+    gender_separated: false,
+    unisex:           false,
+    free:             false,
+    paid:             false,
+  });
+
+  // --- ハンドラ ---
+  const handleFilterChange = (e) => {
+    const { name, checked } = e.target;
+    setFilters(prev => ({ ...prev, [name]: checked }));
+  };
+
+  const handleNewConditionChange = (e) => {
+    const { name, checked } = e.target;
+    setNewConditions(prev => ({ ...prev, [name]: checked }));
+  };
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+
+    // 1. 施設カテゴリー
+    if (facilityCategory) {
+      params.append('facilityCategory', facilityCategory);
+    }
+
+    // 2. 旧フィルタ群 (wheelchair, diaper, open24h, public)
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, 'true');
+    });
+
+    // 3. 新設備条件 (parking, ostomate, nursing_room, baby_chair, washlet, etc.)
+    Object.keys(newConditions).forEach(key => {
+      if (newConditions[key]) {
+        // useToiletSearch の EQ_KEY_MAP のキー名と一致させる
+        params.append(key, 'true');
+      }
+    });
+
+    // 結果として /search?wheelchair=true&nursing_room=true... のようなURLになる
+    navigate(`/search?${params.toString()}`);
+  };
+
+// ... (以下略)
+
+  // 施設カテゴリオプション定義
+  const categoryOptions = [
+    { val: 'station',       label: '駅・交通',  icon: <TrainIcon fontSize="small" /> },
+    { val: 'commercial',    label: '商業施設',  icon: <StorefrontIcon fontSize="small" /> },
+    { val: 'park',          label: '公園・屋外', icon: <ParkIcon fontSize="small" /> },
+    { val: 'public',        label: '公共施設',  icon: <CategoryIcon fontSize="small" /> },
+    { val: 'medical',       label: '医療・福祉', icon: <LocalHospitalIcon fontSize="small" /> },
+    { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="small" /> },
+  ];
+
+  return (
+    <main className="container" style={{ padding: '20px 16px', maxWidth: '800px' }}>
+
+      {/* ヘッダー */}
+      <div style={{ marginBottom: '24px' }}>
+        <Link to="/" className="back-link">
+          <ArrowBackIcon fontSize="small" /> トップに戻る
+        </Link>
+        <h1 style={{ marginTop: '12px', fontSize: '1.6rem' }}>条件を指定して探す</h1>
+        <p style={{ color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
+          探しているトイレの条件を選択してください。
+        </p>
+      </div>
+
+      {/* フォーム全体 */}
+      <div style={{ display: 'grid', gap: '24px' }}>
+
+        <section className="panel" style={{ padding: '20px' }}>
+          <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckIcon color="primary" /> 設備・特徴
+            <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>（複数選択可）</span>
+          </h3>
+
+          <div className="filters" style={{ border: 'none', padding: 0, gap: '10px' }}>
+
+            {/* よく使う条件（highlight） */}
+            <FilterChip label="🚗 駐車場あり"   name="parking"    checked={newConditions.parking}    onChange={handleNewConditionChange} highlight />
+            <FilterChip label="♿ 車椅子対応"   name="wheelchair" checked={filters.wheelchair}       onChange={handleFilterChange}       highlight />
+            <FilterChip label="👶 オムツ替え"   name="diaper"     checked={filters.diaper}           onChange={handleFilterChange}       highlight />
+            <FilterChip label="➕ オストメイト" name="ostomate"   checked={newConditions.ostomate}   onChange={handleNewConditionChange} highlight />
+
+            {/* その他の条件 */}
+            <FilterChip label="🕒 24時間利用"    name="open24h"          checked={filters.open24h}                  onChange={handleFilterChange} />
+            <FilterChip label="🍼 授乳室"        name="nursing_room"     checked={newConditions.nursing_room}       onChange={handleNewConditionChange} />
+            {/* ★修正: babyChair (URLパラメータに送られるだけで未機能) を
+                        baby_chair (EquipmentType.BABY_CHAIR に対応) に変更 */}
+            <FilterChip label="🪑 ベビーチェア"  name="baby_chair"       checked={newConditions.baby_chair}         onChange={handleNewConditionChange} />
+            <FilterChip label="🚽 ウォシュレット" name="washlet"         checked={newConditions.washlet}            onChange={handleNewConditionChange} />
+            <FilterChip label="🚻 男女別"        name="gender_separated" checked={newConditions.gender_separated}   onChange={handleNewConditionChange} />
+            <FilterChip label="💰 無料"          name="free"             checked={newConditions.free}               onChange={handleNewConditionChange} />
+            <FilterChip label="誰でも利用可"      name="public"           checked={filters.public}                   onChange={handleFilterChange} />
+          </div>
+        </section>
+
+        <section className="panel" style={{ padding: '20px' }}>
+          <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CategoryIcon color="primary" /> 施設の種類
+            <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>（1つ選択）</span>
+          </h3>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+            <label
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: '12px', borderRadius: '12px', border: '1px solid #ddd', cursor: 'pointer',
+                backgroundColor: facilityCategory === '' ? '#e3f2fd' : '#fff',
+                borderColor:     facilityCategory === '' ? '#1e88e5' : '#eee',
+                transition: 'all 0.2s'
+              }}
+            >
+              <input
+                type="radio" name="facilityCategory" value=""
+                checked={facilityCategory === ''}
+                onChange={(e) => setFacilityCategory(e.target.value)}
+                style={{ display: 'none' }}
+              />
+              <span style={{ fontWeight: 'bold', color: facilityCategory === '' ? '#1e88e5' : '#666' }}>指定なし</span>
+            </label>
+
+            {categoryOptions.map(opt => (
+              <label
+                key={opt.val}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  padding: '12px', borderRadius: '12px', border: '1px solid #ddd', cursor: 'pointer',
+                  backgroundColor: facilityCategory === opt.val ? '#e3f2fd' : '#fff',
+                  borderColor:     facilityCategory === opt.val ? '#1e88e5' : '#eee',
+                  color:           facilityCategory === opt.val ? '#1e88e5' : '#555',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                }}
+              >
+                <input
+                  type="radio" name="facilityCategory" value={opt.val}
+                  checked={facilityCategory === opt.val}
+                  onChange={(e) => setFacilityCategory(e.target.value)}
+                  style={{ display: 'none' }}
+                />
+                <div style={{ marginBottom: '4px' }}>{opt.icon}</div>
+                <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+      </div>
+
+      <div style={{ marginTop: '40px', textAlign: 'center', position: 'sticky', bottom: '20px', zIndex: 10 }}>
+        <button
+          className="btn btn-primary"
+          onClick={handleSearch}
+          style={{
+            maxWidth: '400px',
+            boxShadow: '0 8px 25px rgba(30,136,229,0.4)',
+            height: '56px',
+            fontSize: '1.1rem'
+          }}
+        >
+          <SearchIcon sx={{ mr: 1 }} />
+          この条件で検索する
+        </button>
+      </div>
+
+    </main>
+  );
+}
+
+function FilterChip({ label, name, checked, onChange, highlight }) {
+  return (
+    <label
+      className="chip"
+      style={{
+        backgroundColor: checked ? (highlight ? '#e3f2fd' : '#f0f4f8') : '#fff',
+        borderColor:  checked ? '#1e88e5' : '#ddd',
+        color:        checked ? '#1e88e5' : '#444',
+        fontWeight:   checked ? 'bold' : 'normal',
+        padding: '10px 16px',
+        margin: '0',
+        borderRadius: '99px',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px'
+      }}
+    >
+      <input
+        type="checkbox"
+        name={name}
+        checked={checked}
+        onChange={onChange}
+        style={{ display: 'none' }}
+      />
+      {checked && <CheckIcon fontSize="inherit" />}
+      <span>{label}</span>
+    </label>
+  );
+}
+
+export default Conditions;
 </file>
 
 <file path="toilet-frontend/src/pages/Search/FilterPanel.jsx">
@@ -6595,6 +6795,7 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
 </file>
 
 <file path="toilet-frontend/src/pages/Search/index.jsx">
+// toilet-frontend/src/pages/Search/index.jsx
 import { useNavigate } from 'react-router-dom';
 import { useToiletSearch } from '../../hooks/useToiletSearch';
 import MapPanel from './MapPanel';
@@ -6619,8 +6820,9 @@ function Search() {
     searchHistory,
     handleHistorySearch,
     removeFromHistory,
-    selectedToiletId,      // ★追加
-    setSelectedToiletId    // ★追加
+    selectedToiletId,      
+    setSelectedToiletId,
+    setMapBounds           // ★追加: 先ほどフックに追加した関数を取得
   } = useToiletSearch();
 
   return (
@@ -6636,10 +6838,8 @@ function Search() {
         </button>
       </div>
 
-      {/* ★ ピン選択時は map-only-mode になる */}
       <div className={`three-col-layout ${selectedToiletId ? 'map-only-mode' : ''}`}>
         
-        {/* ピンが選択されている時は隠す */}
         <div className={`col-filter ${selectedToiletId ? 'hidden' : ''}`}>
           <FilterPanel 
             placeQuery={placeQuery}
@@ -6654,18 +6854,17 @@ function Search() {
         </div>
 
         <div className="col-map">
-          {/* ピンが選択されている時はステータスバーを隠す */}
           {!selectedToiletId && searchStatus && <div className="map-status-bar">{searchStatus}</div>}
           <MapPanel 
             filteredToilets={filteredToilets}
             currentLocation={currentLocation}
             realLocation={realLocation}
-            selectedToiletId={selectedToiletId}     // ★追加
-            setSelectedToiletId={setSelectedToiletId} // ★追加
+            selectedToiletId={selectedToiletId}
+            setSelectedToiletId={setSelectedToiletId}
+            setMapBounds={setMapBounds} // ★追加: MapPanel に関数を渡す
           />
         </div>
 
-        {/* ピンが選択されている時はリストを隠す */}
         <div className={`col-list ${selectedToiletId ? 'hidden' : ''}`}>
           <ListPanel 
             filteredToilets={filteredToilets}
@@ -8127,7 +8326,6 @@ public class ToiletApiControllerTest {
 </file>
 
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
-// backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java
 package com.imatoilet.backend;
 
 import org.springframework.data.domain.Page;
@@ -8152,7 +8350,37 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @NonNull
     Optional<Toilet> findById(@NonNull Long id);
 
-    // ★修正: 位置検索 + フィルタリングのネイティブクエリ（ページネーション対応）
+    // ★追加: 表示領域（Bounding Box）による検索クエリ
+    @Query(value = "SELECT t.id FROM toilet t WHERE " +
+           "t.lat >= :minLat AND t.lat <= :maxLat AND t.lng >= :minLng AND t.lng <= :maxLng " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
+           "t.lat >= :minLat AND t.lat <= :maxLat AND t.lng >= :minLng AND t.lng <= :maxLng " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           nativeQuery = true)
+    Page<Long> findIdsWithinBoundsWithSpecs(
+        @Param("minLat") Double minLat,
+        @Param("maxLat") Double maxLat,
+        @Param("minLng") Double minLng,
+        @Param("maxLng") Double maxLng,
+        @Param("facilityCategory") String facilityCategory,
+        @Param("minCleanliness") Integer minCleanliness,
+        @Param("keyword") String keyword,
+        @Param("publicUse") Boolean publicUse,
+        @Param("equipmentTypes") List<String> equipmentTypes,
+        @Param("typeCount") Integer typeCount,
+        Pageable pageable
+    );
+
+    // 既存: 位置検索 + フィルタリングのネイティブクエリ
     @Query(value = "SELECT t.id FROM toilet t WHERE " +
            "(6371 * acos(least(1.0, greatest(-1.0, " +
            "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
@@ -8185,7 +8413,7 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
         Pageable pageable
     );
 
-    // ★修正: 条件検索のJPQL（サブクエリでCOUNTすることで安全にページネーション対応）
+    // 既存: 条件検索のJPQL
     @Query("SELECT t.id FROM Toilet t " +
            "WHERE (:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) " +
            "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
@@ -8421,7 +8649,9 @@ public class ToiletService {
         this.toiletRepository = toiletRepository;
     }
 
+    // ★修正: 引数に bounds (minLat, maxLat, minLng, maxLng) を追加
     public Page<Toilet> searchToilets(
+            Double minLat, Double maxLat, Double minLng, Double maxLng,
             Double lat, Double lng, Double radius,
             String facilityCategory, Integer minCleanliness,
             String keyword, Boolean publicUse, List<String> equipment,
@@ -8435,7 +8665,11 @@ public class ToiletService {
         List<String> typeStrs = (equipment != null && !equipment.isEmpty()) ? equipment : List.of("DUMMY_TYPE");
         List<EquipmentType> safeTypes = (types != null && !types.isEmpty()) ? types : List.of(EquipmentType.WHEELCHAIR);
 
-        if (lat != null && lng != null) {
+        // ★修正: Bounds指定があればそれを最優先、なければ既存のRadius検索、どちらもなければ通常検索
+        if (minLat != null && maxLat != null && minLng != null && maxLng != null) {
+            idPage = toiletRepository.findIdsWithinBoundsWithSpecs(
+                    minLat, maxLat, minLng, maxLng, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
+        } else if (lat != null && lng != null) {
             double r = (radius != null) ? radius : 5.0;
             idPage = toiletRepository.findIdsWithinRadiusWithSpecs(
                     lat, lng, r, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
@@ -8512,11 +8746,9 @@ public class ToiletService {
         toiletRepository.deleteById(safeId);
     }
 
-    // ★修正: 重複エラーを防ぐための差分同期ロジック
     private void updateEquipmentList(Toilet toilet, List<String> inputs) {
         if (inputs == null) return;
         
-        // 入力された文字列を Enum のリストに変換
         List<EquipmentType> newTypes = new ArrayList<>();
         for (String typeStr : inputs) {
             try {
@@ -8524,15 +8756,12 @@ public class ToiletService {
             } catch (IllegalArgumentException ignored) {}
         }
 
-        // 1. 古いリストから、新リストに含まれないものを削除
         toilet.getEquipmentList().removeIf(e -> !newTypes.contains(e.getType()));
 
-        // 2. 現在のリストに残っている設備の Type を抽出
         List<EquipmentType> currentTypes = toilet.getEquipmentList().stream()
                 .map(Equipment::getType)
                 .collect(Collectors.toList());
 
-        // 3. 新リストのうち、まだ登録されていないものだけを追加
         for (EquipmentType type : newTypes) {
             if (!currentTypes.contains(type)) {
                 toilet.addEquipment(type);
@@ -8801,8 +9030,13 @@ public class ToiletApiController {
         this.toiletService = toiletService;
     }
 
+    // ★修正: Bounding Box用の4つのパラメータを追加
     @GetMapping
     public ResponseEntity<Page<Toilet>> getToilets(
+            @RequestParam(required = false) Double minLat,
+            @RequestParam(required = false) Double maxLat,
+            @RequestParam(required = false) Double minLng,
+            @RequestParam(required = false) Double maxLng,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
             @RequestParam(required = false, defaultValue = "5.0") Double radius,
@@ -8814,7 +9048,8 @@ public class ToiletApiController {
             @PageableDefault(size = 50) Pageable pageable
     ) {
         Page<Toilet> results = toiletService.searchToilets(
-                lat, lng, radius, facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
+                minLat, maxLat, minLng, maxLng, lat, lng, radius, 
+                facilityCategory, minCleanliness, keyword, publicUse, equipment, pageable
         );
         return ResponseEntity.ok(results);
     }
@@ -8903,17 +9138,14 @@ import { InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import { SafeGoogleMap } from '../../components/SafeGoogleMap';
 import { Link } from 'react-router-dom';
 import { normalizeEquipment } from '../../utils'; 
-// ★追加: MarkerClusterer のインポート
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
-// アイコン
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 
 const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
 const CONTAINER_STYLE = { width: '100%', height: '100%' };
 
-// 引数に isFavorite を追加（変更なし）
 const getPinIcon = (toilet, isFavorite) => {
   let color = '#757575';
   let text = '🚽';
@@ -8929,13 +9161,11 @@ const getPinIcon = (toilet, isFavorite) => {
 
   const eqSet = normalizeEquipment(toilet);
 
-  // 右上の車椅子バッジ
   const wheelchairBadge = eqSet.has('WHEELCHAIR') ? `
     <circle cx="32" cy="10" r="9" fill="#1976d2" stroke="white" stroke-width="1.5" />
     <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
   ` : '';
 
-  // 左上のお気に入りバッジ（黄色い星）
   const favBadge = isFavorite ? `
     <circle cx="12" cy="10" r="10" fill="#FFC107" stroke="white" stroke-width="1.5" />
     <text x="12" y="14" font-size="12" text-anchor="middle" fill="white" font-family="sans-serif">★</text>
@@ -8953,7 +9183,6 @@ const getPinIcon = (toilet, isFavorite) => {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
-// ★修正: 引数に `clusterer` を追加
 const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
   const onClickRef = useRef(onClick);
 
@@ -8991,7 +9220,6 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
       gmpClickable: true 
     });
 
-    // ★追加: clusterer が存在すればマーカーをクラスタに登録する
     if (clusterer) {
       clusterer.addMarker(marker);
     }
@@ -9002,7 +9230,6 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
 
     return () => {
       window.google.maps.event.removeListener(listener);
-      // ★追加: アンマウント時にクラスタから削除する
       if (clusterer) {
         clusterer.removeMarker(marker);
       } else {
@@ -9014,15 +9241,13 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
   return null;
 };
 
-function MapPanel({ filteredToilets = [], currentLocation, realLocation, selectedToiletId, setSelectedToiletId }) {
+// ★ ここに確実に setMapBounds が引数として入っています
+function MapPanel({ filteredToilets = [], currentLocation, realLocation, selectedToiletId, setSelectedToiletId, setMapBounds }) {
   const [directionsResponse, setDirectionsResponse] = useState(null);
   const [routeInfo, setRouteInfo] = useState('');
   const [travelMode, setTravelMode] = useState('WALKING');
   const [map, setMap] = useState(null);
-  
-  // ★追加: クラスタラーのインスタンスを保持するstate
   const [clusterer, setClusterer] = useState(null);
-
   const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
@@ -9041,7 +9266,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
     return currentLocation ? { lat: currentLocation.lat, lng: currentLocation.lng } : DEFAULT_CENTER;
   }, [currentLocation]);
 
-  // ★修正: 地図のロード時に MarkerClusterer を初期化する
   const onMapLoad = useCallback((mapInstance) => { 
     setMap(mapInstance); 
     setClusterer(new MarkerClusterer({ map: mapInstance }));
@@ -9052,6 +9276,30 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
       map.panTo({ lat: currentLocation.lat, lng: currentLocation.lng });
     }
   }, [currentLocation, map, selectedToiletId]);
+
+  // ★ 地図の移動やズームが終わったタイミングで表示領域（Bounds）を親に伝える
+  useEffect(() => {
+    if (!map || !setMapBounds || !window.google) return;
+
+    const listener = map.addListener('idle', () => {
+      const bounds = map.getBounds();
+      if (bounds) {
+        const ne = bounds.getNorthEast(); 
+        const sw = bounds.getSouthWest(); 
+        
+        setMapBounds({
+          minLat: sw.lat(),
+          maxLat: ne.lat(),
+          minLng: sw.lng(),
+          maxLng: ne.lng()
+        });
+      }
+    });
+
+    return () => {
+      window.google.maps.event.removeListener(listener);
+    };
+  }, [map, setMapBounds]);
 
   const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
 
@@ -9118,7 +9366,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
               position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
               title={`地図の中心: ${currentLocation.address || ''}`}
               isCenter={true}
-              // 現在地のピンはクラスタに含めない
             />
           )}
 
@@ -9128,7 +9375,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
               position={{ lat: realLocation.lat, lng: realLocation.lng }}
               title="あなたの現在地"
               isRealLocation={true}
-              // 現在地のピンはクラスタに含めない
             />
           )}
 
@@ -9154,7 +9400,7 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
                 <AdvancedMarker
                   key={t.id}
                   map={map}
-                  clusterer={clusterer} // ★追加: クラスタラーを渡す
+                  clusterer={clusterer}
                   position={{ lat: t.lat, lng: t.lng }}
                   title={t.name}
                   iconSrc={getPinIcon(t, isFav)}
@@ -9250,6 +9496,7 @@ export default MapPanel;
 </file>
 
 <file path="toilet-frontend/src/hooks/useToiletSearch.js">
+// toilet-frontend/src/hooks/useToiletSearch.js
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { loadUserToilets, calcDistance, normalizeEquipment } from '../utils'; 
@@ -9292,8 +9539,11 @@ export const useToiletSearch = () => {
   const [searchHistory, setSearchHistory] = useState([]);
   const [searchTrigger, setSearchTrigger] = useState(0);
   
-  // ★ここを追加：選択されたトイレのIDを管理
+  // 選択されたトイレのIDを管理
   const [selectedToiletId, setSelectedToiletId] = useState(null); 
+  
+  // ★今回追加：地図の表示領域（Bounding Box）を管理
+  const [mapBounds, setMapBounds] = useState(null);
 
   useEffect(() => { placeQueryRef.current = placeQuery; }, [placeQuery]);
 
@@ -9446,19 +9696,26 @@ export const useToiletSearch = () => {
   useEffect(() => {
     async function fetchData() {
       const currentPlaceQuery = placeQueryRef.current;
-      if (!currentLocation && !currentPlaceQuery && searchTrigger === 0) return;
+      // ★修正: mapBoundsが存在する場合もフェッチを実行するように条件を緩和
+      if (!currentLocation && !currentPlaceQuery && searchTrigger === 0 && !mapBounds) return;
 
       let apiData = [];
-      const isLocationSearch = !!currentLocation;
-      const isKeywordSearch = !currentLocation;
+      const isLocationSearch = !!currentLocation || !!mapBounds; // ★追加: bounds検索時もロケーション検索として扱う
+      const isKeywordSearch = !currentLocation && !mapBounds;
 
       try {
         const params = new URLSearchParams();
 
-        if (currentLocation) {
+        // ★修正: mapBoundsがある場合は表示領域検索、ない場合は従来の現在地検索
+        if (mapBounds) {
+          params.append('minLat', mapBounds.minLat);
+          params.append('maxLat', mapBounds.maxLat);
+          params.append('minLng', mapBounds.minLng);
+          params.append('maxLng', mapBounds.maxLng);
+        } else if (currentLocation) {
           params.append('lat', currentLocation.lat);
           params.append('lng', currentLocation.lng);
-          params.append('radius', '50.0');
+          params.append('radius', '50.0'); // 初回ロード等、boundsが取得できるまでのフォールバック
         } else {
           if (currentPlaceQuery) params.append('keyword', currentPlaceQuery);
         }
@@ -9489,7 +9746,8 @@ export const useToiletSearch = () => {
         });
 
         params.append('page', '0');
-        params.append('size', '100');
+        // ★修正: 全国スケール対応のため取得上限を増やします（フロントの負荷を考慮し一旦1000件程度に）
+        params.append('size', '1000');
 
         const queryString = params.toString();
         const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL;
@@ -9508,7 +9766,14 @@ export const useToiletSearch = () => {
 
       const localAll = loadUserToilets();
       let localData = [];
-      if (isLocationSearch && currentLocation) {
+      
+      // ★修正: ユーザーが追加したローカルデータも、boundsがあれば画面内に絞り込む
+      if (mapBounds) {
+        localData = localAll.filter(t => 
+          t.lat >= mapBounds.minLat && t.lat <= mapBounds.maxLat &&
+          t.lng >= mapBounds.minLng && t.lng <= mapBounds.maxLng
+        );
+      } else if (isLocationSearch && currentLocation) {
         const cLat = currentLocation.lat;
         const cLng = currentLocation.lng;
         localData = localAll.filter(t => calcDistance(cLat, cLng, t.lat, t.lng) <= 5.0);
@@ -9599,7 +9864,8 @@ export const useToiletSearch = () => {
     }
 
     fetchData();
-  }, [searchParams, currentLocation, searchTrigger]);
+  // ★修正: mapBounds が変わったときにも再フェッチが走るように依存配列に追加
+  }, [searchParams, currentLocation, searchTrigger, mapBounds]);
 
   return {
     filteredToilets,
@@ -9614,8 +9880,11 @@ export const useToiletSearch = () => {
     searchHistory,
     handleHistorySearch,
     removeFromHistory,
-    selectedToiletId,     // ★追加: 戻り値
-    setSelectedToiletId   // ★追加: 戻り値
+    selectedToiletId,
+    setSelectedToiletId,
+    // ★追加: 戻り値としてエクスポート
+    mapBounds,
+    setMapBounds
   };
 };
 </file>

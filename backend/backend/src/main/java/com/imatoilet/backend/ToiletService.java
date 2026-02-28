@@ -25,7 +25,9 @@ public class ToiletService {
         this.toiletRepository = toiletRepository;
     }
 
+    // ★修正: 引数に bounds (minLat, maxLat, minLng, maxLng) を追加
     public Page<Toilet> searchToilets(
+            Double minLat, Double maxLat, Double minLng, Double maxLng,
             Double lat, Double lng, Double radius,
             String facilityCategory, Integer minCleanliness,
             String keyword, Boolean publicUse, List<String> equipment,
@@ -39,7 +41,11 @@ public class ToiletService {
         List<String> typeStrs = (equipment != null && !equipment.isEmpty()) ? equipment : List.of("DUMMY_TYPE");
         List<EquipmentType> safeTypes = (types != null && !types.isEmpty()) ? types : List.of(EquipmentType.WHEELCHAIR);
 
-        if (lat != null && lng != null) {
+        // ★修正: Bounds指定があればそれを最優先、なければ既存のRadius検索、どちらもなければ通常検索
+        if (minLat != null && maxLat != null && minLng != null && maxLng != null) {
+            idPage = toiletRepository.findIdsWithinBoundsWithSpecs(
+                    minLat, maxLat, minLng, maxLng, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
+        } else if (lat != null && lng != null) {
             double r = (radius != null) ? radius : 5.0;
             idPage = toiletRepository.findIdsWithinRadiusWithSpecs(
                     lat, lng, r, facilityCategory, minCleanliness, keyword, publicUse, typeStrs, typeCount.intValue(), pageable);
@@ -116,11 +122,9 @@ public class ToiletService {
         toiletRepository.deleteById(safeId);
     }
 
-    // ★修正: 重複エラーを防ぐための差分同期ロジック
     private void updateEquipmentList(Toilet toilet, List<String> inputs) {
         if (inputs == null) return;
         
-        // 入力された文字列を Enum のリストに変換
         List<EquipmentType> newTypes = new ArrayList<>();
         for (String typeStr : inputs) {
             try {
@@ -128,15 +132,12 @@ public class ToiletService {
             } catch (IllegalArgumentException ignored) {}
         }
 
-        // 1. 古いリストから、新リストに含まれないものを削除
         toilet.getEquipmentList().removeIf(e -> !newTypes.contains(e.getType()));
 
-        // 2. 現在のリストに残っている設備の Type を抽出
         List<EquipmentType> currentTypes = toilet.getEquipmentList().stream()
                 .map(Equipment::getType)
                 .collect(Collectors.toList());
 
-        // 3. 新リストのうち、まだ登録されていないものだけを追加
         for (EquipmentType type : newTypes) {
             if (!currentTypes.contains(type)) {
                 toilet.addEquipment(type);

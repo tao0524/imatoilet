@@ -3,17 +3,14 @@ import { InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import { SafeGoogleMap } from '../../components/SafeGoogleMap';
 import { Link } from 'react-router-dom';
 import { normalizeEquipment } from '../../utils'; 
-// ★追加: MarkerClusterer のインポート
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
-// アイコン
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 
 const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
 const CONTAINER_STYLE = { width: '100%', height: '100%' };
 
-// 引数に isFavorite を追加（変更なし）
 const getPinIcon = (toilet, isFavorite) => {
   let color = '#757575';
   let text = '🚽';
@@ -29,13 +26,11 @@ const getPinIcon = (toilet, isFavorite) => {
 
   const eqSet = normalizeEquipment(toilet);
 
-  // 右上の車椅子バッジ
   const wheelchairBadge = eqSet.has('WHEELCHAIR') ? `
     <circle cx="32" cy="10" r="9" fill="#1976d2" stroke="white" stroke-width="1.5" />
     <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
   ` : '';
 
-  // 左上のお気に入りバッジ（黄色い星）
   const favBadge = isFavorite ? `
     <circle cx="12" cy="10" r="10" fill="#FFC107" stroke="white" stroke-width="1.5" />
     <text x="12" y="14" font-size="12" text-anchor="middle" fill="white" font-family="sans-serif">★</text>
@@ -53,7 +48,6 @@ const getPinIcon = (toilet, isFavorite) => {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
-// ★修正: 引数に `clusterer` を追加
 const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
   const onClickRef = useRef(onClick);
 
@@ -91,7 +85,6 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
       gmpClickable: true 
     });
 
-    // ★追加: clusterer が存在すればマーカーをクラスタに登録する
     if (clusterer) {
       clusterer.addMarker(marker);
     }
@@ -102,7 +95,6 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
 
     return () => {
       window.google.maps.event.removeListener(listener);
-      // ★追加: アンマウント時にクラスタから削除する
       if (clusterer) {
         clusterer.removeMarker(marker);
       } else {
@@ -114,15 +106,13 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
   return null;
 };
 
-function MapPanel({ filteredToilets = [], currentLocation, realLocation, selectedToiletId, setSelectedToiletId }) {
+// ★ ここに確実に setMapBounds が引数として入っています
+function MapPanel({ filteredToilets = [], currentLocation, realLocation, selectedToiletId, setSelectedToiletId, setMapBounds }) {
   const [directionsResponse, setDirectionsResponse] = useState(null);
   const [routeInfo, setRouteInfo] = useState('');
   const [travelMode, setTravelMode] = useState('WALKING');
   const [map, setMap] = useState(null);
-  
-  // ★追加: クラスタラーのインスタンスを保持するstate
   const [clusterer, setClusterer] = useState(null);
-
   const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
@@ -141,7 +131,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
     return currentLocation ? { lat: currentLocation.lat, lng: currentLocation.lng } : DEFAULT_CENTER;
   }, [currentLocation]);
 
-  // ★修正: 地図のロード時に MarkerClusterer を初期化する
   const onMapLoad = useCallback((mapInstance) => { 
     setMap(mapInstance); 
     setClusterer(new MarkerClusterer({ map: mapInstance }));
@@ -153,9 +142,33 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
     }
   }, [currentLocation, map, selectedToiletId]);
 
+  // ★ 地図の移動やズームが終わったタイミングで表示領域（Bounds）を親に伝える
+  useEffect(() => {
+    if (!map || !setMapBounds || !window.google) return;
+
+    const listener = map.addListener('idle', () => {
+      const bounds = map.getBounds();
+      if (bounds) {
+        const ne = bounds.getNorthEast(); 
+        const sw = bounds.getSouthWest(); 
+        
+        setMapBounds({
+          minLat: sw.lat(),
+          maxLat: ne.lat(),
+          minLng: sw.lng(),
+          maxLng: ne.lng()
+        });
+      }
+    });
+
+    return () => {
+      window.google.maps.event.removeListener(listener);
+    };
+  }, [map, setMapBounds]);
+
   const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
 
-  const MARKER_LIMIT = 50;
+  const MARKER_LIMIT = 1000;
   const markerToilets = useMemo(() => {
     if (!Array.isArray(filteredToilets)) return [];
     return filteredToilets.slice(0, MARKER_LIMIT);
@@ -218,7 +231,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
               position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
               title={`地図の中心: ${currentLocation.address || ''}`}
               isCenter={true}
-              // 現在地のピンはクラスタに含めない
             />
           )}
 
@@ -228,7 +240,6 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
               position={{ lat: realLocation.lat, lng: realLocation.lng }}
               title="あなたの現在地"
               isRealLocation={true}
-              // 現在地のピンはクラスタに含めない
             />
           )}
 
@@ -254,7 +265,7 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
                 <AdvancedMarker
                   key={t.id}
                   map={map}
-                  clusterer={clusterer} // ★追加: クラスタラーを渡す
+                  clusterer={clusterer}
                   position={{ lat: t.lat, lng: t.lng }}
                   title={t.name}
                   iconSrc={getPinIcon(t, isFav)}
