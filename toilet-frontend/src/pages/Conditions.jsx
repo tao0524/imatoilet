@@ -62,23 +62,29 @@ function Conditions() {
   const handleSearch = () => {
     const params = new URLSearchParams();
 
-    // 旧フラグ (wheelchair, diaper, open24h, public)
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) params.append(key, 'true');
-    });
-
-    // 施設カテゴリ
+    // 1. 施設カテゴリー
     if (facilityCategory) {
       params.append('facilityCategory', facilityCategory);
     }
 
-    // 新設備条件 (baby_chairも含む)
-    Object.keys(newConditions).forEach(key => {
-      if (newConditions[key]) params.append(key, 'true');
+    // 2. 旧フィルタ群 (wheelchair, diaper, open24h, public)
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, 'true');
     });
 
+    // 3. 新設備条件 (parking, ostomate, nursing_room, baby_chair, washlet, etc.)
+    Object.keys(newConditions).forEach(key => {
+      if (newConditions[key]) {
+        // useToiletSearch の EQ_KEY_MAP のキー名と一致させる
+        params.append(key, 'true');
+      }
+    });
+
+    // 結果として /search?wheelchair=true&nursing_room=true... のようなURLになる
     navigate(`/search?${params.toString()}`);
   };
+
+// ... (以下略)
 
   // 施設カテゴリオプション定義
   const categoryOptions = [
