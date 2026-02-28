@@ -3,6 +3,8 @@ import { InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import { SafeGoogleMap } from '../../components/SafeGoogleMap';
 import { Link } from 'react-router-dom';
 import { normalizeEquipment } from '../../utils'; 
+// ★追加: MarkerClusterer のインポート
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 // アイコン
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
@@ -11,7 +13,7 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 const DEFAULT_CENTER = { lat: 36.0825, lng: 140.1120 };
 const CONTAINER_STYLE = { width: '100%', height: '100%' };
 
-// ★引数に isFavorite を追加
+// 引数に isFavorite を追加（変更なし）
 const getPinIcon = (toilet, isFavorite) => {
   let color = '#757575';
   let text = '🚽';
@@ -33,7 +35,7 @@ const getPinIcon = (toilet, isFavorite) => {
     <text x="32" y="14" font-size="11" text-anchor="middle" fill="white" font-family="sans-serif">♿</text>
   ` : '';
 
-  // ★追加：左上のお気に入りバッジ（黄色い星）
+  // 左上のお気に入りバッジ（黄色い星）
   const favBadge = isFavorite ? `
     <circle cx="12" cy="10" r="10" fill="#FFC107" stroke="white" stroke-width="1.5" />
     <text x="12" y="14" font-size="12" text-anchor="middle" fill="white" font-family="sans-serif">★</text>
@@ -51,7 +53,8 @@ const getPinIcon = (toilet, isFavorite) => {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
-const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
+// ★修正: 引数に `clusterer` を追加
+const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
   const onClickRef = useRef(onClick);
 
   useEffect(() => { onClickRef.current = onClick; }, [onClick]);
@@ -67,11 +70,7 @@ const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocatio
       img.style.width = '44px';
       img.style.height = '52px';
       img.style.cursor = 'pointer';
-      
-      // ★修正: Google Mapsの内部処理と衝突する pointerEvents, click, touchend の直接付与を全削除し、
-      // API公式の gmp-click イベントに完全に任せます。
       contentEl.appendChild(img);
-      
     } else if (isCenter) {
       Object.assign(contentEl.style, {
         width: '16px', height: '16px', backgroundColor: '#FF9800',
@@ -89,19 +88,28 @@ const AdvancedMarker = ({ map, position, title, iconSrc, isCenter, isRealLocatio
       position, 
       title, 
       content: contentEl,
-      gmpClickable: true // ★ これにより公式機能としてクリック可能になります
+      gmpClickable: true 
     });
 
-    // API公式のクリックイベントを監視
+    // ★追加: clusterer が存在すればマーカーをクラスタに登録する
+    if (clusterer) {
+      clusterer.addMarker(marker);
+    }
+
     const listener = marker.addListener('gmp-click', () => {
       if (onClickRef.current) onClickRef.current();
     });
 
     return () => {
       window.google.maps.event.removeListener(listener);
-      marker.map = null;
+      // ★追加: アンマウント時にクラスタから削除する
+      if (clusterer) {
+        clusterer.removeMarker(marker);
+      } else {
+        marker.map = null;
+      }
     };
-  }, [map, position.lat, position.lng, title, iconSrc, isCenter, isRealLocation]);
+  }, [map, clusterer, position.lat, position.lng, title, iconSrc, isCenter, isRealLocation]);
 
   return null;
 };
@@ -111,15 +119,16 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
   const [routeInfo, setRouteInfo] = useState('');
   const [travelMode, setTravelMode] = useState('WALKING');
   const [map, setMap] = useState(null);
+  
+  // ★追加: クラスタラーのインスタンスを保持するstate
+  const [clusterer, setClusterer] = useState(null);
 
-  // ★これを追加：お気に入りリストを保持する
   const [favorites, setFavorites] = useState([]);
 
-  // ★これを追加：コンポーネントが読み込まれた時にお気に入りを取得
   useEffect(() => {
     const favs = JSON.parse(localStorage.getItem('imatoilet_favorites') || '[]');
     setFavorites(favs);
-  }, [filteredToilets]); // 検索結果が変わるたびに最新のお気に入りを反映
+  }, [filteredToilets]); 
 
   useEffect(() => {
     setSelectedToiletId(null);
@@ -132,7 +141,11 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
     return currentLocation ? { lat: currentLocation.lat, lng: currentLocation.lng } : DEFAULT_CENTER;
   }, [currentLocation]);
 
-  const onMapLoad = useCallback((mapInstance) => { setMap(mapInstance); }, []);
+  // ★修正: 地図のロード時に MarkerClusterer を初期化する
+  const onMapLoad = useCallback((mapInstance) => { 
+    setMap(mapInstance); 
+    setClusterer(new MarkerClusterer({ map: mapInstance }));
+  }, []);
 
   useEffect(() => {
     if (map && currentLocation && !selectedToiletId) {
@@ -205,6 +218,7 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
               position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
               title={`地図の中心: ${currentLocation.address || ''}`}
               isCenter={true}
+              // 現在地のピンはクラスタに含めない
             />
           )}
 
@@ -214,6 +228,7 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
               position={{ lat: realLocation.lat, lng: realLocation.lng }}
               title="あなたの現在地"
               isRealLocation={true}
+              // 現在地のピンはクラスタに含めない
             />
           )}
 
@@ -234,15 +249,15 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
           {markerToilets
             .filter(t => selectedToiletId ? t.id === selectedToiletId : true)
             .map((t) => {
-              // ★ここでお気に入りかどうかを判定（IDは文字列で比較すると安全です）
               const isFav = favorites.includes(String(t.id));
               return (
                 <AdvancedMarker
                   key={t.id}
                   map={map}
+                  clusterer={clusterer} // ★追加: クラスタラーを渡す
                   position={{ lat: t.lat, lng: t.lng }}
                   title={t.name}
-                  iconSrc={getPinIcon(t, isFav)} // ★isFav を渡す
+                  iconSrc={getPinIcon(t, isFav)}
                   onClick={() => setSelectedToiletId(t.id)}
                 />
               );
