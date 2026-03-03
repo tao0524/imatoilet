@@ -9,7 +9,7 @@
 
 ## 🔗 デモ
 
-> 🚧 公開準備中 — [デモURL](#)
+[デモURL](https://imatoilet.vercel.app)
 
 ---
 
