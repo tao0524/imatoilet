@@ -163,102 +163,6 @@ update.json
 <files>
 This section contains the contents of the repository's files.
 
-<file path="backend/backend/src/main/resources/db/migration-h2/V15__add_national_scale_toilets.sql">
--- V15__add_national_scale_toilets.sql
--- アプリの全国スケール展開（ズームアウト時のクラスタリングや長距離検索）を検証するための遠方データ（北海道・福岡）
-
-BEGIN;
-
-INSERT INTO toilet (
-  name, address, lat, lng, description, cleanliness,
-  facility_category, public_use, equipment,
-  source, source_url, last_verified
-) VALUES
--- 北海道エリア
-('札幌駅 南口公衆トイレ', '北海道札幌市北区北6条西4丁目', 43.068600, 141.350800, '寒冷地仕様で二重扉になっています。広くて清潔です。', 4, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28'),
-('道の駅 サーモンパーク千歳 トイレ', '北海道千歳市花園2丁目4-2', 42.837800, 141.662700, '長距離ドライブの休憩に最適。広大な駐車場と24時間利用可能な清潔なトイレがあります。', 5, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING,OPEN_24H', '全国スケールテストデータ', NULL, '2026-02-28'),
-
--- 福岡エリア
-('福岡空港 国内線ターミナル トイレ', '福岡県福岡市博多区下臼井778-1', 33.585500, 130.448500, '多言語対応の案内板あり。旅行者や出張者に優しい最新設備が揃っています。', 5, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET,NURSING_ROOM,BABY_CHAIR', '全国スケールテストデータ', NULL, '2026-02-28'),
-('JR博多駅 筑紫口公衆トイレ', '福岡県福岡市博多区博多駅中央街1-1', 33.589800, 130.422000, '九州の玄関口。利用者が多いですが、定期的に清掃が行き届いています。', 4, 'station', true, 'WHEELCHAIR,DIAPER,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28');
-
-
--- Equipment テーブルへの反映（バックエンドの検索機能用）
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WHEELCHAIR%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'DIAPER' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%DIAPER%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'OSTOMATE' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OSTOMATE%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%NURSING_ROOM%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%BABY_CHAIR%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'WASHLET' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WASHLET%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'PARKING' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%PARKING%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'OPEN_24H' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OPEN_24H%';
-
-COMMIT;
-</file>
-
-<file path="backend/backend/src/main/resources/db/migration/V15__add_national_scale_toilets.sql">
--- V15__add_national_scale_toilets.sql
--- アプリの全国スケール展開（ズームアウト時のクラスタリングや長距離検索）を検証するための遠方データ（北海道・福岡）
-
-BEGIN;
-
-INSERT INTO toilet (
-  name, address, lat, lng, description, cleanliness,
-  facility_category, public_use, equipment,
-  source, source_url, last_verified
-) VALUES
--- 北海道エリア
-('札幌駅 南口公衆トイレ', '北海道札幌市北区北6条西4丁目', 43.068600, 141.350800, '寒冷地仕様で二重扉になっています。広くて清潔です。', 4, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28'),
-('道の駅 サーモンパーク千歳 トイレ', '北海道千歳市花園2丁目4-2', 42.837800, 141.662700, '長距離ドライブの休憩に最適。広大な駐車場と24時間利用可能な清潔なトイレがあります。', 5, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING,OPEN_24H', '全国スケールテストデータ', NULL, '2026-02-28'),
-
--- 福岡エリア
-('福岡空港 国内線ターミナル トイレ', '福岡県福岡市博多区下臼井778-1', 33.585500, 130.448500, '多言語対応の案内板あり。旅行者や出張者に優しい最新設備が揃っています。', 5, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET,NURSING_ROOM,BABY_CHAIR', '全国スケールテストデータ', NULL, '2026-02-28'),
-('JR博多駅 筑紫口公衆トイレ', '福岡県福岡市博多区博多駅中央街1-1', 33.589800, 130.422000, '九州の玄関口。利用者が多いですが、定期的に清掃が行き届いています。', 4, 'station', true, 'WHEELCHAIR,DIAPER,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28');
-
-
--- Equipment テーブルへの反映（バックエンドの検索機能用）
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WHEELCHAIR%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'DIAPER' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%DIAPER%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'OSTOMATE' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OSTOMATE%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%NURSING_ROOM%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%BABY_CHAIR%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'WASHLET' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WASHLET%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'PARKING' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%PARKING%';
-
-INSERT INTO equipment (toilet_id, type)
-SELECT id, 'OPEN_24H' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OPEN_24H%';
-
-COMMIT;
-</file>
-
 <file path="backend/backend/.gitattributes">
 /mvnw text eol=lf
 *.cmd text eol=crlf
@@ -1330,6 +1234,54 @@ SELECT id, 'OPEN_24H' FROM toilet WHERE source = '観光地テストデータ' A
 COMMIT;
 </file>
 
+<file path="backend/backend/src/main/resources/db/migration-h2/V15__add_national_scale_toilets.sql">
+-- V15__add_national_scale_toilets.sql
+-- アプリの全国スケール展開（ズームアウト時のクラスタリングや長距離検索）を検証するための遠方データ（北海道・福岡）
+
+BEGIN;
+
+INSERT INTO toilet (
+  name, address, lat, lng, description, cleanliness,
+  facility_category, public_use, equipment,
+  source, source_url, last_verified
+) VALUES
+-- 北海道エリア
+('札幌駅 南口公衆トイレ', '北海道札幌市北区北6条西4丁目', 43.068600, 141.350800, '寒冷地仕様で二重扉になっています。広くて清潔です。', 4, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28'),
+('道の駅 サーモンパーク千歳 トイレ', '北海道千歳市花園2丁目4-2', 42.837800, 141.662700, '長距離ドライブの休憩に最適。広大な駐車場と24時間利用可能な清潔なトイレがあります。', 5, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING,OPEN_24H', '全国スケールテストデータ', NULL, '2026-02-28'),
+
+-- 福岡エリア
+('福岡空港 国内線ターミナル トイレ', '福岡県福岡市博多区下臼井778-1', 33.585500, 130.448500, '多言語対応の案内板あり。旅行者や出張者に優しい最新設備が揃っています。', 5, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET,NURSING_ROOM,BABY_CHAIR', '全国スケールテストデータ', NULL, '2026-02-28'),
+('JR博多駅 筑紫口公衆トイレ', '福岡県福岡市博多区博多駅中央街1-1', 33.589800, 130.422000, '九州の玄関口。利用者が多いですが、定期的に清掃が行き届いています。', 4, 'station', true, 'WHEELCHAIR,DIAPER,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28');
+
+
+-- Equipment テーブルへの反映（バックエンドの検索機能用）
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WHEELCHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'DIAPER' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%DIAPER%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OSTOMATE' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OSTOMATE%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%NURSING_ROOM%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%BABY_CHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WASHLET' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WASHLET%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'PARKING' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%PARKING%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OPEN_24H' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OPEN_24H%';
+
+COMMIT;
+</file>
+
 <file path="backend/backend/src/main/resources/db/migration-h2/V2__add_equipment_table.sql">
 -- V2__add_equipment_table.sql (H2用)
 -- H2はDO $$ ... END $$（PL/pgSQL）非対応のため書き直し。
@@ -1862,6 +1814,54 @@ SELECT id, 'OPEN_24H' FROM toilet WHERE source = '観光地テストデータ' A
 COMMIT;
 </file>
 
+<file path="backend/backend/src/main/resources/db/migration/V15__add_national_scale_toilets.sql">
+-- V15__add_national_scale_toilets.sql
+-- アプリの全国スケール展開（ズームアウト時のクラスタリングや長距離検索）を検証するための遠方データ（北海道・福岡）
+
+BEGIN;
+
+INSERT INTO toilet (
+  name, address, lat, lng, description, cleanliness,
+  facility_category, public_use, equipment,
+  source, source_url, last_verified
+) VALUES
+-- 北海道エリア
+('札幌駅 南口公衆トイレ', '北海道札幌市北区北6条西4丁目', 43.068600, 141.350800, '寒冷地仕様で二重扉になっています。広くて清潔です。', 4, 'station', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28'),
+('道の駅 サーモンパーク千歳 トイレ', '北海道千歳市花園2丁目4-2', 42.837800, 141.662700, '長距離ドライブの休憩に最適。広大な駐車場と24時間利用可能な清潔なトイレがあります。', 5, 'public', true, 'WHEELCHAIR,DIAPER,NURSING_ROOM,PARKING,OPEN_24H', '全国スケールテストデータ', NULL, '2026-02-28'),
+
+-- 福岡エリア
+('福岡空港 国内線ターミナル トイレ', '福岡県福岡市博多区下臼井778-1', 33.585500, 130.448500, '多言語対応の案内板あり。旅行者や出張者に優しい最新設備が揃っています。', 5, 'commercial', true, 'WHEELCHAIR,DIAPER,OSTOMATE,WASHLET,NURSING_ROOM,BABY_CHAIR', '全国スケールテストデータ', NULL, '2026-02-28'),
+('JR博多駅 筑紫口公衆トイレ', '福岡県福岡市博多区博多駅中央街1-1', 33.589800, 130.422000, '九州の玄関口。利用者が多いですが、定期的に清掃が行き届いています。', 4, 'station', true, 'WHEELCHAIR,DIAPER,WASHLET', '全国スケールテストデータ', NULL, '2026-02-28');
+
+
+-- Equipment テーブルへの反映（バックエンドの検索機能用）
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WHEELCHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WHEELCHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'DIAPER' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%DIAPER%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OSTOMATE' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OSTOMATE%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'NURSING_ROOM' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%NURSING_ROOM%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'BABY_CHAIR' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%BABY_CHAIR%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'WASHLET' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%WASHLET%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'PARKING' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%PARKING%';
+
+INSERT INTO equipment (toilet_id, type)
+SELECT id, 'OPEN_24H' FROM toilet WHERE source = '全国スケールテストデータ' AND equipment LIKE '%OPEN_24H%';
+
+COMMIT;
+</file>
+
 <file path="backend/backend/src/main/resources/db/migration/V2__add_equipment_table.sql">
 -- V2__add_equipment_table.sql
 -- Phase 2-1: Equipmentテーブル追加＆既存データ移行（PostgreSQL）
@@ -2179,199 +2179,6 @@ INSERT INTO equipment (toilet_id, type)
 SELECT id, 'PARKING' FROM toilet WHERE source = 'つくば市バリアフリーマップ' AND equipment LIKE '%PARKING%';
 
 COMMIT;
-</file>
-
-<file path="README.md">
-# 🚻 imatoilet
-
-[日本語版はこちら](README.ja.md)
-
-A toilet search web app for Japan — find accessible, clean, and well-equipped restrooms near you.
-
-<!-- Replace with actual screenshot -->
-<!-- ![imatoilet screenshot](docs/screenshot.png) -->
-
-## 🔗 Demo
-
-> 🚧 Coming soon — [Live Demo URL](#)
-
----
-
-## ✨ Features
-
-- 📍 Search toilets by location on an interactive Google Maps interface
-- ♿ Filter by accessibility features (wheelchair, diaper changing, 24h, etc.)
-- ✏️ Admin interface to add, edit, and delete toilet entries
-- 📊 Data sourced from Tsukuba City open barrier-free map data
-
----
-
-## 🛠 Tech Stack
-
-### Backend
-| Layer | Technology |
-|---|---|
-| Language | Java 21 (Eclipse Temurin) |
-| Framework | Spring Boot 3.5.9 |
-| ORM | Spring Data JPA / Hibernate |
-| DB Migration | Flyway 11.7.2 |
-| Local DB | H2 (in-memory, dev profile) |
-| Production DB | PostgreSQL |
-| Build Tool | Apache Maven 3.9.12 |
-
-### Frontend
-| Layer | Technology |
-|---|---|
-| Framework | React + Vite |
-| Maps | Google Maps JavaScript API |
-| Image Hosting | Cloudinary (optional) |
-
----
-
-## 🚀 Local Development
-
-### Prerequisites
-
-- Java 21
-- Apache Maven 3.9.12 (direct install — **do not use `mvnw`**)
-- Node.js 18+
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/your-username/imatoilet.git
-cd imatoilet
-```
-
-### 2. Set up backend environment variables
-
-Create a `.env` file (not committed to Git) or set environment variables directly.
-See `.env.example` in `toilet-frontend/` for reference.
-
-### 3. Start the backend (H2 local dev)
-
-```powershell
-cd backend\backend
-mvn clean spring-boot:run "-Dspring-boot.run.profiles=dev"
-```
-
-Backend runs at: `http://localhost:8080`
-
-#### H2 Console (local dev only)
-
-| Field | Value |
-|---|---|
-| URL | `http://localhost:8080/h2-console` |
-| JDBC URL | `jdbc:h2:mem:imatoiletdb` |
-| Username | `sa` |
-| Password | *(leave blank)* |
-
-### 4. Start the frontend
-
-```bash
-cd toilet-frontend
-cp .env.example .env   # Fill in your API keys
-npm install
-npm run dev
-```
-
-Frontend runs at: `http://localhost:5173`
-
----
-
-## 🗄 Database Migrations
-
-Flyway manages all schema changes. Migration files are split by environment:
-
-| Directory | Purpose |
-|---|---|
-| `src/main/resources/db/migration/` | PostgreSQL (production) |
-| `src/main/resources/db/migration-h2/` | H2 (local dev) |
-
-> ⚠️ **Never modify existing V1–V10 files.** New migrations must be added as V11, V12, etc.
-
-### Current migrations
-
-| Version | Description |
-|---|---|
-| V1 | Initial schema |
-| V2 | Add equipment table |
-| V3 | Add search indexes |
-| V4 | Insert sample data |
-| V5 | Add image column |
-| V6 | Add baby chair equipment |
-| V7 | Drop boolean flags |
-| V8 | Add source columns |
-| V9 | Insert open data (Tsukuba City) |
-| V10 | Fix Midorino station location coordinates |
-
----
-
-## 🔐 Authentication
-
-Admin operations (PUT / DELETE) require a token header:
-
-```
-X-Admin-Token: <your-admin-token>
-```
-
-Set `ADMIN_TOKEN` in your environment (defaults to `dev-admin-token-local` for local dev).
-
----
-
-## 📁 Project Structure
-
-```
-imatoilet/
-├── backend/backend/          # Spring Boot application
-│   └── src/main/
-│       ├── java/com/imatoilet/backend/
-│       └── resources/
-│           ├── application.properties        # Production (PostgreSQL)
-│           ├── application-dev.properties    # Local dev (H2)
-│           └── db/
-│               ├── migration/                # PostgreSQL migrations
-│               └── migration-h2/             # H2-compatible migrations
-└── toilet-frontend/          # React + Vite frontend
-    ├── .env.example
-    └── src/
-```
-
----
-
-## 🌐 Deployment
-
-### Backend (Railway / Render)
-
-Set the following environment variables in your hosting platform:
-
-```
-DB_URL=jdbc:postgresql://...
-DB_USER=...
-DB_PASSWORD=...
-ADMIN_TOKEN=...
-CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
-PORT=8080
-```
-
-### Frontend (Vercel / Netlify)
-
-Set the following environment variables:
-
-```
-VITE_API_BASE_URL=https://your-backend.railway.app/api/toilets
-VITE_ADMIN_TOKEN=...
-VITE_GOOGLE_MAPS_API_KEY=...
-VITE_GOOGLE_MAPS_MAP_ID=...
-```
-
-> 🚧 Live deployment URL: [Coming soon](#)
-
----
-
-## 📄 License
-
-MIT
 </file>
 
 <file path="toilet-frontend/.env.example">
@@ -3763,197 +3570,217 @@ public enum EquipmentType {
 }
 </file>
 
-<file path="README.ja.md">
-# 🚻 imatoilet!
+<file path="README.md">
+# 🚻 imatoilet
 
-日本全国のトイレを検索できるWebアプリです。バリアフリー対応・清潔さ・設備情報をもとに、近くの公共トイレを素早く見つけられます。
+[日本語版はこちら](README.ja.md)
 
-<!-- 実際のスクリーンショットに差し替えてください -->
-<!-- ![imatoilet スクリーンショット](docs/screenshot.png) -->
+> Find clean, accessible, and well-equipped restrooms anywhere in Japan — instantly.
 
-[English](README.md)
+<!-- Replace with actual screenshot -->
+<!-- ![imatoilet screenshot](docs/screenshot.png) -->
 
-## 🔗 デモ
+## 🔗 Demo
 
-> 🚧 公開準備中 — [デモURL](#)
-
----
-
-## ✨ 主な機能
-
-- 📍 Google マップ上でインタラクティブにトイレを検索
-- ♿ バリアフリー設備（車椅子対応・おむつ交換台・24時間利用可など）でフィルタリング
-- ✏️ 管理者向けのトイレ情報の追加・編集・削除
-- 📊 つくば市バリアフリーマップのオープンデータを収録
+[Live Demo URL](https://imatoilet.vercel.app)
 
 ---
 
-## 🛠 技術スタック
+## ✨ Features
 
-### バックエンド
-| レイヤー | 技術 |
+| Feature | Description |
 |---|---|
-| 言語 | Java 21 (Eclipse Temurin) |
-| フレームワーク | Spring Boot 3.5.9 |
+| 📍 **Map-based search** | Browse toilets on an interactive Google Maps interface with AdvancedMarker and MarkerClusterer |
+| 🗾 **Nationwide coverage** | Bounding Box search dynamically fetches toilets for any visible map area across Japan |
+| ♿ **Accessibility filters** | Filter by 13+ criteria: wheelchair, diaper, 24h, ostomate, nursing room, washlet, free, and more |
+| ⭐ **Reviews & ratings** | Users can post text reviews with cleanliness ratings for each toilet |
+| ❤️ **Favorites** | Save frequently used toilets to a local favorites list |
+| 🗺️ **Route guidance** | Get walking or driving directions from your current location to any toilet |
+| ✏️ **CRUD for admins** | Token-authenticated admin interface to add, edit, and delete toilet entries |
+| 📱 **PWA support** | Installable as a Progressive Web App on mobile devices |
+| 🏙️ **Open data** | Seeded with Tsukuba City barrier-free open data and national tourist spot toilets |
+
+---
+
+## 🛠 Tech Stack
+
+### Backend
+
+| Layer | Technology |
+|---|---|
+| Language | Java 21 (Eclipse Temurin) |
+| Framework | Spring Boot 3.5.9 |
 | ORM | Spring Data JPA / Hibernate |
-| DBマイグレーション | Flyway 11.7.2 |
-| ローカルDB | H2（インメモリ・devプロファイル） |
-| 本番DB | PostgreSQL |
-| ビルドツール | Apache Maven 3.9.12 |
+| DB Migration | Flyway 11.7.2 |
+| Local DB | H2 (in-memory, `dev` profile) |
+| Production DB | PostgreSQL |
+| Build Tool | Apache Maven 3.9.12 |
+| Security | Spring Security + custom `AdminTokenFilter` |
+| Testing | JUnit 5 + MockMvc |
 
-### フロントエンド
-| レイヤー | 技術 |
+### Frontend
+
+| Layer | Technology |
 |---|---|
-| フレームワーク | React + Vite |
-| 地図 | Google Maps JavaScript API |
-| 画像ホスティング | Cloudinary（オプション） |
+| Framework | React 19 + Vite |
+| UI Components | MUI (Material-UI) v7 |
+| Maps | Google Maps JavaScript API (`@react-google-maps/api`) |
+| Marker Clustering | `@googlemaps/markerclusterer` |
+| Image Hosting | Cloudinary (optional) |
+| Testing | Vitest + Testing Library |
+
+### Architecture
+
+```
+[React (Vite)]  ──REST API──>  [Spring Boot]  ──JPA──>  [PostgreSQL]
+      │                                                   [H2 (dev)]
+      │
+  Google Maps JS API
+  Cloudinary (images)
+```
 
 ---
 
-## 🚀 ローカル開発環境のセットアップ
+## 🚀 Local Development
 
-### 必要なもの
+### Prerequisites
 
 - Java 21
-- Apache Maven 3.9.12（直接インストール — **`mvnw` は使用しないこと**）
-- Node.js 18以上
+- Apache Maven 3.9.12 (direct install — **do not use `mvnw`**)
+- Node.js 18+
+- Google Maps API Key
 
-### 1. リポジトリをクローン
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/your-username/imatoilet.git
 cd imatoilet
 ```
 
-### 2. バックエンドの環境変数を設定
-
-`.env` ファイルを作成してください（Gitにはコミットしないこと）。
-`toilet-frontend/.env.example` を参考にしてください。
-
-### 3. バックエンドを起動（H2ローカル開発）
+### 2. Start the backend (H2 in-memory, dev profile)
 
 ```powershell
 cd backend\backend
 mvn clean spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-バックエンド起動URL: `http://localhost:8080`
+Backend runs at: `http://localhost:8080`
 
-#### H2コンソール（ローカル開発時のみ）
+**H2 Console** (local dev only):
 
-| 項目 | 値 |
+| Field | Value |
 |---|---|
-| アクセスURL | `http://localhost:8080/h2-console` |
+| URL | `http://localhost:8080/h2-console` |
 | JDBC URL | `jdbc:h2:mem:imatoiletdb` |
-| ユーザー名 | `sa` |
-| パスワード | *（空欄）* |
+| Username | `sa` |
+| Password | *(leave blank)* |
 
-### 4. フロントエンドを起動
+### 3. Configure frontend environment variables
 
 ```bash
 cd toilet-frontend
-cp .env.example .env   # APIキーを記入してください
+cp .env.example .env
+# Fill in VITE_GOOGLE_MAPS_API_KEY and other keys
+```
+
+### 4. Start the frontend
+
+```bash
 npm install
 npm run dev
 ```
 
-フロントエンド起動URL: `http://localhost:5173`
+Frontend runs at: `http://localhost:5173`
 
 ---
 
-## 🗄 データベースマイグレーション
+## 🗄 Database Migrations
 
-FlywayでDBのスキーマ変更を管理しています。環境ごとにマイグレーションファイルを分けています。
-
-| ディレクトリ | 用途 |
-|---|---|
-| `src/main/resources/db/migration/` | PostgreSQL（本番） |
-| `src/main/resources/db/migration-h2/` | H2（ローカル開発） |
-
-> ⚠️ **既存のV1〜V10ファイルは絶対に書き換えないこと。** 新しいマイグレーションはV11、V12として追加してください。
-
-### マイグレーション一覧
-
-| バージョン | 内容 |
-|---|---|
-| V1 | 初期スキーマ作成 |
-| V2 | 設備テーブル追加 |
-| V3 | 検索用インデックス追加 |
-| V4 | サンプルデータ投入 |
-| V5 | 画像カラム追加 |
-| V6 | ベビーチェア設備追加 |
-| V7 | 旧ブーリアンフラグ削除 |
-| V8 | ソース情報カラム追加 |
-| V9 | オープンデータ投入（つくば市） |
-| V10 | みどりの駅の緯度座標修正 |
-
----
-
-## 🔐 認証
-
-管理者操作（PUT / DELETE）にはトークンヘッダーが必要です：
+Flyway migrations run automatically on startup.
+Migration scripts are located at:
 
 ```
-X-Admin-Token: <管理者トークン>
+backend/src/main/resources/db/migration/       # PostgreSQL (production)
+backend/src/main/resources/db/migration-h2/    # H2 (local dev)
 ```
 
-環境変数 `ADMIN_TOKEN` で設定してください（ローカル開発時のデフォルト値: `dev-admin-token-local`）。
+Key migrations:
+
+| Version | Description |
+|---|---|
+| V1 | Initial schema (toilets, equipment) |
+| V4 | Sample data |
+| V9 | Tsukuba City open data |
+| V11 | Review table |
+| V13–V15 | Tokyo dense data, tourist spots, national scale data |
 
 ---
 
-## 📁 ディレクトリ構成
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/toilets` | Search toilets (location, bounding box, keyword, filters) |
+| `GET` | `/api/toilets/{id}` | Get toilet details |
+| `POST` | `/api/toilets` | Create toilet *(admin token required)* |
+| `PUT` | `/api/toilets/{id}` | Update toilet *(admin token required)* |
+| `DELETE` | `/api/toilets/{id}` | Delete toilet *(admin token required)* |
+| `GET` | `/api/toilets/{id}/reviews` | List reviews for a toilet |
+| `POST` | `/api/toilets/{id}/reviews` | Post a new review |
+
+### Search Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `lat` / `lng` | `Double` | Center coordinates for radius search |
+| `radius` | `Double` | Search radius in km (default: 5.0) |
+| `minLat/maxLat/minLng/maxLng` | `Double` | Bounding box (nationwide search) |
+| `keyword` | `String` | Keyword search on name/address |
+| `facilityCategory` | `String` | `station`, `park`, `commercial`, `public`, etc. |
+| `equipment` | `List<String>` | e.g. `WHEELCHAIR`, `DIAPER`, `OPEN_24H`, `OSTOMATE` |
+
+---
+
+## 🧪 Running Tests
+
+```bash
+# Backend
+cd backend/backend
+mvn test
+
+# Frontend
+cd toilet-frontend
+npm run test
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 imatoilet/
-├── backend/backend/          # Spring Boot アプリケーション
-│   └── src/main/
-│       ├── java/com/imatoilet/backend/
-│       └── resources/
-│           ├── application.properties        # 本番用（PostgreSQL）
-│           ├── application-dev.properties    # ローカル開発用（H2）
-│           └── db/
-│               ├── migration/                # PostgreSQL用マイグレーション
-│               └── migration-h2/             # H2互換マイグレーション
-└── toilet-frontend/          # React + Vite フロントエンド
-    ├── .env.example
-    └── src/
+├── backend/backend/           # Spring Boot application
+│   ├── src/main/java/         # Controllers, Services, Entities, Repositories
+│   ├── src/main/resources/    # application.properties, Flyway migrations
+│   └── src/test/              # Unit & integration tests
+└── toilet-frontend/           # React + Vite application
+    ├── src/
+    │   ├── components/        # Shared UI components (SafeGoogleMap, ToiletCard, etc.)
+    │   ├── hooks/             # Custom hooks (useToiletSearch)
+    │   ├── pages/             # Route-level pages (Home, Search, Detail, Register, Favorites)
+    │   └── utils.js           # Utility functions (distance calc, equipment normalization)
+    └── public/                # PWA icons, manifest
 ```
 
 ---
 
-## 🌐 デプロイ
-
-### バックエンド（Railway / Render）
-
-ホスティング環境で以下の環境変数を設定してください：
-
-```
-DB_URL=jdbc:postgresql://...
-DB_USER=...
-DB_PASSWORD=...
-ADMIN_TOKEN=...
-CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
-PORT=8080
-```
-
-### フロントエンド（Vercel / Netlify）
-
-以下の環境変数を設定してください：
-
-```
-VITE_API_BASE_URL=https://your-backend.railway.app/api/toilets
-VITE_ADMIN_TOKEN=...
-VITE_GOOGLE_MAPS_API_KEY=...
-VITE_GOOGLE_MAPS_MAP_ID=...
-```
-
-> 🚧 公開URL: [準備中](#)
-
----
-
-## 📄 ライセンス
+## 📝 License
 
 MIT
+
+---
+
+*Built with ❤️ as a portfolio project.*
 </file>
 
 <file path="toilet-frontend/.gitignore">
@@ -5207,6 +5034,219 @@ describe('utils.js (便利関数)', () => {
     });
   });
 });
+</file>
+
+<file path="README.ja.md">
+# 🚻 imatoilet
+
+[English](README.md)
+
+> 日本全国のトイレを、今すぐ見つける。清潔さ・バリアフリー設備・場所から絞り込めるトイレ検索Webアプリ。
+
+<!-- 実際のスクリーンショットに差し替えてください -->
+<!-- ![imatoilet スクリーンショット](docs/screenshot.png) -->
+
+## 🔗 デモ
+
+[デモURL](https://imatoilet.vercel.app)
+
+---
+
+## ✨ 主な機能
+
+| 機能 | 説明 |
+|---|---|
+| 📍 **マップ検索** | Google Maps上でトイレをインタラクティブに表示。AdvancedMarker・MarkerClustererに対応 |
+| 🗾 **全国スケール対応** | 地図の表示領域（Bounding Box）で動的にAPIを叩き、日本全国どこでも検索可能 |
+| ♿ **バリアフリーフィルター** | 車椅子・おむつ台・24時間・オストメイト・授乳室・ウォシュレット・無料など13項目以上で絞り込み |
+| ⭐ **レビュー・コメント** | 清潔度評価つきのテキストレビューを投稿可能 |
+| ❤️ **お気に入り** | よく使うトイレをローカル保存してお気に入り一覧から参照 |
+| 🗺️ **ルート案内** | 現在地からトイレまでの徒歩・車ルートをGoogle Mapsで表示 |
+| ✏️ **管理者向けCRUD** | トークン認証による管理者専用のトイレ情報追加・編集・削除 |
+| 📱 **PWA対応** | スマートフォンにアプリとしてインストール可能 |
+| 🏙️ **オープンデータ活用** | つくば市バリアフリーマップのオープンデータおよび全国主要観光地のトイレ情報を収録 |
+
+---
+
+## 🛠 技術スタック
+
+### バックエンド
+
+| レイヤー | 技術 |
+|---|---|
+| 言語 | Java 21 (Eclipse Temurin) |
+| フレームワーク | Spring Boot 3.5.9 |
+| ORM | Spring Data JPA / Hibernate |
+| DBマイグレーション | Flyway 11.7.2 |
+| ローカルDB | H2（インメモリ・`dev`プロファイル） |
+| 本番DB | PostgreSQL |
+| ビルドツール | Apache Maven 3.9.12 |
+| セキュリティ | Spring Security + カスタム `AdminTokenFilter` |
+| テスト | JUnit 5 + MockMvc |
+
+### フロントエンド
+
+| レイヤー | 技術 |
+|---|---|
+| フレームワーク | React 19 + Vite |
+| UIコンポーネント | MUI (Material-UI) v7 |
+| 地図 | Google Maps JavaScript API（`@react-google-maps/api`） |
+| マーカークラスタリング | `@googlemaps/markerclusterer` |
+| 画像ホスティング | Cloudinary（オプション） |
+| テスト | Vitest + Testing Library |
+
+### アーキテクチャ
+
+```
+[React (Vite)]  ──REST API──>  [Spring Boot]  ──JPA──>  [PostgreSQL]
+      │                                                   [H2 (dev)]
+      │
+  Google Maps JS API
+  Cloudinary（画像）
+```
+
+---
+
+## 🚀 ローカル開発環境のセットアップ
+
+### 必要なもの
+
+- Java 21
+- Apache Maven 3.9.12（直接インストール — **`mvnw` は使用しないこと**）
+- Node.js 18以上
+- Google Maps APIキー
+
+### 1. リポジトリをクローン
+
+```bash
+git clone https://github.com/your-username/imatoilet.git
+cd imatoilet
+```
+
+### 2. バックエンドを起動（H2インメモリ・devプロファイル）
+
+```powershell
+cd backend\backend
+mvn clean spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+バックエンド起動URL: `http://localhost:8080`
+
+**H2コンソール**（ローカル開発時のみ）:
+
+| 項目 | 値 |
+|---|---|
+| アクセスURL | `http://localhost:8080/h2-console` |
+| JDBC URL | `jdbc:h2:mem:imatoiletdb` |
+| ユーザー名 | `sa` |
+| パスワード | *（空欄）* |
+
+### 3. フロントエンドの環境変数を設定
+
+```bash
+cd toilet-frontend
+cp .env.example .env
+# VITE_GOOGLE_MAPS_API_KEY などを記入してください
+```
+
+### 4. フロントエンドを起動
+
+```bash
+npm install
+npm run dev
+```
+
+フロントエンド起動URL: `http://localhost:5173`
+
+---
+
+## 🗄 データベースマイグレーション
+
+Flywayマイグレーションは起動時に自動実行されます。
+マイグレーションスクリプトの格納場所:
+
+```
+backend/src/main/resources/db/migration/       # PostgreSQL（本番）
+backend/src/main/resources/db/migration-h2/    # H2（ローカル開発）
+```
+
+主なマイグレーション:
+
+| バージョン | 内容 |
+|---|---|
+| V1 | 初期スキーマ（toilets・equipment） |
+| V4 | サンプルデータ投入 |
+| V9 | つくば市オープンデータ投入 |
+| V11 | レビューテーブル追加 |
+| V13〜V15 | 東京密集データ・観光地・全国スケールデータ追加 |
+
+---
+
+## 🔌 APIエンドポイント
+
+| メソッド | エンドポイント | 説明 |
+|---|---|---|
+| `GET` | `/api/toilets` | トイレ検索（位置情報・Bounding Box・キーワード・フィルター） |
+| `GET` | `/api/toilets/{id}` | トイレ詳細取得 |
+| `POST` | `/api/toilets` | トイレ追加 *（管理者トークン必須）* |
+| `PUT` | `/api/toilets/{id}` | トイレ更新 *（管理者トークン必須）* |
+| `DELETE` | `/api/toilets/{id}` | トイレ削除 *（管理者トークン必須）* |
+| `GET` | `/api/toilets/{id}/reviews` | レビュー一覧取得 |
+| `POST` | `/api/toilets/{id}/reviews` | レビュー投稿 |
+
+### 主な検索パラメータ
+
+| パラメータ | 型 | 説明 |
+|---|---|---|
+| `lat` / `lng` | `Double` | 現在地座標（半径検索） |
+| `radius` | `Double` | 検索半径（km、デフォルト: 5.0） |
+| `minLat/maxLat/minLng/maxLng` | `Double` | Bounding Box（全国スケール検索） |
+| `keyword` | `String` | 名称・住所のキーワード検索 |
+| `facilityCategory` | `String` | `station`・`park`・`commercial`・`public` など |
+| `equipment` | `List<String>` | `WHEELCHAIR`・`DIAPER`・`OPEN_24H`・`OSTOMATE` など |
+
+---
+
+## 🧪 テストの実行
+
+```bash
+# バックエンド
+cd backend/backend
+mvn test
+
+# フロントエンド
+cd toilet-frontend
+npm run test
+```
+
+---
+
+## 📁 ディレクトリ構成
+
+```
+imatoilet/
+├── backend/backend/           # Spring Bootアプリケーション
+│   ├── src/main/java/         # Controller・Service・Entity・Repository
+│   ├── src/main/resources/    # application.properties・Flywayマイグレーション
+│   └── src/test/              # ユニット・統合テスト
+└── toilet-frontend/           # React + Viteアプリケーション
+    ├── src/
+    │   ├── components/        # 共有UIコンポーネント（SafeGoogleMap・ToiletCardなど）
+    │   ├── hooks/             # カスタムフック（useToiletSearch）
+    │   ├── pages/             # ルートページ（Home・Search・Detail・Register・Favorites）
+    │   └── utils.js           # ユーティリティ（距離計算・設備情報正規化）
+    └── public/                # PWAアイコン・マニフェスト
+```
+
+---
+
+## 📝 ライセンス
+
+MIT
+
+---
+
+*ポートフォリオとして個人開発しています。*
 </file>
 
 <file path="toilet-frontend/index.html">
@@ -6794,91 +6834,6 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
 };
 </file>
 
-<file path="toilet-frontend/src/pages/Search/index.jsx">
-// toilet-frontend/src/pages/Search/index.jsx
-import { useNavigate } from 'react-router-dom';
-import { useToiletSearch } from '../../hooks/useToiletSearch';
-import MapPanel from './MapPanel';
-import ListPanel from './ListPanel';
-import FilterPanel from './FilterPanel';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import '../../search.css';
-
-function Search() {
-  const navigate = useNavigate();
-  
-  const {
-    filteredToilets,
-    currentLocation,
-    realLocation,
-    placeQuery,
-    setPlaceQuery,
-    searchStatus, 
-    handlePlaceSearch,
-    handleCurrentLocation,
-    handleKeywordSearch,
-    searchHistory,
-    handleHistorySearch,
-    removeFromHistory,
-    selectedToiletId,      
-    setSelectedToiletId,
-    setMapBounds           // ★追加: 先ほどフックに追加した関数を取得
-  } = useToiletSearch();
-
-  return (
-    <main className="search-page-wrapper">
-
-      <div className="search-back-bar">
-        <button
-          className="search-back-btn"
-          onClick={() => navigate('/')}
-        >
-          <ArrowBackIcon fontSize="small" />
-          <span>トップに戻る</span>
-        </button>
-      </div>
-
-      <div className={`three-col-layout ${selectedToiletId ? 'map-only-mode' : ''}`}>
-        
-        <div className={`col-filter ${selectedToiletId ? 'hidden' : ''}`}>
-          <FilterPanel 
-            placeQuery={placeQuery}
-            setPlaceQuery={setPlaceQuery}
-            handleKeywordSearch={handleKeywordSearch}
-            handleCurrentLocation={handleCurrentLocation}
-            handlePlaceSearch={handlePlaceSearch}
-            searchHistory={searchHistory}
-            handleHistorySearch={handleHistorySearch}
-            removeFromHistory={removeFromHistory}
-          />
-        </div>
-
-        <div className="col-map">
-          {!selectedToiletId && searchStatus && <div className="map-status-bar">{searchStatus}</div>}
-          <MapPanel 
-            filteredToilets={filteredToilets}
-            currentLocation={currentLocation}
-            realLocation={realLocation}
-            selectedToiletId={selectedToiletId}
-            setSelectedToiletId={setSelectedToiletId}
-            setMapBounds={setMapBounds} // ★追加: MapPanel に関数を渡す
-          />
-        </div>
-
-        <div className={`col-list ${selectedToiletId ? 'hidden' : ''}`}>
-          <ListPanel 
-            filteredToilets={filteredToilets}
-            currentLocation={currentLocation}
-          />
-        </div>
-      </div>
-    </main>
-  );
-}
-
-export default Search;
-</file>
-
 <file path="backend/backend/pom.xml">
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -7034,6 +6989,91 @@ export default Search;
     "vite": "npm:rolldown-vite@7.2.5"
   }
 }
+</file>
+
+<file path="toilet-frontend/src/pages/Search/index.jsx">
+// toilet-frontend/src/pages/Search/index.jsx
+import { useNavigate } from 'react-router-dom';
+import { useToiletSearch } from '../../hooks/useToiletSearch';
+import MapPanel from './MapPanel';
+import ListPanel from './ListPanel';
+import FilterPanel from './FilterPanel';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import '../../search.css';
+
+function Search() {
+  const navigate = useNavigate();
+  
+  const {
+    filteredToilets,
+    currentLocation,
+    realLocation,
+    placeQuery,
+    setPlaceQuery,
+    searchStatus, 
+    handlePlaceSearch,
+    handleCurrentLocation,
+    handleKeywordSearch,
+    searchHistory,
+    handleHistorySearch,
+    removeFromHistory,
+    selectedToiletId,      
+    setSelectedToiletId,
+    setMapBounds           // ★追加: 先ほどフックに追加した関数を取得
+  } = useToiletSearch();
+
+  return (
+    <main className="search-page-wrapper">
+
+      <div className="search-back-bar">
+        <button
+          className="search-back-btn"
+          onClick={() => navigate('/')}
+        >
+          <ArrowBackIcon fontSize="small" />
+          <span>トップに戻る</span>
+        </button>
+      </div>
+
+      <div className={`three-col-layout ${selectedToiletId ? 'map-only-mode' : ''}`}>
+        
+        <div className={`col-filter ${selectedToiletId ? 'hidden' : ''}`}>
+          <FilterPanel 
+            placeQuery={placeQuery}
+            setPlaceQuery={setPlaceQuery}
+            handleKeywordSearch={handleKeywordSearch}
+            handleCurrentLocation={handleCurrentLocation}
+            handlePlaceSearch={handlePlaceSearch}
+            searchHistory={searchHistory}
+            handleHistorySearch={handleHistorySearch}
+            removeFromHistory={removeFromHistory}
+          />
+        </div>
+
+        <div className="col-map">
+          {!selectedToiletId && searchStatus && <div className="map-status-bar">{searchStatus}</div>}
+          <MapPanel 
+            filteredToilets={filteredToilets}
+            currentLocation={currentLocation}
+            realLocation={realLocation}
+            selectedToiletId={selectedToiletId}
+            setSelectedToiletId={setSelectedToiletId}
+            setMapBounds={setMapBounds} // ★追加: MapPanel に関数を渡す
+          />
+        </div>
+
+        <div className={`col-list ${selectedToiletId ? 'hidden' : ''}`}>
+          <ListPanel 
+            filteredToilets={filteredToilets}
+            currentLocation={currentLocation}
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default Search;
 </file>
 
 <file path="toilet-frontend/src/utils.js">
@@ -9303,7 +9343,7 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
 
   const selectedToilet = filteredToilets.find(t => t.id === selectedToiletId);
 
-  const MARKER_LIMIT = 50;
+  const MARKER_LIMIT = 1000;
   const markerToilets = useMemo(() => {
     if (!Array.isArray(filteredToilets)) return [];
     return filteredToilets.slice(0, MARKER_LIMIT);
