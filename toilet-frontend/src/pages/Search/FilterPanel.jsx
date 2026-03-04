@@ -57,15 +57,25 @@ function FilterPanel({
         <h3 className="filter-title desktop-only">場所・キーワード</h3>
 
         <div className="search-box-group" style={{ position: 'relative' }} ref={historyRef}>
-          <input
-            type="search"
-            className="input-search-side"
-            placeholder="場所や施設名を入力"
-            value={placeQuery}
-            onChange={(e) => setPlaceQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()}
-            onFocus={() => setShowHistory(true)}
-          />
+
+          {/* 入力欄 + 🔍 + 📍 を1行に収める */}
+          <div className="search-input-row">
+            <input
+              type="search"
+              className="input-search-side"
+              placeholder="駅名・場所・施設名を入力"
+              value={placeQuery}
+              onChange={(e) => setPlaceQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()}
+              onFocus={() => setShowHistory(true)}
+            />
+            <button className="btn-search-inline" onClick={handlePlaceSearch} title="検索">
+              <SearchIcon fontSize="small" />
+            </button>
+            <button className="btn-search-inline btn-search-location" onClick={handleCurrentLocation} title="現在地">
+              <MyLocationIcon fontSize="small" />
+            </button>
+          </div>
 
           {/* 履歴ポップアップ */}
           {showHistory && searchHistory && searchHistory.length > 0 && (
@@ -76,7 +86,6 @@ function FilterPanel({
                   <span>過去の検索履歴</span>
                   <button className="history-close-btn" onClick={() => setShowHistory(false)}>✕</button>
                 </div>
-
                 <div className="history-list">
                   {searchHistory.map((hist, idx) => (
                     <div
@@ -84,19 +93,16 @@ function FilterPanel({
                       className="history-item"
                       style={{ display: 'flex', justifyContent: 'space-between', padding: '0' }}
                     >
-                      {/* 左側：クリックで検索実行 */}
-                      <div 
+                      <div
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '12px 14px' }}
                         onClick={() => { handleHistorySearch(hist); setShowHistory(false); }}
                       >
                         <HistoryIcon fontSize="small" color="action" />
                         {hist}
                       </div>
-
-                      {/* 右側：削除ボタン */}
                       <button
                         onClick={(e) => {
-                          e.stopPropagation(); // 親のクリックイベント（検索実行）を防ぐ
+                          e.stopPropagation();
                           removeFromHistory(hist);
                         }}
                         style={{
@@ -110,7 +116,6 @@ function FilterPanel({
                     </div>
                   ))}
                 </div>
-
                 <div className="history-footer desktop-only" onClick={() => setShowHistory(false)}>
                   閉じる
                 </div>
@@ -118,25 +123,8 @@ function FilterPanel({
             </>
           )}
 
-          <div className="search-actions">
-            <button className="btn-icon-side desktop-only-btn" onClick={handleKeywordSearch} title="登録データの名前・住所で探す">
-              <SearchIcon fontSize="small" />
-              <span className="btn-label">登録データを検索</span>
-            </button>
-            <button className="btn-icon-side desktop-only-btn" onClick={handlePlaceSearch} title="駅名・エリア名で地図を移動して探す">
-              <MapIcon fontSize="small" />
-              <span className="btn-label">地図で探す</span>
-            </button>
-            <button className="btn-icon-side btn-location" onClick={handleCurrentLocation} title="現在地">
-              <MyLocationIcon fontSize="small" className="loc-icon" />
-              <span className="loc-text">現在地</span>
-            </button>
-          </div>
-          <p className="search-hint desktop-only">
-            🗺️ 地図で探す：駅名・エリア名向け<br />
-            🔍 登録データを検索：施設名が分かる時向け
-          </p>
         </div>
+
       </section>
 
       {/* スマホ用アコーディオン開閉ボタン */}
