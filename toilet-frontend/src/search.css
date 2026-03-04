@@ -76,23 +76,43 @@
   display: flex;
   gap: 8px;
 }
+
 .btn-icon-side {
   flex: 1;
   background: #f5f5f5;
   border: 1px solid #ddd;
   border-radius: 6px;
-  padding: 6px;
+  padding: 6px 4px;
   cursor: pointer;
   color: #555;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 36px;
+  gap: 2px;
+  min-height: 44px;
+  height: auto;
 }
 .btn-icon-side:hover {
   background: #e3f2fd;
   color: #1976d2;
   border-color: #1976d2;
+}
+
+/* ボタン内テキストラベル（PC用） */
+.btn-label {
+  font-size: 0.65rem;
+  line-height: 1;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* 検索ヒントテキスト（PC用） */
+.search-hint {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 4px 0 0;
+  line-height: 1.6;
 }
 
 /* ラジオボタンリスト */
@@ -595,6 +615,18 @@
   }
   .desktop-only-btn {
     display: none !important;
+  }
+  /* タブレット・モバイルではヒントテキストも非表示 */
+  .search-hint {
+    display: none;
+  }
+
+  /* モバイルでは現在地ボタンのみアイコン+テキスト横並びに戻す */
+  .btn-location {
+    flex-direction: row !important;
+    gap: 4px !important;
+    height: 44px !important;
+    min-height: 44px !important;
   }
 
   .filter-section-top {

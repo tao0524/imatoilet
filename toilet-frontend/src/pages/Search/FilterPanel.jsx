@@ -119,17 +119,23 @@ function FilterPanel({
           )}
 
           <div className="search-actions">
-            <button className="btn-icon-side desktop-only-btn" onClick={handleKeywordSearch} title="リスト内をキーワード検索">
+            <button className="btn-icon-side desktop-only-btn" onClick={handleKeywordSearch} title="登録データの名前・住所で探す">
               <SearchIcon fontSize="small" />
+              <span className="btn-label">登録データを検索</span>
             </button>
-            <button className="btn-icon-side desktop-only-btn" onClick={handlePlaceSearch} title="地図移動">
+            <button className="btn-icon-side desktop-only-btn" onClick={handlePlaceSearch} title="駅名・エリア名で地図を移動して探す">
               <MapIcon fontSize="small" />
+              <span className="btn-label">地図で探す</span>
             </button>
             <button className="btn-icon-side btn-location" onClick={handleCurrentLocation} title="現在地">
               <MyLocationIcon fontSize="small" className="loc-icon" />
               <span className="loc-text">現在地</span>
             </button>
           </div>
+          <p className="search-hint desktop-only">
+            🗺️ 地図で探す：駅名・エリア名向け<br />
+            🔍 登録データを検索：施設名が分かる時向け
+          </p>
         </div>
       </section>
 
