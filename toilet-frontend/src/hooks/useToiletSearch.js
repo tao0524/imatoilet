@@ -357,9 +357,7 @@ export const useToiletSearch = () => {
       setFilteredToilets(uniqueResult);
       setSearchStatus(prev => {
         if (uniqueResult.length > 0) {
-          return prev.includes('検索中') || prev.includes('読み込み中')
-            ? `${uniqueResult.length}件のトイレが見つかりました`
-            : prev;
+          return `${uniqueResult.length}件のトイレが見つかりました`;
         }
         return prev.includes('付近') ? prev : '条件に一致するトイレは見つかりませんでした';
       });
