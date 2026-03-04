@@ -116,7 +116,6 @@ export const useToiletSearch = () => {
           const lng = hit.geometry.location.lng();
           setCurrentLocation({ lat, lng, address: hit.formatted_address || hit.name });
           let statusMsg = `「${hit.name}」周辺`;
-          if (hit.rating) statusMsg += ` (★${hit.rating})`;
           setSearchStatus(statusMsg + ' を表示中');
         } else {
           const geocoder = new window.google.maps.Geocoder();
