@@ -91,35 +91,40 @@ function Home() {
               <li>
                 <span className="step-num">1</span>
                 <div className="step-body">
-                  <div className="step-head">「近くのトイレを探す」を押す</div>
-                  <div className="step-text">検索ページで近い順に一覧表示します。</div>
+                  <div className="step-head">近くのトイレを探す</div>
+                  <div className="step-text">駅名・場所・施設名で検索ができます。</div>
                 </div>
               </li>
 
               <li>
                 <span className="step-num">2</span>
                 <div className="step-body">
-                  <div className="step-head">位置情報を許可（距離表示）</div>
-                  <div className="step-text">許可すると距離が表示され、近い順に並び替えます。</div>
+                  <div className="step-head">地図でトイレを確認する</div>
+                  <div className="step-text">周辺のトイレがマップ上に表示されます。</div>
                 </div>
               </li>
 
               <li>
                 <span className="step-num">3</span>
                 <div className="step-body">
-                  <div className="step-head">条件をチェック（車椅子 / オムツ / 24時間）</div>
-                  <div className="step-text">必要な設備だけに絞り込めます。</div>
+                  <div className="step-head">条件を指定して探す</div>
+                  <div className="step-text">車椅子・オムツ・24時間など13項目で、必要な設備だけに絞り込めます。</div>
                 </div>
               </li>
 
               <li>
                 <span className="step-num">4</span>
                 <div className="step-body">
-                  <div className="step-head">トイレを登録する（任意）</div>
-                  <div className="step-text">
-                    見つけたトイレを、自分用に登録できます。<br />
-                    写真や設備情報も追加できます（公開はされません）。
-                  </div>
+                  <div className="step-head">行き方を確認する</div>
+                  <div className="step-text">現在地からの経路案内（徒歩・車）が使えます。</div>
+                </div>
+              </li>
+
+              <li>
+                <span className="step-num">5</span>
+                <div className="step-body">
+                  <div className="step-head">お気に入りに登録する</div>
+                  <div className="step-text">よく使うトイレを保存して次回は、よく使うトイレからすぐ見つけられます。</div>
                 </div>
               </li>
             </ol>
