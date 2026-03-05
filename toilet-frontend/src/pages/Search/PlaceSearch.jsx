@@ -25,7 +25,7 @@ function PlaceSearch({
           <input 
             type="search" 
             className="input-search"
-            placeholder="住所、駅、施設名など" 
+            placeholder="駅名・場所・施設名を入力"
             value={placeQuery}
             onChange={(e) => setPlaceQuery(e.target.value)}
             onFocus={() => setShowHistory(true)}
@@ -68,22 +68,17 @@ function PlaceSearch({
         </div>
 
         <div className="place-search__btns">
-           {/* 地図検索（Nominatim） */}
-           <button className="btn btn-sub" onClick={handlePlaceSearch} title="地図を移動して周辺を探す">
-             <MapIcon fontSize="small" sx={{ mr: 0.5 }} /> 地図検索
+           <button className="btn btn-primary" onClick={handlePlaceSearch} title="検索">
+             <SearchIcon fontSize="small" />
            </button>
-           
-           {/* ★追加: キーワード検索（DB直接） */}
-           <button className="btn btn-primary" onClick={handleKeywordSearch} title="登録データの住所や名前で探す" style={{ padding: '0 12px' }}>
-             <SearchIcon fontSize="small" sx={{ mr: 0.5 }} /> キーワード
-           </button>
-           
-           {/* 現在地リセット */}
-           <button className="btn btn-sub" onClick={handleCurrentLocation} title="現在地に戻す">
+           <button className="btn btn-sub btn-location-mobile" onClick={handleCurrentLocation} title="現在地に戻す">
              <MyLocationIcon fontSize="small" />
            </button>
         </div>
       </div>
+      <p style={{ fontSize: '0.75rem', color: '#888', margin: '4px 0 0', lineHeight: '1.5' }}>
+        🗺️ 地図で探す：駅名・エリア名向け　／　🔍 DB検索：施設名が分かる時向け
+      </p>
       <p className="place-search__status">{searchStatus}</p>
     </section>
   );
