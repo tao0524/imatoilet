@@ -1,15 +1,20 @@
 # 🚻 imatoilet
 
-[日本語版はこちら](README.ja.md)
+[日本語](README.ja.md)
 
-> Find clean, accessible, and well-equipped restrooms anywhere in Japan — instantly.
+> Find the nearest toilet in Japan, right now. A toilet search web app with filtering by cleanliness, accessibility features, and location.
 
-<!-- Replace with actual screenshot -->
-<!-- ![imatoilet screenshot](docs/screenshot.png) -->
+<p align="center">
+  <img src="docs/screenshot-hero-pc.png" width="60%" alt="Imatoilet PC top screen">
+  <img src="docs/screenshot-hero-mobile.png" width="25%" alt="Imatoilet mobile top screen">
+</p>
+
+**"Imatoilet" — find the nearest toilet when you need it most.**
+A full-stack web application that quickly locates available toilets based on your current location and specified conditions. Fully responsive for both PC and smartphones, designed for smooth use on the go.
 
 ## 🔗 Demo
 
-[Live Demo URL](https://imatoilet.vercel.app)
+[Live Demo](https://imatoilet.vercel.app)
 
 ---
 
@@ -17,15 +22,15 @@
 
 | Feature | Description |
 |---|---|
-| 📍 **Map-based search** | Browse toilets on an interactive Google Maps interface with AdvancedMarker and MarkerClusterer |
-| 🗾 **Nationwide coverage** | Bounding Box search dynamically fetches toilets for any visible map area across Japan |
-| ♿ **Accessibility filters** | Filter by 13+ criteria: wheelchair, diaper, 24h, ostomate, nursing room, washlet, free, and more |
-| ⭐ **Reviews & ratings** | Users can post text reviews with cleanliness ratings for each toilet |
-| ❤️ **Favorites** | Save frequently used toilets to a local favorites list |
-| 🗺️ **Route guidance** | Get walking or driving directions from your current location to any toilet |
-| ✏️ **CRUD for admins** | Token-authenticated admin interface to add, edit, and delete toilet entries |
-| 📱 **PWA support** | Installable as a Progressive Web App on mobile devices |
-| 🏙️ **Open data** | Seeded with Tsukuba City barrier-free open data and national tourist spot toilets |
+| 📍 **Map Search** | Interactively display toilets on Google Maps with AdvancedMarker and MarkerClusterer support |
+| 🗾 **Nationwide Coverage** | Dynamically queries the API by map viewport (Bounding Box), covering all of Japan |
+| ♿ **Accessibility Filters** | Filter by 13+ criteria: wheelchair access, diaper changing, 24h availability, ostomate, nursing room, washlet, free, and more |
+| ⭐ **Reviews & Comments** | Post text reviews with a cleanliness rating |
+| ❤️ **Favorites** | Save frequently used toilets locally and access them from a favorites list |
+| 🗺️ **Route Navigation** | Display walking and driving routes from your current location via Google Maps |
+| ✏️ **Admin CRUD** | Add, edit, and delete toilet information via token-authenticated admin access |
+| 📱 **PWA Support** | Installable as an app on smartphones |
+| 🏙️ **Open Data Integration** | Includes Tsukuba City barrier-free map open data and toilet information for major tourist spots nationwide |
 
 ---
 
@@ -58,29 +63,74 @@
 
 ### Architecture
 
-```
-[React (Vite)]  ──REST API──>  [Spring Boot]  ──JPA──>  [PostgreSQL]
-      │                                                   [H2 (dev)]
-      │
-  Google Maps JS API
-  Cloudinary (images)
+```mermaid
+graph LR
+  A[React / Vite] -->|REST API| B[Spring Boot]
+  B -->|JPA| C[(PostgreSQL)]
+  B -->|JPA| D[(H2 / dev)]
+  A --- E[Google Maps JS API]
+  A --- F[Cloudinary]
 ```
 
 ---
 
-## 🚀 Local Development
+## 💡 Development Story & Key Decisions
+
+### 1. Performance Optimization and AI-Assisted Troubleshooting (Google Maps API)
+
+<p align="center">
+  <img src="docs/screenshot-cluster-pc.png" width="60%" alt="Map clustering — PC">
+  <img src="docs/screenshot-cluster-mobile.png" width="25%" alt="Map clustering — Mobile">
+</p>
+
+**Rendering performance optimization with Google Maps API and MarkerClusterer**
+To prevent the map from becoming cluttered when many results are returned, I introduced MarkerClusterer to group pins together. This reduces browser rendering load from large numbers of markers, achieving both smooth performance and high visual clarity.
+
+Throughout development I made active use of AI assistance, but in complex domains like the Google Maps API, I repeatedly encountered responses containing outdated information or contradictions. This reinforced the habit of cross-referencing AI-generated code against error logs and official documentation rather than copying it blindly. Proactively introducing MarkerClusterer to handle future data growth taught me the fundamentals of building with long-term operability in mind.
+
+---
+
+### 2. Leveraging Backend Knowledge While Learning React from Scratch
+
+<p align="center">
+  <img src="docs/screenshot-detail-pc.png" width="60%" alt="Toilet detail screen — PC">
+  <img src="docs/screenshot-detail-mobile.png" width="25%" alt="Toilet detail screen — Mobile">
+</p>
+
+**Clean rendering of complex facility data via Spring Boot API integration**
+Equipment information and review data fetched from the Spring Boot backend are processed on the React side and mapped into readable tags and star ratings. This seamless frontend-backend data integration produces a detail screen where users can grasp all the information they need at a glance.
+
+Java was already familiar to me, so I could approach the API design and database setup calmly, while React was a completely new challenge. The hardest part was the API communication bridging the two environments — AI-generated code frequently caused errors, and I had to isolate and debug issues methodically. Leveraging my Java knowledge to trace problems from the backend outward, and ultimately building a consistent data flow from frontend to database on my own, gave me a solid end-to-end understanding of full-stack development.
+
+---
+
+### 3. User-Centered UI/UX Born from Personal Experience and Competitor Analysis
+
+<p align="center">
+  <img src="docs/screenshot-filter-pc.png" width="60%" alt="Accessibility filter screen — PC">
+  <img src="docs/screenshot-filter-mobile.png" width="25%" alt="Accessibility filter screen — Mobile">
+</p>
+
+**Barrier-free UI design considerate of elderly users and diverse needs**
+Built with MUI v7, detailed conditions such as "diaper changing table" and "wheelchair access" are expressed through high-visibility icons and intuitive toggle switches. Button placement is optimized for mobile usability, delivering a friendly UX that anyone can operate without confusion, regardless of digital literacy.
+
+The project started from a personal experience of needing to find a toilet quickly while out. After discovering that many similar apps already existed, I downloaded and compared several of them rather than giving up — and concluded that the most important differentiator was **simplicity that even elderly or less tech-savvy users can navigate intuitively**. I avoided feature bloat that would complicate the interface, prioritized quick access to essential information (accessibility features, distance), and kept the overall design soft and welcoming to ease the anxiety of urgently needing a restroom. This project taught me that imagining who opens the app and how they feel is just as important as the technical implementation.
+
+---
+
+## 🚀 Local Development Setup
 
 ### Prerequisites
 
 - Java 21
-- Apache Maven 3.9.12 (direct install — **do not use `mvnw`**)
+- Apache Maven 3.9.12 (install directly — **do not use `mvnw`**)
 - Node.js 18+
-- Google Maps API Key
+- Google Maps API key
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/imatoilet.git
+git clone https://github.com/tao0524/imatoilet.git
 cd imatoilet
 ```
 
@@ -91,13 +141,13 @@ cd backend\backend
 mvn clean spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-Backend runs at: `http://localhost:8080`
+Backend URL: `http://localhost:8080`
 
-**H2 Console** (local dev only):
+**H2 Console** (local development only):
 
-| Field | Value |
-|---|---|
-| URL | `http://localhost:8080/h2-console` |
+| Item | Value |
+| --- | --- |
+| Access URL | `http://localhost:8080/h2-console` |
 | JDBC URL | `jdbc:h2:mem:imatoiletdb` |
 | Username | `sa` |
 | Password | *(leave blank)* |
@@ -107,7 +157,7 @@ Backend runs at: `http://localhost:8080`
 ```bash
 cd toilet-frontend
 cp .env.example .env
-# Fill in VITE_GOOGLE_MAPS_API_KEY and other keys
+# Fill in VITE_GOOGLE_MAPS_API_KEY and other values
 ```
 
 ### 4. Start the frontend
@@ -117,7 +167,7 @@ npm install
 npm run dev
 ```
 
-Frontend runs at: `http://localhost:5173`
+Frontend URL: `http://localhost:5173`
 
 ---
 
@@ -128,43 +178,43 @@ Migration scripts are located at:
 
 ```
 backend/src/main/resources/db/migration/       # PostgreSQL (production)
-backend/src/main/resources/db/migration-h2/    # H2 (local dev)
+backend/src/main/resources/db/migration-h2/    # H2 (local development)
 ```
 
 Key migrations:
 
-| Version | Description |
-|---|---|
-| V1 | Initial schema (toilets, equipment) |
-| V4 | Sample data |
-| V9 | Tsukuba City open data |
-| V11 | Review table |
-| V13–V15 | Tokyo dense data, tourist spots, national scale data |
+| Version | Content |
+| --- | --- |
+| V1 | Initial schema (toilets & equipment) |
+| V4 | Sample data seed |
+| V9 | Tsukuba City open data import |
+| V11 | Reviews table added |
+| V13–V15 | Tokyo dense data, tourist spots, nationwide scale data |
 
 ---
 
 ## 🔌 API Endpoints
 
 | Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/toilets` | Search toilets (location, bounding box, keyword, filters) |
+| --- | --- | --- |
+| `GET` | `/api/toilets` | Search toilets (location, Bounding Box, keyword, filters) |
 | `GET` | `/api/toilets/{id}` | Get toilet details |
-| `POST` | `/api/toilets` | Create toilet *(admin token required)* |
+| `POST` | `/api/toilets` | Add toilet *(admin token required)* |
 | `PUT` | `/api/toilets/{id}` | Update toilet *(admin token required)* |
 | `DELETE` | `/api/toilets/{id}` | Delete toilet *(admin token required)* |
-| `GET` | `/api/toilets/{id}/reviews` | List reviews for a toilet |
-| `POST` | `/api/toilets/{id}/reviews` | Post a new review |
+| `GET` | `/api/toilets/{id}/reviews` | Get review list |
+| `POST` | `/api/toilets/{id}/reviews` | Post a review |
 
-### Search Parameters
+### Key Search Parameters
 
 | Parameter | Type | Description |
-|---|---|---|
-| `lat` / `lng` | `Double` | Center coordinates for radius search |
+| --- | --- | --- |
+| `lat` / `lng` | `Double` | Current location coordinates (radius search) |
 | `radius` | `Double` | Search radius in km (default: 5.0) |
-| `minLat/maxLat/minLng/maxLng` | `Double` | Bounding box (nationwide search) |
-| `keyword` | `String` | Keyword search on name/address |
+| `minLat/maxLat/minLng/maxLng` | `Double` | Bounding Box (nationwide search) |
+| `keyword` | `String` | Keyword search by name or address |
 | `facilityCategory` | `String` | `station`, `park`, `commercial`, `public`, etc. |
-| `equipment` | `List<String>` | e.g. `WHEELCHAIR`, `DIAPER`, `OPEN_24H`, `OSTOMATE` |
+| `equipment` | `List<String>` | `WHEELCHAIR`, `DIAPER`, `OPEN_24H`, `OSTOMATE`, etc. |
 
 ---
 
@@ -182,21 +232,22 @@ npm run test
 
 ---
 
-## 📁 Project Structure
+## 📁 Directory Structure
 
 ```
 imatoilet/
+├── docs/                      # Screenshots
 ├── backend/backend/           # Spring Boot application
-│   ├── src/main/java/         # Controllers, Services, Entities, Repositories
+│   ├── src/main/java/         # Controller, Service, Entity, Repository
 │   ├── src/main/resources/    # application.properties, Flyway migrations
-│   └── src/test/              # Unit & integration tests
+│   └── src/test/              # Unit and integration tests
 └── toilet-frontend/           # React + Vite application
     ├── src/
     │   ├── components/        # Shared UI components (SafeGoogleMap, ToiletCard, etc.)
     │   ├── hooks/             # Custom hooks (useToiletSearch)
-    │   ├── pages/             # Route-level pages (Home, Search, Detail, Register, Favorites)
-    │   └── utils.js           # Utility functions (distance calc, equipment normalization)
-    └── public/                # PWA icons, manifest
+    │   ├── pages/             # Route pages (Home, Search, Detail, Register, Favorites)
+    │   └── utils.js           # Utilities (distance calculation, equipment normalization)
+    └── public/                # PWA icons and manifest
 ```
 
 ---
@@ -207,4 +258,4 @@ MIT
 
 ---
 
-*Built with ❤️ as a portfolio project.*
+*Developed as a personal portfolio project.*

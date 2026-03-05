@@ -102,6 +102,14 @@ backend/backend/src/main/resources/db/migration/V9__insert_open_data.sql
 backend/backend/src/test/java/com/imatoilet/backend/BackendApplicationTests.java
 backend/backend/src/test/java/com/imatoilet/backend/ToiletApiControllerTest.java
 backend/backend/src/test/resources/application.properties
+docs/screenshot-cluster-mobile.png
+docs/screenshot-cluster-pc.png
+docs/screenshot-detail-mobile.png
+docs/screenshot-detail-pc.png
+docs/screenshot-filter-mobile.png
+docs/screenshot-filter-pc.png
+docs/screenshot-hero-mobile.png
+docs/screenshot-hero-pc.png
 README.ja.md
 README.md
 toilet-frontend/.env.example
@@ -3573,16 +3581,21 @@ public enum EquipmentType {
 <file path="README.md">
 # 🚻 imatoilet
 
-[日本語版はこちら](README.ja.md)
+[日本語](README.ja.md)
 
-> Find clean, accessible, and well-equipped restrooms anywhere in Japan — instantly.
+> Find the nearest toilet in Japan, right now. A toilet search web app with filtering by cleanliness, accessibility features, and location.
 
-<!-- Replace with actual screenshot -->
-<!-- ![imatoilet screenshot](docs/screenshot.png) -->
+<p align="center">
+  <img src="docs/screenshot-hero-pc.png" width="60%" alt="Imatoilet PC top screen">
+  <img src="docs/screenshot-hero-mobile.png" width="25%" alt="Imatoilet mobile top screen">
+</p>
+
+**"Imatoilet" — find the nearest toilet when you need it most.**
+A full-stack web application that quickly locates available toilets based on your current location and specified conditions. Fully responsive for both PC and smartphones, designed for smooth use on the go.
 
 ## 🔗 Demo
 
-[Live Demo URL](https://imatoilet.vercel.app)
+[Live Demo](https://imatoilet.vercel.app)
 
 ---
 
@@ -3590,15 +3603,15 @@ public enum EquipmentType {
 
 | Feature | Description |
 |---|---|
-| 📍 **Map-based search** | Browse toilets on an interactive Google Maps interface with AdvancedMarker and MarkerClusterer |
-| 🗾 **Nationwide coverage** | Bounding Box search dynamically fetches toilets for any visible map area across Japan |
-| ♿ **Accessibility filters** | Filter by 13+ criteria: wheelchair, diaper, 24h, ostomate, nursing room, washlet, free, and more |
-| ⭐ **Reviews & ratings** | Users can post text reviews with cleanliness ratings for each toilet |
-| ❤️ **Favorites** | Save frequently used toilets to a local favorites list |
-| 🗺️ **Route guidance** | Get walking or driving directions from your current location to any toilet |
-| ✏️ **CRUD for admins** | Token-authenticated admin interface to add, edit, and delete toilet entries |
-| 📱 **PWA support** | Installable as a Progressive Web App on mobile devices |
-| 🏙️ **Open data** | Seeded with Tsukuba City barrier-free open data and national tourist spot toilets |
+| 📍 **Map Search** | Interactively display toilets on Google Maps with AdvancedMarker and MarkerClusterer support |
+| 🗾 **Nationwide Coverage** | Dynamically queries the API by map viewport (Bounding Box), covering all of Japan |
+| ♿ **Accessibility Filters** | Filter by 13+ criteria: wheelchair access, diaper changing, 24h availability, ostomate, nursing room, washlet, free, and more |
+| ⭐ **Reviews & Comments** | Post text reviews with a cleanliness rating |
+| ❤️ **Favorites** | Save frequently used toilets locally and access them from a favorites list |
+| 🗺️ **Route Navigation** | Display walking and driving routes from your current location via Google Maps |
+| ✏️ **Admin CRUD** | Add, edit, and delete toilet information via token-authenticated admin access |
+| 📱 **PWA Support** | Installable as an app on smartphones |
+| 🏙️ **Open Data Integration** | Includes Tsukuba City barrier-free map open data and toilet information for major tourist spots nationwide |
 
 ---
 
@@ -3631,29 +3644,74 @@ public enum EquipmentType {
 
 ### Architecture
 
-```
-[React (Vite)]  ──REST API──>  [Spring Boot]  ──JPA──>  [PostgreSQL]
-      │                                                   [H2 (dev)]
-      │
-  Google Maps JS API
-  Cloudinary (images)
+```mermaid
+graph LR
+  A[React / Vite] -->|REST API| B[Spring Boot]
+  B -->|JPA| C[(PostgreSQL)]
+  B -->|JPA| D[(H2 / dev)]
+  A --- E[Google Maps JS API]
+  A --- F[Cloudinary]
 ```
 
 ---
 
-## 🚀 Local Development
+## 💡 Development Story & Key Decisions
+
+### 1. Performance Optimization and AI-Assisted Troubleshooting (Google Maps API)
+
+<p align="center">
+  <img src="docs/screenshot-cluster-pc.png" width="60%" alt="Map clustering — PC">
+  <img src="docs/screenshot-cluster-mobile.png" width="25%" alt="Map clustering — Mobile">
+</p>
+
+**Rendering performance optimization with Google Maps API and MarkerClusterer**
+To prevent the map from becoming cluttered when many results are returned, I introduced MarkerClusterer to group pins together. This reduces browser rendering load from large numbers of markers, achieving both smooth performance and high visual clarity.
+
+Throughout development I made active use of AI assistance, but in complex domains like the Google Maps API, I repeatedly encountered responses containing outdated information or contradictions. This reinforced the habit of cross-referencing AI-generated code against error logs and official documentation rather than copying it blindly. Proactively introducing MarkerClusterer to handle future data growth taught me the fundamentals of building with long-term operability in mind.
+
+---
+
+### 2. Leveraging Backend Knowledge While Learning React from Scratch
+
+<p align="center">
+  <img src="docs/screenshot-detail-pc.png" width="60%" alt="Toilet detail screen — PC">
+  <img src="docs/screenshot-detail-mobile.png" width="25%" alt="Toilet detail screen — Mobile">
+</p>
+
+**Clean rendering of complex facility data via Spring Boot API integration**
+Equipment information and review data fetched from the Spring Boot backend are processed on the React side and mapped into readable tags and star ratings. This seamless frontend-backend data integration produces a detail screen where users can grasp all the information they need at a glance.
+
+Java was already familiar to me, so I could approach the API design and database setup calmly, while React was a completely new challenge. The hardest part was the API communication bridging the two environments — AI-generated code frequently caused errors, and I had to isolate and debug issues methodically. Leveraging my Java knowledge to trace problems from the backend outward, and ultimately building a consistent data flow from frontend to database on my own, gave me a solid end-to-end understanding of full-stack development.
+
+---
+
+### 3. User-Centered UI/UX Born from Personal Experience and Competitor Analysis
+
+<p align="center">
+  <img src="docs/screenshot-filter-pc.png" width="60%" alt="Accessibility filter screen — PC">
+  <img src="docs/screenshot-filter-mobile.png" width="25%" alt="Accessibility filter screen — Mobile">
+</p>
+
+**Barrier-free UI design considerate of elderly users and diverse needs**
+Built with MUI v7, detailed conditions such as "diaper changing table" and "wheelchair access" are expressed through high-visibility icons and intuitive toggle switches. Button placement is optimized for mobile usability, delivering a friendly UX that anyone can operate without confusion, regardless of digital literacy.
+
+The project started from a personal experience of needing to find a toilet quickly while out. After discovering that many similar apps already existed, I downloaded and compared several of them rather than giving up — and concluded that the most important differentiator was **simplicity that even elderly or less tech-savvy users can navigate intuitively**. I avoided feature bloat that would complicate the interface, prioritized quick access to essential information (accessibility features, distance), and kept the overall design soft and welcoming to ease the anxiety of urgently needing a restroom. This project taught me that imagining who opens the app and how they feel is just as important as the technical implementation.
+
+---
+
+## 🚀 Local Development Setup
 
 ### Prerequisites
 
 - Java 21
-- Apache Maven 3.9.12 (direct install — **do not use `mvnw`**)
+- Apache Maven 3.9.12 (install directly — **do not use `mvnw`**)
 - Node.js 18+
-- Google Maps API Key
+- Google Maps API key
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/imatoilet.git
+git clone https://github.com/tao0524/imatoilet.git
 cd imatoilet
 ```
 
@@ -3664,13 +3722,13 @@ cd backend\backend
 mvn clean spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-Backend runs at: `http://localhost:8080`
+Backend URL: `http://localhost:8080`
 
-**H2 Console** (local dev only):
+**H2 Console** (local development only):
 
-| Field | Value |
-|---|---|
-| URL | `http://localhost:8080/h2-console` |
+| Item | Value |
+| --- | --- |
+| Access URL | `http://localhost:8080/h2-console` |
 | JDBC URL | `jdbc:h2:mem:imatoiletdb` |
 | Username | `sa` |
 | Password | *(leave blank)* |
@@ -3680,7 +3738,7 @@ Backend runs at: `http://localhost:8080`
 ```bash
 cd toilet-frontend
 cp .env.example .env
-# Fill in VITE_GOOGLE_MAPS_API_KEY and other keys
+# Fill in VITE_GOOGLE_MAPS_API_KEY and other values
 ```
 
 ### 4. Start the frontend
@@ -3690,7 +3748,7 @@ npm install
 npm run dev
 ```
 
-Frontend runs at: `http://localhost:5173`
+Frontend URL: `http://localhost:5173`
 
 ---
 
@@ -3701,43 +3759,43 @@ Migration scripts are located at:
 
 ```
 backend/src/main/resources/db/migration/       # PostgreSQL (production)
-backend/src/main/resources/db/migration-h2/    # H2 (local dev)
+backend/src/main/resources/db/migration-h2/    # H2 (local development)
 ```
 
 Key migrations:
 
-| Version | Description |
-|---|---|
-| V1 | Initial schema (toilets, equipment) |
-| V4 | Sample data |
-| V9 | Tsukuba City open data |
-| V11 | Review table |
-| V13–V15 | Tokyo dense data, tourist spots, national scale data |
+| Version | Content |
+| --- | --- |
+| V1 | Initial schema (toilets & equipment) |
+| V4 | Sample data seed |
+| V9 | Tsukuba City open data import |
+| V11 | Reviews table added |
+| V13–V15 | Tokyo dense data, tourist spots, nationwide scale data |
 
 ---
 
 ## 🔌 API Endpoints
 
 | Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/toilets` | Search toilets (location, bounding box, keyword, filters) |
+| --- | --- | --- |
+| `GET` | `/api/toilets` | Search toilets (location, Bounding Box, keyword, filters) |
 | `GET` | `/api/toilets/{id}` | Get toilet details |
-| `POST` | `/api/toilets` | Create toilet *(admin token required)* |
+| `POST` | `/api/toilets` | Add toilet *(admin token required)* |
 | `PUT` | `/api/toilets/{id}` | Update toilet *(admin token required)* |
 | `DELETE` | `/api/toilets/{id}` | Delete toilet *(admin token required)* |
-| `GET` | `/api/toilets/{id}/reviews` | List reviews for a toilet |
-| `POST` | `/api/toilets/{id}/reviews` | Post a new review |
+| `GET` | `/api/toilets/{id}/reviews` | Get review list |
+| `POST` | `/api/toilets/{id}/reviews` | Post a review |
 
-### Search Parameters
+### Key Search Parameters
 
 | Parameter | Type | Description |
-|---|---|---|
-| `lat` / `lng` | `Double` | Center coordinates for radius search |
+| --- | --- | --- |
+| `lat` / `lng` | `Double` | Current location coordinates (radius search) |
 | `radius` | `Double` | Search radius in km (default: 5.0) |
-| `minLat/maxLat/minLng/maxLng` | `Double` | Bounding box (nationwide search) |
-| `keyword` | `String` | Keyword search on name/address |
+| `minLat/maxLat/minLng/maxLng` | `Double` | Bounding Box (nationwide search) |
+| `keyword` | `String` | Keyword search by name or address |
 | `facilityCategory` | `String` | `station`, `park`, `commercial`, `public`, etc. |
-| `equipment` | `List<String>` | e.g. `WHEELCHAIR`, `DIAPER`, `OPEN_24H`, `OSTOMATE` |
+| `equipment` | `List<String>` | `WHEELCHAIR`, `DIAPER`, `OPEN_24H`, `OSTOMATE`, etc. |
 
 ---
 
@@ -3755,21 +3813,22 @@ npm run test
 
 ---
 
-## 📁 Project Structure
+## 📁 Directory Structure
 
 ```
 imatoilet/
+├── docs/                      # Screenshots
 ├── backend/backend/           # Spring Boot application
-│   ├── src/main/java/         # Controllers, Services, Entities, Repositories
+│   ├── src/main/java/         # Controller, Service, Entity, Repository
 │   ├── src/main/resources/    # application.properties, Flyway migrations
-│   └── src/test/              # Unit & integration tests
+│   └── src/test/              # Unit and integration tests
 └── toilet-frontend/           # React + Vite application
     ├── src/
     │   ├── components/        # Shared UI components (SafeGoogleMap, ToiletCard, etc.)
     │   ├── hooks/             # Custom hooks (useToiletSearch)
-    │   ├── pages/             # Route-level pages (Home, Search, Detail, Register, Favorites)
-    │   └── utils.js           # Utility functions (distance calc, equipment normalization)
-    └── public/                # PWA icons, manifest
+    │   ├── pages/             # Route pages (Home, Search, Detail, Register, Favorites)
+    │   └── utils.js           # Utilities (distance calculation, equipment normalization)
+    └── public/                # PWA icons and manifest
 ```
 
 ---
@@ -3780,7 +3839,7 @@ MIT
 
 ---
 
-*Built with ❤️ as a portfolio project.*
+*Developed as a personal portfolio project.*
 </file>
 
 <file path="toilet-frontend/.gitignore">
@@ -3923,101 +3982,6 @@ describe('Detail Page', () => {
     expect(errorMsg).toBeInTheDocument();
   });
 });
-</file>
-
-<file path="toilet-frontend/src/pages/Search/PlaceSearch.jsx">
-import React, { useState } from 'react';
-
-// アイコン
-import HistoryIcon from '@mui/icons-material/History';
-import SearchIcon from '@mui/icons-material/Search';
-import MapIcon from '@mui/icons-material/Map';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
-
-function PlaceSearch({ 
-  placeQuery, 
-  setPlaceQuery, 
-  handlePlaceSearch, 
-  handleCurrentLocation,
-  handleKeywordSearch, // ★追加
-  searchStatus,
-  searchHistory,       // ★追加
-  handleHistorySearch  // ★追加
-}) {
-  const [showHistory, setShowHistory] = useState(false);
-
-  return (
-    <section className="place-search">
-      <div className="place-search__row">
-        <div style={{ position: 'relative' }}>
-          <input 
-            type="search" 
-            className="input-search"
-            placeholder="住所、駅、施設名など" 
-            value={placeQuery}
-            onChange={(e) => setPlaceQuery(e.target.value)}
-            onFocus={() => setShowHistory(true)}
-            // onBlur={() => setTimeout(() => setShowHistory(false), 200)} // クリック判定用ディレイ
-            onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()} // Enter時はキーワード検索優先
-          />
-          
-          {/* ★追加: 履歴のポップアップ表示 */}
-          {showHistory && searchHistory && searchHistory.length > 0 && (
-             <div style={{
-               position: 'absolute', top: '100%', left: 0, right: 0,
-               background: '#fff', border: '1px solid #ddd',
-               borderRadius: '0 0 12px 12px', zIndex: 1000,
-               boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-             }}>
-               {searchHistory.map((hist, idx) => (
-                 <div 
-                   key={idx}
-                   onClick={() => {
-                     handleHistorySearch(hist);
-                     setShowHistory(false);
-                   }}
-                   style={{
-                     padding: '10px 14px', borderBottom: '1px solid #eee', cursor: 'pointer',
-                     display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem'
-                   }}
-                 >
-                   <HistoryIcon fontSize="small" color="action" />
-                   {hist}
-                 </div>
-               ))}
-               <div 
-                 onClick={() => setShowHistory(false)} 
-                 style={{ padding: '8px', textAlign: 'center', fontSize: '0.8rem', color: '#888', cursor: 'pointer' }}
-               >
-                 閉じる
-               </div>
-             </div>
-          )}
-        </div>
-
-        <div className="place-search__btns">
-           {/* 地図検索（Nominatim） */}
-           <button className="btn btn-sub" onClick={handlePlaceSearch} title="地図を移動して周辺を探す">
-             <MapIcon fontSize="small" sx={{ mr: 0.5 }} /> 地図検索
-           </button>
-           
-           {/* ★追加: キーワード検索（DB直接） */}
-           <button className="btn btn-primary" onClick={handleKeywordSearch} title="登録データの住所や名前で探す" style={{ padding: '0 12px' }}>
-             <SearchIcon fontSize="small" sx={{ mr: 0.5 }} /> キーワード
-           </button>
-           
-           {/* 現在地リセット */}
-           <button className="btn btn-sub" onClick={handleCurrentLocation} title="現在地に戻す">
-             <MyLocationIcon fontSize="small" />
-           </button>
-        </div>
-      </div>
-      <p className="place-search__status">{searchStatus}</p>
-    </section>
-  );
-}
-
-export default PlaceSearch;
 </file>
 
 <file path="toilet-frontend/vite.config.js">
@@ -4920,6 +4884,96 @@ function ListPanel({ filteredToilets = [], currentLocation }) {
 export default ListPanel;
 </file>
 
+<file path="toilet-frontend/src/pages/Search/PlaceSearch.jsx">
+import React, { useState } from 'react';
+
+// アイコン
+import HistoryIcon from '@mui/icons-material/History';
+import SearchIcon from '@mui/icons-material/Search';
+import MapIcon from '@mui/icons-material/Map';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+
+function PlaceSearch({ 
+  placeQuery, 
+  setPlaceQuery, 
+  handlePlaceSearch, 
+  handleCurrentLocation,
+  handleKeywordSearch, // ★追加
+  searchStatus,
+  searchHistory,       // ★追加
+  handleHistorySearch  // ★追加
+}) {
+  const [showHistory, setShowHistory] = useState(false);
+
+  return (
+    <section className="place-search">
+      <div className="place-search__row">
+        <div style={{ position: 'relative' }}>
+          <input 
+            type="search" 
+            className="input-search"
+            placeholder="駅名・場所・施設名を入力"
+            value={placeQuery}
+            onChange={(e) => setPlaceQuery(e.target.value)}
+            onFocus={() => setShowHistory(true)}
+            // onBlur={() => setTimeout(() => setShowHistory(false), 200)} // クリック判定用ディレイ
+            onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()} // Enter時はキーワード検索優先
+          />
+          
+          {/* ★追加: 履歴のポップアップ表示 */}
+          {showHistory && searchHistory && searchHistory.length > 0 && (
+             <div style={{
+               position: 'absolute', top: '100%', left: 0, right: 0,
+               background: '#fff', border: '1px solid #ddd',
+               borderRadius: '0 0 12px 12px', zIndex: 1000,
+               boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+             }}>
+               {searchHistory.map((hist, idx) => (
+                 <div 
+                   key={idx}
+                   onClick={() => {
+                     handleHistorySearch(hist);
+                     setShowHistory(false);
+                   }}
+                   style={{
+                     padding: '10px 14px', borderBottom: '1px solid #eee', cursor: 'pointer',
+                     display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem'
+                   }}
+                 >
+                   <HistoryIcon fontSize="small" color="action" />
+                   {hist}
+                 </div>
+               ))}
+               <div 
+                 onClick={() => setShowHistory(false)} 
+                 style={{ padding: '8px', textAlign: 'center', fontSize: '0.8rem', color: '#888', cursor: 'pointer' }}
+               >
+                 閉じる
+               </div>
+             </div>
+          )}
+        </div>
+
+        <div className="place-search__btns">
+           <button className="btn btn-primary" onClick={handlePlaceSearch} title="検索">
+             <SearchIcon fontSize="small" />
+           </button>
+           <button className="btn btn-sub btn-location-mobile" onClick={handleCurrentLocation} title="現在地に戻す">
+             <MyLocationIcon fontSize="small" />
+           </button>
+        </div>
+      </div>
+      <p style={{ fontSize: '0.75rem', color: '#888', margin: '4px 0 0', lineHeight: '1.5' }}>
+        🗺️ 地図で探す：駅名・エリア名向け　／　🔍 DB検索：施設名が分かる時向け
+      </p>
+      <p className="place-search__status">{searchStatus}</p>
+    </section>
+  );
+}
+
+export default PlaceSearch;
+</file>
+
 <file path="toilet-frontend/src/utils.test.js">
 import { calcDistance, makeId, loadUserToilets, saveUserToilets, buildEquipmentArray, normalizeEquipment } from './utils';
 import { vi } from 'vitest';
@@ -5034,219 +5088,6 @@ describe('utils.js (便利関数)', () => {
     });
   });
 });
-</file>
-
-<file path="README.ja.md">
-# 🚻 imatoilet
-
-[English](README.md)
-
-> 日本全国のトイレを、今すぐ見つける。清潔さ・バリアフリー設備・場所から絞り込めるトイレ検索Webアプリ。
-
-<!-- 実際のスクリーンショットに差し替えてください -->
-<!-- ![imatoilet スクリーンショット](docs/screenshot.png) -->
-
-## 🔗 デモ
-
-[デモURL](https://imatoilet.vercel.app)
-
----
-
-## ✨ 主な機能
-
-| 機能 | 説明 |
-|---|---|
-| 📍 **マップ検索** | Google Maps上でトイレをインタラクティブに表示。AdvancedMarker・MarkerClustererに対応 |
-| 🗾 **全国スケール対応** | 地図の表示領域（Bounding Box）で動的にAPIを叩き、日本全国どこでも検索可能 |
-| ♿ **バリアフリーフィルター** | 車椅子・おむつ台・24時間・オストメイト・授乳室・ウォシュレット・無料など13項目以上で絞り込み |
-| ⭐ **レビュー・コメント** | 清潔度評価つきのテキストレビューを投稿可能 |
-| ❤️ **お気に入り** | よく使うトイレをローカル保存してお気に入り一覧から参照 |
-| 🗺️ **ルート案内** | 現在地からトイレまでの徒歩・車ルートをGoogle Mapsで表示 |
-| ✏️ **管理者向けCRUD** | トークン認証による管理者専用のトイレ情報追加・編集・削除 |
-| 📱 **PWA対応** | スマートフォンにアプリとしてインストール可能 |
-| 🏙️ **オープンデータ活用** | つくば市バリアフリーマップのオープンデータおよび全国主要観光地のトイレ情報を収録 |
-
----
-
-## 🛠 技術スタック
-
-### バックエンド
-
-| レイヤー | 技術 |
-|---|---|
-| 言語 | Java 21 (Eclipse Temurin) |
-| フレームワーク | Spring Boot 3.5.9 |
-| ORM | Spring Data JPA / Hibernate |
-| DBマイグレーション | Flyway 11.7.2 |
-| ローカルDB | H2（インメモリ・`dev`プロファイル） |
-| 本番DB | PostgreSQL |
-| ビルドツール | Apache Maven 3.9.12 |
-| セキュリティ | Spring Security + カスタム `AdminTokenFilter` |
-| テスト | JUnit 5 + MockMvc |
-
-### フロントエンド
-
-| レイヤー | 技術 |
-|---|---|
-| フレームワーク | React 19 + Vite |
-| UIコンポーネント | MUI (Material-UI) v7 |
-| 地図 | Google Maps JavaScript API（`@react-google-maps/api`） |
-| マーカークラスタリング | `@googlemaps/markerclusterer` |
-| 画像ホスティング | Cloudinary（オプション） |
-| テスト | Vitest + Testing Library |
-
-### アーキテクチャ
-
-```
-[React (Vite)]  ──REST API──>  [Spring Boot]  ──JPA──>  [PostgreSQL]
-      │                                                   [H2 (dev)]
-      │
-  Google Maps JS API
-  Cloudinary（画像）
-```
-
----
-
-## 🚀 ローカル開発環境のセットアップ
-
-### 必要なもの
-
-- Java 21
-- Apache Maven 3.9.12（直接インストール — **`mvnw` は使用しないこと**）
-- Node.js 18以上
-- Google Maps APIキー
-
-### 1. リポジトリをクローン
-
-```bash
-git clone https://github.com/your-username/imatoilet.git
-cd imatoilet
-```
-
-### 2. バックエンドを起動（H2インメモリ・devプロファイル）
-
-```powershell
-cd backend\backend
-mvn clean spring-boot:run "-Dspring-boot.run.profiles=dev"
-```
-
-バックエンド起動URL: `http://localhost:8080`
-
-**H2コンソール**（ローカル開発時のみ）:
-
-| 項目 | 値 |
-|---|---|
-| アクセスURL | `http://localhost:8080/h2-console` |
-| JDBC URL | `jdbc:h2:mem:imatoiletdb` |
-| ユーザー名 | `sa` |
-| パスワード | *（空欄）* |
-
-### 3. フロントエンドの環境変数を設定
-
-```bash
-cd toilet-frontend
-cp .env.example .env
-# VITE_GOOGLE_MAPS_API_KEY などを記入してください
-```
-
-### 4. フロントエンドを起動
-
-```bash
-npm install
-npm run dev
-```
-
-フロントエンド起動URL: `http://localhost:5173`
-
----
-
-## 🗄 データベースマイグレーション
-
-Flywayマイグレーションは起動時に自動実行されます。
-マイグレーションスクリプトの格納場所:
-
-```
-backend/src/main/resources/db/migration/       # PostgreSQL（本番）
-backend/src/main/resources/db/migration-h2/    # H2（ローカル開発）
-```
-
-主なマイグレーション:
-
-| バージョン | 内容 |
-|---|---|
-| V1 | 初期スキーマ（toilets・equipment） |
-| V4 | サンプルデータ投入 |
-| V9 | つくば市オープンデータ投入 |
-| V11 | レビューテーブル追加 |
-| V13〜V15 | 東京密集データ・観光地・全国スケールデータ追加 |
-
----
-
-## 🔌 APIエンドポイント
-
-| メソッド | エンドポイント | 説明 |
-|---|---|---|
-| `GET` | `/api/toilets` | トイレ検索（位置情報・Bounding Box・キーワード・フィルター） |
-| `GET` | `/api/toilets/{id}` | トイレ詳細取得 |
-| `POST` | `/api/toilets` | トイレ追加 *（管理者トークン必須）* |
-| `PUT` | `/api/toilets/{id}` | トイレ更新 *（管理者トークン必須）* |
-| `DELETE` | `/api/toilets/{id}` | トイレ削除 *（管理者トークン必須）* |
-| `GET` | `/api/toilets/{id}/reviews` | レビュー一覧取得 |
-| `POST` | `/api/toilets/{id}/reviews` | レビュー投稿 |
-
-### 主な検索パラメータ
-
-| パラメータ | 型 | 説明 |
-|---|---|---|
-| `lat` / `lng` | `Double` | 現在地座標（半径検索） |
-| `radius` | `Double` | 検索半径（km、デフォルト: 5.0） |
-| `minLat/maxLat/minLng/maxLng` | `Double` | Bounding Box（全国スケール検索） |
-| `keyword` | `String` | 名称・住所のキーワード検索 |
-| `facilityCategory` | `String` | `station`・`park`・`commercial`・`public` など |
-| `equipment` | `List<String>` | `WHEELCHAIR`・`DIAPER`・`OPEN_24H`・`OSTOMATE` など |
-
----
-
-## 🧪 テストの実行
-
-```bash
-# バックエンド
-cd backend/backend
-mvn test
-
-# フロントエンド
-cd toilet-frontend
-npm run test
-```
-
----
-
-## 📁 ディレクトリ構成
-
-```
-imatoilet/
-├── backend/backend/           # Spring Bootアプリケーション
-│   ├── src/main/java/         # Controller・Service・Entity・Repository
-│   ├── src/main/resources/    # application.properties・Flywayマイグレーション
-│   └── src/test/              # ユニット・統合テスト
-└── toilet-frontend/           # React + Viteアプリケーション
-    ├── src/
-    │   ├── components/        # 共有UIコンポーネント（SafeGoogleMap・ToiletCardなど）
-    │   ├── hooks/             # カスタムフック（useToiletSearch）
-    │   ├── pages/             # ルートページ（Home・Search・Detail・Register・Favorites）
-    │   └── utils.js           # ユーティリティ（距離計算・設備情報正規化）
-    └── public/                # PWAアイコン・マニフェスト
-```
-
----
-
-## 📝 ライセンス
-
-MIT
-
----
-
-*ポートフォリオとして個人開発しています。*
 </file>
 
 <file path="toilet-frontend/index.html">
@@ -5950,158 +5791,6 @@ body {
 }
 </file>
 
-<file path="toilet-frontend/src/pages/Home.jsx">
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import '../base.css';
-import '../components.css';
-import '../index.css';
-
-function Home() {
-  const navigate = useNavigate();
-  const [locLoading, setLocLoading] = useState(false);
-
-  // 現在地を取得して検索ページへ飛ぶハンドラ
-  const handleCurrentLocationSearch = () => {
-    if (!navigator.geolocation) {
-      alert("お使いのブラウザは位置情報に対応していません");
-      return;
-    }
-
-    setLocLoading(true);
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setLocLoading(false);
-        // 取得した座標を持って検索ページへ移動
-        // radiusはバックエンドのデフォルト(5km)に任せるため指定しない、または明示的に送る
-        navigate(`/search?lat=${latitude}&lng=${longitude}`);
-      },
-      (err) => {
-        setLocLoading(false);
-        console.error(err);
-        alert("現在地の取得に失敗しました。\n位置情報の利用が許可されているか確認してください。");
-      },
-      { timeout: 10000 }
-    );
-  };
-
-  return (
-    <>
-      <main className="top-main" id="top">
-        <div className="container">
-
-          <section className="hero">
-            <h1 className="catch">
-              困った“いま”に、<br />
-              いちばん近いトイレ。
-            </h1>
-
-            <p className="sub">
-              現在地と条件から、今すぐ使えるトイレを探せます。<br />
-              子ども連れや車椅子の方にも配慮した情報を掲載。
-            </p>
-
-            {/* 画像を表示: ファーストビューなのでlazyは使わず、asyncのみ適用 */}
-            <img 
-              src="/images/hero.png" 
-              alt="イメージ画像" 
-              className="hero-img" 
-              decoding="async"
-            />
-          </section>
-
-          <section className="actions">
-            <Link to="/search" className="btn btn-primary">🚽 近くのトイレを探す</Link>
-            <Link to="/conditions" className="btn btn-secondary">⚙️ 条件を指定して探す</Link>
-
-            <div className="sub-actions">
-              <Link to="/favorites" className="btn btn-sub">⭐ よく使うトイレ</Link>
-              
-              {/* 現在地検索ボタン */}
-              <button 
-                className="btn btn-sub" 
-                onClick={handleCurrentLocationSearch}
-                disabled={locLoading}
-              >
-                {locLoading ? '📡 取得中...' : '📍 現在地周辺'}
-              </button>
-            </div>
-
-            {/* ✅ 副CTA：トイレ登録 */}
-            <Link to="/register" className="btn btn-sub btn-register">
-              ➕ トイレを登録する
-            </Link>
-            <p className="register-note">写真・設備情報を追加できます（任意）</p>
-          </section>
-
-          {/* 使い方 */}
-          <section className="howto" id="howto">
-            <h2 className="howto-title">使い方（30秒）</h2>
-
-            <ol className="howto-steps">
-              <li>
-                <span className="step-num">1</span>
-                <div className="step-body">
-                  <div className="step-head">「近くのトイレを探す」を押す</div>
-                  <div className="step-text">検索ページで近い順に一覧表示します。</div>
-                </div>
-              </li>
-
-              <li>
-                <span className="step-num">2</span>
-                <div className="step-body">
-                  <div className="step-head">位置情報を許可（距離表示）</div>
-                  <div className="step-text">許可すると距離が表示され、近い順に並び替えます。</div>
-                </div>
-              </li>
-
-              <li>
-                <span className="step-num">3</span>
-                <div className="step-body">
-                  <div className="step-head">条件をチェック（車椅子 / オムツ / 24時間）</div>
-                  <div className="step-text">必要な設備だけに絞り込めます。</div>
-                </div>
-              </li>
-
-              <li>
-                <span className="step-num">4</span>
-                <div className="step-body">
-                  <div className="step-head">トイレを登録する（任意）</div>
-                  <div className="step-text">
-                    見つけたトイレを、自分用に登録できます。<br />
-                    写真や設備情報も追加できます（公開はされません）。
-                  </div>
-                </div>
-              </li>
-            </ol>
-
-            <div className="howto-cta">
-              <Link to="/search" className="btn btn-primary">🚽 今すぐ探す</Link>
-              <a href="#top" className="howto-toplink">ページ上部へ</a>
-            </div>
-
-            <p className="howto-note">
-              ※ 位置情報を許可しない場合は、距離は表示されません（条件検索は利用できます）。
-            </p>
-          </section>
-
-        </div>
-      </main>
-
-      <footer style={{ textAlign: 'center', padding: '20px', fontSize: '0.8rem', color: '#666' }}>
-        <p>※本サイトは開発中のポートフォリオ（デモ）です。<br />
-          登録したデータはブラウザ内にのみ保存され、他者とは共有されません。</p>
-        <p>© 2026 Imatoilet Project</p>
-      </footer>
-    </>
-  );
-}
-
-export default Home;
-</file>
-
 <file path="backend/backend/src/main/java/com/imatoilet/backend/config/SecurityConfig.java">
 package com.imatoilet.backend.config;
 
@@ -6214,6 +5903,270 @@ app.admin.token=dev-admin-token-local
 spring.flyway.locations=classpath:db/migration-h2
 
 logging.level.org.flywaydb=INFO
+</file>
+
+<file path="README.ja.md">
+# 🚻 imatoilet
+
+[English](README.md)
+
+> 日本全国のトイレを、今すぐ見つける。清潔さ・バリアフリー設備・場所から絞り込めるトイレ検索Webアプリ。
+
+<p align="center">
+  <img src="docs/screenshot-hero-pc.png" width="60%" alt="Imatoilet PC版トップ画面">
+  <img src="docs/screenshot-hero-mobile.png" width="25%" alt="Imatoilet モバイル版トップ画面">
+</p>
+
+**困った"いま"に、いちばん近いトイレを探せるWebサービス「Imatoilet」**
+現在地や指定した条件から、今すぐ使えるトイレを迅速に検索できるフルスタックWebアプリケーションです。PC・スマートフォンの両デバイスに完全対応したレスポンシブデザインを採用し、外出先でもスムーズに利用できる設計にしています。
+
+## 🔗 デモ
+
+[デモURL](https://imatoilet.vercel.app)
+
+---
+
+## ✨ 主な機能
+
+| 機能 | 説明 |
+|---|---|
+| 📍 **マップ検索** | Google Maps上でトイレをインタラクティブに表示。AdvancedMarker・MarkerClustererに対応 |
+| 🗾 **全国スケール対応** | 地図の表示領域（Bounding Box）で動的にAPIを叩き、日本全国どこでも検索可能 |
+| ♿ **バリアフリーフィルター** | 車椅子・おむつ台・24時間・オストメイト・授乳室・ウォシュレット・無料など13項目以上で絞り込み |
+| ⭐ **レビュー・コメント** | 清潔度評価つきのテキストレビューを投稿可能 |
+| ❤️ **お気に入り** | よく使うトイレをローカル保存してお気に入り一覧から参照 |
+| 🗺️ **ルート案内** | 現在地からトイレまでの徒歩・車ルートをGoogle Mapsで表示 |
+| ✏️ **管理者向けCRUD** | トークン認証による管理者専用のトイレ情報追加・編集・削除 |
+| 📱 **PWA対応** | スマートフォンにアプリとしてインストール可能 |
+| 🏙️ **オープンデータ活用** | つくば市バリアフリーマップのオープンデータおよび全国主要観光地のトイレ情報を収録 |
+
+---
+
+## 🛠 技術スタック
+
+### バックエンド
+
+| レイヤー | 技術 |
+|---|---|
+| 言語 | Java 21 (Eclipse Temurin) |
+| フレームワーク | Spring Boot 3.5.9 |
+| ORM | Spring Data JPA / Hibernate |
+| DBマイグレーション | Flyway 11.7.2 |
+| ローカルDB | H2（インメモリ・`dev`プロファイル） |
+| 本番DB | PostgreSQL |
+| ビルドツール | Apache Maven 3.9.12 |
+| セキュリティ | Spring Security + カスタム `AdminTokenFilter` |
+| テスト | JUnit 5 + MockMvc |
+
+### フロントエンド
+
+| レイヤー | 技術 |
+|---|---|
+| フレームワーク | React 19 + Vite |
+| UIコンポーネント | MUI (Material-UI) v7 |
+| 地図 | Google Maps JavaScript API（`@react-google-maps/api`） |
+| マーカークラスタリング | `@googlemaps/markerclusterer` |
+| 画像ホスティング | Cloudinary（オプション） |
+| テスト | Vitest + Testing Library |
+
+### アーキテクチャ
+
+```mermaid
+graph LR
+  A[React / Vite] -->|REST API| B[Spring Boot]
+  B -->|JPA| C[(PostgreSQL)]
+  B -->|JPA| D[(H2 / dev)]
+  A --- E[Google Maps JS API]
+  A --- F[Cloudinary]
+```
+
+---
+
+## 💡 開発ストーリーと工夫した点
+
+### 1. 将来を見据えたパフォーマンス対策と、AIを活用したトラブルシューティング（Google Maps API）
+
+<p align="center">
+  <img src="docs/screenshot-cluster-pc.png" width="60%" alt="マップのクラスタリング状態 PC版">
+  <img src="docs/screenshot-cluster-mobile.png" width="25%" alt="マップのクラスタリング状態 モバイル版">
+</p>
+
+**Google Maps APIとクラスタリングによる描画パフォーマンスの最適化**
+検索結果が多数に及ぶ場合でもマップ画面が乱雑にならないよう、MarkerClustererを導入してピンをグループ化（クラスタリング）しています。これにより、大量のマーカー描画によるブラウザの負荷を軽減し、サクサク動くパフォーマンスと高い視認性を両立させました。
+
+開発ではAIを積極的に活用しましたが、Google Maps APIのような仕様が複雑な領域では、AIの回答に古い情報や矛盾が含まれる場面に何度も直面しました。そのため「AIのコードを丸写しするのではなく、エラーログや公式ドキュメントと照合しながら原因を探る」姿勢を一貫して意識しました。将来的にデータ量が増えた際の描画負荷を見越してMarkerClustererを導入したことで、エラーから逃げずに将来の運用も見据えて実装する開発の基礎を学べました。
+
+---
+
+### 2. 基礎を活かしたバックエンド構築と、初挑戦のReactにおけるAPI連携
+
+<p align="center">
+  <img src="docs/screenshot-detail-pc.png" width="60%" alt="トイレ詳細情報の表示画面 PC版">
+  <img src="docs/screenshot-detail-mobile.png" width="25%" alt="トイレ詳細情報の表示画面 モバイル版">
+</p>
+
+**Spring Boot APIとの連携による、複雑な設備データのクリーンな描画**
+バックエンド（Spring Boot）から取得した設備情報やレビューデータを、React側で適切に処理してタグや星評価としてマッピング表示しています。フロントエンドとバックエンドのシームレスなデータ連携により、ユーザーが知りたい詳細情報を一目で把握できる画面を構築しました。
+
+Javaは以前から学習済みだったため、API設計からDB構築まで落ち着いて進められた一方、Reactは今回が初挑戦でした。最も苦労したのはフロントエンド・バックエンド間のAPI通信で、AIが提示したコードが原因でエラーが頻発しました。Javaの基礎知識を活かして問題を切り分けながら冷静に原因を追い、フロントエンドからDBまでデータが一貫して通る仕組みを自力で構築できたことは、フルスタック開発の流れを理解する上で大きな財産になりました。
+
+---
+
+### 3. 原体験と競合分析から生まれた、ユーザーに寄り添うUI/UX設計
+
+<p align="center">
+  <img src="docs/screenshot-filter-pc.png" width="60%" alt="バリアフリーフィルター操作画面 PC版">
+  <img src="docs/screenshot-filter-mobile.png" width="25%" alt="バリアフリーフィルター操作画面 モバイル版">
+</p>
+
+**高齢者や多様なユーザーに配慮したバリアフリーなUI設計**
+MUI v7を採用し、「オムツ交換台」「車椅子対応」などの詳細条件を視認性の高いアイコンと直感的なトグルスイッチで表現しました。モバイルでも押しやすいボタン配置を意識し、ITリテラシーを問わず誰でも迷わず操作できるUXを実現しています。
+
+「外出先でトイレだけをすぐ探したい」という実体験からスタートし、既存アプリを複数使い比べた競合分析を経て、最もこだわったのは「高齢者やスマホ操作に不慣れな方でも直感的に使えるシンプルさ」です。多機能化による画面の複雑さを避け、本当に必要な情報にすぐアクセスできるUIと、外出先での焦りや不安を和らげる柔らかい配色・デザインを心がけました。技術的な実装だけでなく「誰がどんな気持ちでアプリを開くか」を想像することの大切さを、この開発を通して学びました。
+
+---
+
+## 🚀 ローカル開発環境のセットアップ
+
+### 必要なもの
+
+- Java 21
+- Apache Maven 3.9.12（直接インストール — **`mvnw` は使用しないこと**）
+- Node.js 18以上
+- Google Maps APIキー
+
+### 1. リポジトリをクローン
+
+```bash
+git clone https://github.com/tao0524/imatoilet.git
+cd imatoilet
+```
+
+### 2. バックエンドを起動（H2インメモリ・devプロファイル）
+
+```powershell
+cd backend\backend
+mvn clean spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+バックエンド起動URL: `http://localhost:8080`
+
+**H2コンソール**（ローカル開発時のみ）:
+
+| 項目 | 値 |
+| --- | --- |
+| アクセスURL | `http://localhost:8080/h2-console` |
+| JDBC URL | `jdbc:h2:mem:imatoiletdb` |
+| ユーザー名 | `sa` |
+| パスワード | *（空欄）* |
+
+### 3. フロントエンドの環境変数を設定
+
+```bash
+cd toilet-frontend
+cp .env.example .env
+# VITE_GOOGLE_MAPS_API_KEY などを記入してください
+```
+
+### 4. フロントエンドを起動
+
+```bash
+npm install
+npm run dev
+```
+
+フロントエンド起動URL: `http://localhost:5173`
+
+---
+
+## 🗄 データベースマイグレーション
+
+Flywayマイグレーションは起動時に自動実行されます。
+マイグレーションスクリプトの格納場所:
+
+```
+backend/src/main/resources/db/migration/       # PostgreSQL（本番）
+backend/src/main/resources/db/migration-h2/    # H2（ローカル開発）
+```
+
+主なマイグレーション:
+
+| バージョン | 内容 |
+| --- | --- |
+| V1 | 初期スキーマ（toilets・equipment） |
+| V4 | サンプルデータ投入 |
+| V9 | つくば市オープンデータ投入 |
+| V11 | レビューテーブル追加 |
+| V13〜V15 | 東京密集データ・観光地・全国スケールデータ追加 |
+
+---
+
+## 🔌 APIエンドポイント
+
+| メソッド | エンドポイント | 説明 |
+| --- | --- | --- |
+| `GET` | `/api/toilets` | トイレ検索（位置情報・Bounding Box・キーワード・フィルター） |
+| `GET` | `/api/toilets/{id}` | トイレ詳細取得 |
+| `POST` | `/api/toilets` | トイレ追加 *（管理者トークン必須）* |
+| `PUT` | `/api/toilets/{id}` | トイレ更新 *（管理者トークン必須）* |
+| `DELETE` | `/api/toilets/{id}` | トイレ削除 *（管理者トークン必須）* |
+| `GET` | `/api/toilets/{id}/reviews` | レビュー一覧取得 |
+| `POST` | `/api/toilets/{id}/reviews` | レビュー投稿 |
+
+### 主な検索パラメータ
+
+| パラメータ | 型 | 説明 |
+| --- | --- | --- |
+| `lat` / `lng` | `Double` | 現在地座標（半径検索） |
+| `radius` | `Double` | 検索半径（km、デフォルト: 5.0） |
+| `minLat/maxLat/minLng/maxLng` | `Double` | Bounding Box（全国スケール検索） |
+| `keyword` | `String` | 名称・住所のキーワード検索 |
+| `facilityCategory` | `String` | `station`・`park`・`commercial`・`public` など |
+| `equipment` | `List<String>` | `WHEELCHAIR`・`DIAPER`・`OPEN_24H`・`OSTOMATE` など |
+
+---
+
+## 🧪 テストの実行
+
+```bash
+# バックエンド
+cd backend/backend
+mvn test
+
+# フロントエンド
+cd toilet-frontend
+npm run test
+```
+
+---
+
+## 📁 ディレクトリ構成
+
+```
+imatoilet/
+├── docs/                      # スクリーンショット
+├── backend/backend/           # Spring Bootアプリケーション
+│   ├── src/main/java/         # Controller・Service・Entity・Repository
+│   ├── src/main/resources/    # application.properties・Flywayマイグレーション
+│   └── src/test/              # ユニット・統合テスト
+└── toilet-frontend/           # React + Viteアプリケーション
+    ├── src/
+    │   ├── components/        # 共有UIコンポーネント（SafeGoogleMap・ToiletCardなど）
+    │   ├── hooks/             # カスタムフック（useToiletSearch）
+    │   ├── pages/             # ルートページ（Home・Search・Detail・Register・Favorites）
+    │   └── utils.js           # ユーティリティ（距離計算・設備情報正規化）
+    └── public/                # PWAアイコン・マニフェスト
+```
+
+---
+
+## 📝 ライセンス
+
+MIT
+
+---
+
+*ポートフォリオとして個人開発しています。*
 </file>
 
 <file path="toilet-frontend/src/App.jsx">
@@ -6508,213 +6461,161 @@ function FilterChip({ label, name, checked, onChange, highlight }) {
 export default Conditions;
 </file>
 
-<file path="toilet-frontend/src/pages/Search/FilterPanel.jsx">
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+<file path="toilet-frontend/src/pages/Home.jsx">
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import '../base.css';
+import '../components.css';
+import '../index.css';
 
-import SearchIcon from '@mui/icons-material/Search';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
-import MapIcon from '@mui/icons-material/Map';
-import CheckIcon from '@mui/icons-material/Check';
-import HistoryIcon from '@mui/icons-material/History';
-import TrainIcon from '@mui/icons-material/Train';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import ParkIcon from '@mui/icons-material/Park';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import HotelIcon from '@mui/icons-material/Hotel';
-import CategoryIcon from '@mui/icons-material/Category';
+function Home() {
+  const navigate = useNavigate();
+  const [locLoading, setLocLoading] = useState(false);
 
-function FilterPanel({
-  placeQuery, setPlaceQuery, handleKeywordSearch, handleCurrentLocation,
-  handlePlaceSearch, searchHistory, handleHistorySearch, removeFromHistory
-}) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [showHistory, setShowHistory] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const historyRef = useRef(null);
-
-  // 履歴ポップアップの外クリック・Escで閉じる
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (historyRef.current && !historyRef.current.contains(e.target)) setShowHistory(false);
-    };
-    const handleKeyDown = (e) => { if (e.key === 'Escape') setShowHistory(false); };
-
-    if (showHistory) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
+  // 現在地を取得して検索ページへ飛ぶハンドラ
+  const handleCurrentLocationSearch = () => {
+    if (!navigator.geolocation) {
+      alert("お使いのブラウザは位置情報に対応していません");
+      return;
     }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showHistory]);
 
-  const updateParam = (key, value) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value === null || value === false || value === '') newParams.delete(key);
-    else newParams.set(key, String(value));
-    setSearchParams(newParams);
+    setLocLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setLocLoading(false);
+        // 取得した座標を持って検索ページへ移動
+        // radiusはバックエンドのデフォルト(5km)に任せるため指定しない、または明示的に送る
+        navigate(`/search?lat=${latitude}&lng=${longitude}`);
+      },
+      (err) => {
+        setLocLoading(false);
+        console.error(err);
+        alert("現在地の取得に失敗しました。\n位置情報の利用が許可されているか確認してください。");
+      },
+      { timeout: 10000 }
+    );
   };
 
-  const getBoolParam = (key) => searchParams.get(key) === 'true';
-  const getStrParam  = (key) => searchParams.get(key) || '';
-
   return (
-    <aside className="filter-panel">
+    <>
+      <main className="top-main" id="top">
+        <div className="container">
 
-      {/* 1. キーワード・場所検索エリア */}
-      <section className="filter-section filter-section-top">
-        <h3 className="filter-title desktop-only">場所・キーワード</h3>
+          <section className="hero">
+            <h1 className="catch">
+              困った“いま”に、<br />
+              いちばん近いトイレ。
+            </h1>
 
-        <div className="search-box-group" style={{ position: 'relative' }} ref={historyRef}>
-          <input
-            type="search"
-            className="input-search-side"
-            placeholder="場所や施設名を入力"
-            value={placeQuery}
-            onChange={(e) => setPlaceQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()}
-            onFocus={() => setShowHistory(true)}
-          />
+            <p className="sub">
+              現在地と条件から、今すぐ使えるトイレを探せます。<br />
+              子ども連れや車椅子の方にも配慮した情報を掲載。
+            </p>
 
-          {/* 履歴ポップアップ */}
-          {showHistory && searchHistory && searchHistory.length > 0 && (
-            <>
-              <div className="history-backdrop" onClick={() => setShowHistory(false)} />
-              <div className="history-popup">
-                <div className="history-popup-header">
-                  <span>過去の検索履歴</span>
-                  <button className="history-close-btn" onClick={() => setShowHistory(false)}>✕</button>
+            {/* 画像を表示: ファーストビューなのでlazyは使わず、asyncのみ適用 */}
+            <img 
+              src="/images/hero.png" 
+              alt="イメージ画像" 
+              className="hero-img" 
+              decoding="async"
+            />
+          </section>
+
+          <section className="actions">
+            <Link to="/search" className="btn btn-primary">🚽 近くのトイレを探す</Link>
+            <Link to="/conditions" className="btn btn-secondary">⚙️ 条件を指定して探す</Link>
+
+            <div className="sub-actions">
+              <Link to="/favorites" className="btn btn-sub">⭐ よく使うトイレ</Link>
+              
+              {/* 現在地検索ボタン */}
+              <button 
+                className="btn btn-sub" 
+                onClick={handleCurrentLocationSearch}
+                disabled={locLoading}
+              >
+                {locLoading ? '📡 取得中...' : '📍 現在地周辺'}
+              </button>
+            </div>
+
+            {/* ✅ 副CTA：トイレ登録 */}
+            <Link to="/register" className="btn btn-sub btn-register">
+              ➕ トイレを登録する
+            </Link>
+            <p className="register-note">写真・設備情報を追加できます（任意）</p>
+          </section>
+
+          {/* 使い方 */}
+          <section className="howto" id="howto">
+            <h2 className="howto-title">使い方（30秒）</h2>
+
+            <ol className="howto-steps">
+              <li>
+                <span className="step-num">1</span>
+                <div className="step-body">
+                  <div className="step-head">近くのトイレを探す</div>
+                  <div className="step-text">駅名・場所・施設名で検索ができます。</div>
                 </div>
+              </li>
 
-                <div className="history-list">
-                  {searchHistory.map((hist, idx) => (
-                    <div
-                      key={idx}
-                      className="history-item"
-                      style={{ display: 'flex', justifyContent: 'space-between', padding: '0' }}
-                    >
-                      {/* 左側：クリックで検索実行 */}
-                      <div 
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '12px 14px' }}
-                        onClick={() => { handleHistorySearch(hist); setShowHistory(false); }}
-                      >
-                        <HistoryIcon fontSize="small" color="action" />
-                        {hist}
-                      </div>
-
-                      {/* 右側：削除ボタン */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation(); // 親のクリックイベント（検索実行）を防ぐ
-                          removeFromHistory(hist);
-                        }}
-                        style={{
-                          background: 'transparent', border: 'none', color: '#ccc', cursor: 'pointer',
-                          padding: '0 14px', fontSize: '1.2rem'
-                        }}
-                        title="履歴を削除"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+              <li>
+                <span className="step-num">2</span>
+                <div className="step-body">
+                  <div className="step-head">地図でトイレを確認する</div>
+                  <div className="step-text">周辺のトイレがマップ上に表示されます。</div>
                 </div>
+              </li>
 
-                <div className="history-footer desktop-only" onClick={() => setShowHistory(false)}>
-                  閉じる
+              <li>
+                <span className="step-num">3</span>
+                <div className="step-body">
+                  <div className="step-head">条件を指定して探す</div>
+                  <div className="step-text">車椅子・オムツ・24時間など13項目で、必要な設備だけに絞り込めます。</div>
                 </div>
-              </div>
-            </>
-          )}
+              </li>
 
-          <div className="search-actions">
-            <button className="btn-icon-side desktop-only-btn" onClick={handleKeywordSearch} title="リスト内をキーワード検索">
-              <SearchIcon fontSize="small" />
-            </button>
-            <button className="btn-icon-side desktop-only-btn" onClick={handlePlaceSearch} title="地図移動">
-              <MapIcon fontSize="small" />
-            </button>
-            <button className="btn-icon-side btn-location" onClick={handleCurrentLocation} title="現在地">
-              <MyLocationIcon fontSize="small" className="loc-icon" />
-              <span className="loc-text">現在地</span>
-            </button>
-          </div>
+              <li>
+                <span className="step-num">4</span>
+                <div className="step-body">
+                  <div className="step-head">行き方を確認する</div>
+                  <div className="step-text">現在地からの経路案内（徒歩・車）が使えます。</div>
+                </div>
+              </li>
+
+              <li>
+                <span className="step-num">5</span>
+                <div className="step-body">
+                  <div className="step-head">お気に入りに登録する</div>
+                  <div className="step-text">よく使うトイレを保存して次回は、よく使うトイレからすぐ見つけられます。</div>
+                </div>
+              </li>
+            </ol>
+
+            <div className="howto-cta">
+              <Link to="/search" className="btn btn-primary">🚽 今すぐ探す</Link>
+              <a href="#top" className="howto-toplink">ページ上部へ</a>
+            </div>
+
+            <p className="howto-note">
+              ※ 位置情報を許可しない場合は、距離は表示されません（条件検索は利用できます）。
+            </p>
+          </section>
+
         </div>
-      </section>
+      </main>
 
-      {/* スマホ用アコーディオン開閉ボタン */}
-      <button className="mobile-toggle-btn" onClick={() => setIsOpen(!isOpen)}>
-        {isOpen ? '▲ 詳細条件を閉じる' : '▼ 詳細条件を開く'}
-      </button>
-
-      <div className={`accordion-content ${isOpen ? 'open' : ''}`}>
-
-        {/* 2. 施設タイプ */}
-        <section className="filter-section">
-          <h3 className="filter-title">詳細条件（施設）</h3>
-          <div className="radio-group-vertical">
-            <label className={`radio-row ${getStrParam('facilityCategory') === '' ? 'active' : ''}`}>
-              <input type="radio" name="cat" checked={getStrParam('facilityCategory') === ''} onChange={() => updateParam('facilityCategory', '')} />
-              <span className="radio-icon">🏠</span> 指定なし
-            </label>
-
-            {[
-              { val: 'station',       label: '駅・交通',  icon: <TrainIcon fontSize="inherit" /> },
-              { val: 'commercial',    label: '商業施設',  icon: <StorefrontIcon fontSize="inherit" /> },
-              { val: 'park',          label: '公園・屋外', icon: <ParkIcon fontSize="inherit" /> },
-              { val: 'public',        label: '公共施設',  icon: <CategoryIcon fontSize="inherit" /> },
-              { val: 'medical',       label: '医療・福祉', icon: <LocalHospitalIcon fontSize="inherit" /> },
-              { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="inherit" /> },
-            ].map(opt => (
-              <label key={opt.val} className={`radio-row ${getStrParam('facilityCategory') === opt.val ? 'active' : ''}`}>
-                <input type="radio" name="cat" checked={getStrParam('facilityCategory') === opt.val} onChange={() => updateParam('facilityCategory', opt.val)} />
-                <span className="radio-icon">{opt.icon}</span> {opt.label}
-              </label>
-            ))}
-          </div>
-        </section>
-
-        {/* 3. 設備・条件 */}
-        <section className="filter-section" style={{ borderBottom: 'none', marginBottom: 0 }}>
-          <div className="check-group-vertical">
-            <CheckRow label="オムツ交換台"   pKey="diaper"           icon="👶" checked={getBoolParam('diaper')}           onChange={updateParam} />
-            <CheckRow label="車椅子対応"     pKey="wheelchair"       icon="♿" checked={getBoolParam('wheelchair')}       onChange={updateParam} />
-            <CheckRow label="24時間営業"     pKey="open24h"          icon="🕒" checked={getBoolParam('open24h')}          onChange={updateParam} />
-            <CheckRow label="駐車場あり"     pKey="parking"          icon="🚗" checked={getBoolParam('parking')}          onChange={updateParam} />
-            <CheckRow label="オストメイト"   pKey="ostomate"         icon="➕" checked={getBoolParam('ostomate')}         onChange={updateParam} />
-            <CheckRow label="授乳室"         pKey="nursing_room"     icon="🍼" checked={getBoolParam('nursing_room')}     onChange={updateParam} />
-            {/* ★追加: ベビーチェア */}
-            <CheckRow label="ベビーチェア"   pKey="baby_chair"       icon="🪑" checked={getBoolParam('baby_chair')}       onChange={updateParam} />
-            <CheckRow label="ウォシュレット" pKey="washlet"          icon="🚽" checked={getBoolParam('washlet')}          onChange={updateParam} />
-            <CheckRow label="男女別"         pKey="gender_separated" icon="🚻" checked={getBoolParam('gender_separated')} onChange={updateParam} />
-            <CheckRow label="無料"           pKey="free"             icon="💰" checked={getBoolParam('free')}             onChange={updateParam} />
-          </div>
-        </section>
-
-        <button className="mobile-toggle-btn btn-bottom" onClick={() => setIsOpen(false)}>
-          ▲ 詳細条件を閉じる
-        </button>
-      </div>
-    </aside>
+      <footer style={{ textAlign: 'center', padding: '20px', fontSize: '0.8rem', color: '#666' }}>
+        <p>※本サイトは開発中のポートフォリオ（デモ）です。<br />
+          登録したデータはブラウザ内にのみ保存され、他者とは共有されません。</p>
+        <p>© 2026 Imatoilet Project</p>
+      </footer>
+    </>
   );
 }
 
-function CheckRow({ label, pKey, icon, checked, onChange }) {
-  return (
-    <label className={`check-row ${checked ? 'checked' : ''}`}>
-      <div className="check-label-content">
-        {icon && <span className="check-icon">{icon}</span>}
-        <span className="check-text">{label}</span>
-      </div>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(pKey, e.target.checked)} />
-      <span className="toggle-switch" />
-    </label>
-  );
-}
-
-export default FilterPanel;
+export default Home;
 </file>
 
 <file path="toilet-frontend/src/components/SafeGoogleMap.jsx">
@@ -6989,6 +6890,209 @@ export const SafeGoogleMap = ({ children, center, zoom, style, ...props }) => {
     "vite": "npm:rolldown-vite@7.2.5"
   }
 }
+</file>
+
+<file path="toilet-frontend/src/pages/Search/FilterPanel.jsx">
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+import SearchIcon from '@mui/icons-material/Search';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import MapIcon from '@mui/icons-material/Map';
+import CheckIcon from '@mui/icons-material/Check';
+import HistoryIcon from '@mui/icons-material/History';
+import TrainIcon from '@mui/icons-material/Train';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ParkIcon from '@mui/icons-material/Park';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import HotelIcon from '@mui/icons-material/Hotel';
+import CategoryIcon from '@mui/icons-material/Category';
+
+function FilterPanel({
+  placeQuery, setPlaceQuery, handleKeywordSearch, handleCurrentLocation,
+  handlePlaceSearch, searchHistory, handleHistorySearch, removeFromHistory
+}) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showHistory, setShowHistory] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const historyRef = useRef(null);
+
+  // 履歴ポップアップの外クリック・Escで閉じる
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (historyRef.current && !historyRef.current.contains(e.target)) setShowHistory(false);
+    };
+    const handleKeyDown = (e) => { if (e.key === 'Escape') setShowHistory(false); };
+
+    if (showHistory) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showHistory]);
+
+  const updateParam = (key, value) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === null || value === false || value === '') newParams.delete(key);
+    else newParams.set(key, String(value));
+    setSearchParams(newParams);
+  };
+
+  const getBoolParam = (key) => searchParams.get(key) === 'true';
+  const getStrParam  = (key) => searchParams.get(key) || '';
+
+  return (
+    <aside className="filter-panel">
+
+      {/* 1. キーワード・場所検索エリア */}
+      <section className="filter-section filter-section-top">
+        <h3 className="filter-title desktop-only">場所・キーワード</h3>
+
+        <div className="search-box-group" style={{ position: 'relative' }} ref={historyRef}>
+
+          {/* 入力欄 + 🔍 + 📍 を1行に収める */}
+          <div className="search-input-row">
+            <input
+              type="search"
+              className="input-search-side"
+              placeholder="駅名・場所・施設名を入力"
+              value={placeQuery}
+              onChange={(e) => setPlaceQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handlePlaceSearch()}
+              onFocus={() => setShowHistory(true)}
+            />
+            <button className="btn-search-inline" onClick={handlePlaceSearch} title="検索">
+              <SearchIcon fontSize="small" />
+            </button>
+            <button className="btn-search-inline btn-search-location" onClick={handleCurrentLocation} title="現在地">
+              <MyLocationIcon fontSize="small" />
+            </button>
+          </div>
+
+          {/* 履歴ポップアップ */}
+          {showHistory && searchHistory && searchHistory.length > 0 && (
+            <>
+              <div className="history-backdrop" onClick={() => setShowHistory(false)} />
+              <div className="history-popup">
+                <div className="history-popup-header">
+                  <span>過去の検索履歴</span>
+                  <button className="history-close-btn" onClick={() => setShowHistory(false)}>✕</button>
+                </div>
+                <div className="history-list">
+                  {searchHistory.map((hist, idx) => (
+                    <div
+                      key={idx}
+                      className="history-item"
+                      style={{ display: 'flex', justifyContent: 'space-between', padding: '0' }}
+                    >
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '12px 14px' }}
+                        onClick={() => { handleHistorySearch(hist); setShowHistory(false); }}
+                      >
+                        <HistoryIcon fontSize="small" color="action" />
+                        {hist}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromHistory(hist);
+                        }}
+                        style={{
+                          background: 'transparent', border: 'none', color: '#ccc', cursor: 'pointer',
+                          padding: '0 14px', fontSize: '1.2rem'
+                        }}
+                        title="履歴を削除"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="history-footer desktop-only" onClick={() => setShowHistory(false)}>
+                  閉じる
+                </div>
+              </div>
+            </>
+          )}
+
+        </div>
+
+      </section>
+
+      {/* スマホ用アコーディオン開閉ボタン */}
+      <button className="mobile-toggle-btn" onClick={() => setIsOpen(!isOpen)}>
+        {isOpen ? '▲ 詳細条件を閉じる' : '▼ 詳細条件を開く'}
+      </button>
+
+      <div className={`accordion-content ${isOpen ? 'open' : ''}`}>
+
+        {/* 2. 施設タイプ */}
+        <section className="filter-section">
+          <h3 className="filter-title">詳細条件（施設）</h3>
+          <div className="radio-group-vertical">
+            <label className={`radio-row ${getStrParam('facilityCategory') === '' ? 'active' : ''}`}>
+              <input type="radio" name="cat" checked={getStrParam('facilityCategory') === ''} onChange={() => updateParam('facilityCategory', '')} />
+              <span className="radio-icon">🏠</span> 指定なし
+            </label>
+
+            {[
+              { val: 'station',       label: '駅・交通',  icon: <TrainIcon fontSize="inherit" /> },
+              { val: 'commercial',    label: '商業施設',  icon: <StorefrontIcon fontSize="inherit" /> },
+              { val: 'park',          label: '公園・屋外', icon: <ParkIcon fontSize="inherit" /> },
+              { val: 'public',        label: '公共施設',  icon: <CategoryIcon fontSize="inherit" /> },
+              { val: 'medical',       label: '医療・福祉', icon: <LocalHospitalIcon fontSize="inherit" /> },
+              { val: 'hotel_tourism', label: '観光・宿泊', icon: <HotelIcon fontSize="inherit" /> },
+            ].map(opt => (
+              <label key={opt.val} className={`radio-row ${getStrParam('facilityCategory') === opt.val ? 'active' : ''}`}>
+                <input type="radio" name="cat" checked={getStrParam('facilityCategory') === opt.val} onChange={() => updateParam('facilityCategory', opt.val)} />
+                <span className="radio-icon">{opt.icon}</span> {opt.label}
+              </label>
+            ))}
+          </div>
+        </section>
+
+        {/* 3. 設備・条件 */}
+        <section className="filter-section" style={{ borderBottom: 'none', marginBottom: 0 }}>
+          <div className="check-group-vertical">
+            <CheckRow label="オムツ交換台"   pKey="diaper"           icon="👶" checked={getBoolParam('diaper')}           onChange={updateParam} />
+            <CheckRow label="車椅子対応"     pKey="wheelchair"       icon="♿" checked={getBoolParam('wheelchair')}       onChange={updateParam} />
+            <CheckRow label="24時間営業"     pKey="open24h"          icon="🕒" checked={getBoolParam('open24h')}          onChange={updateParam} />
+            <CheckRow label="駐車場あり"     pKey="parking"          icon="🚗" checked={getBoolParam('parking')}          onChange={updateParam} />
+            <CheckRow label="オストメイト"   pKey="ostomate"         icon="➕" checked={getBoolParam('ostomate')}         onChange={updateParam} />
+            <CheckRow label="授乳室"         pKey="nursing_room"     icon="🍼" checked={getBoolParam('nursing_room')}     onChange={updateParam} />
+            {/* ★追加: ベビーチェア */}
+            <CheckRow label="ベビーチェア"   pKey="baby_chair"       icon="🪑" checked={getBoolParam('baby_chair')}       onChange={updateParam} />
+            <CheckRow label="ウォシュレット" pKey="washlet"          icon="🚽" checked={getBoolParam('washlet')}          onChange={updateParam} />
+            <CheckRow label="男女別"         pKey="gender_separated" icon="🚻" checked={getBoolParam('gender_separated')} onChange={updateParam} />
+            <CheckRow label="無料"           pKey="free"             icon="💰" checked={getBoolParam('free')}             onChange={updateParam} />
+          </div>
+        </section>
+
+        <button className="mobile-toggle-btn btn-bottom" onClick={() => setIsOpen(false)}>
+          ▲ 詳細条件を閉じる
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function CheckRow({ label, pKey, icon, checked, onChange }) {
+  return (
+    <label className={`check-row ${checked ? 'checked' : ''}`}>
+      <div className="check-label-content">
+        {icon && <span className="check-icon">{icon}</span>}
+        <span className="check-text">{label}</span>
+      </div>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(pKey, e.target.checked)} />
+      <span className="toggle-switch" />
+    </label>
+  );
+}
+
+export default FilterPanel;
 </file>
 
 <file path="toilet-frontend/src/pages/Search/index.jsx">
@@ -7449,6 +7553,302 @@ public class ToiletApiControllerTest {
 }
 </file>
 
+<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
+package com.imatoilet.backend;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNull;
+import java.util.List;
+import java.util.Optional;
+
+public interface ToiletRepository extends JpaRepository<Toilet, Long> {
+
+    @Override
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @NonNull
+    List<Toilet> findAll();
+
+    @Override
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @NonNull
+    Optional<Toilet> findById(@NonNull Long id);
+
+    // ★追加: 表示領域（Bounding Box）による検索クエリ
+    @Query(value = "SELECT t.id FROM toilet t WHERE " +
+           "t.lat >= :minLat AND t.lat <= :maxLat AND t.lng >= :minLng AND t.lng <= :maxLng " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
+           "t.lat >= :minLat AND t.lat <= :maxLat AND t.lng >= :minLng AND t.lng <= :maxLng " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           nativeQuery = true)
+    Page<Long> findIdsWithinBoundsWithSpecs(
+        @Param("minLat") Double minLat,
+        @Param("maxLat") Double maxLat,
+        @Param("minLng") Double minLng,
+        @Param("maxLng") Double maxLng,
+        @Param("facilityCategory") String facilityCategory,
+        @Param("minCleanliness") Integer minCleanliness,
+        @Param("keyword") String keyword,
+        @Param("publicUse") Boolean publicUse,
+        @Param("equipmentTypes") List<String> equipmentTypes,
+        @Param("typeCount") Integer typeCount,
+        Pageable pageable
+    );
+
+    // 既存: 位置検索 + フィルタリングのネイティブクエリ
+    @Query(value = "SELECT t.id FROM toilet t WHERE " +
+           "(6371 * acos(least(1.0, greatest(-1.0, " +
+           "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
+           "  cos(radians(t.lng) - radians(:lng)) + " +
+           "  sin(radians(:lat)) * sin(radians(t.lat))" +
+           ")))) <= :radius " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
+           "(6371 * acos(least(1.0, greatest(-1.0, cos(radians(:lat)) * cos(radians(t.lat)) * cos(radians(t.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(t.lat)))))) <= :radius " +
+           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
+           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
+           nativeQuery = true)
+    Page<Long> findIdsWithinRadiusWithSpecs(
+        @Param("lat") Double lat,
+        @Param("lng") Double lng,
+        @Param("radius") Double radius,
+        @Param("facilityCategory") String facilityCategory,
+        @Param("minCleanliness") Integer minCleanliness,
+        @Param("keyword") String keyword,
+        @Param("publicUse") Boolean publicUse,
+        @Param("equipmentTypes") List<String> equipmentTypes,
+        @Param("typeCount") Integer typeCount,
+        Pageable pageable
+    );
+
+    // 既存: 条件検索のJPQL
+    @Query("SELECT t.id FROM Toilet t " +
+           "WHERE (:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) " +
+           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:publicUse IS NULL OR t.publicUse = :publicUse) " +
+           "AND (:typeCount = 0L OR (SELECT COUNT(DISTINCT e.type) FROM Equipment e WHERE e.toilet.id = t.id AND e.type IN :equipmentTypes) = :typeCount)")
+    Page<Long> searchIdsBySpecs(
+        @Param("facilityCategory") String facilityCategory,
+        @Param("minCleanliness") Integer minCleanliness,
+        @Param("keyword") String keyword,
+        @Param("publicUse") Boolean publicUse,
+        @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
+        @Param("typeCount") Long typeCount,
+        Pageable pageable
+    );
+
+    // 2段階フェッチ用（N+1回避）
+    @EntityGraph(attributePaths = {"equipmentList"})
+    @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
+    List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
+}
+</file>
+
+<file path="toilet-frontend/src/pages/Edit.jsx">
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { loadUserToilets, saveUserToilets, buildEquipmentArray, normalizeEquipment } from '../utils';
+import { API_BASE_URL } from '../config/api';
+import './Register.css';
+import ToiletForm from '../components/ToiletForm';
+import EditIcon from '@mui/icons-material/Edit';
+
+function Edit() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    description: '',
+    lat: '',
+    lng: '',
+    images: [],
+    cleanliness: 3,
+    facilityCategory: '',
+    conditions: {
+      wheelchair:       false,
+      diaper:           false,
+      open24h:          false,
+      ostomate:         false,
+      nursing_room:     false,
+      baby_chair:       false,
+      washlet:          false,
+      gender_separated: false,
+      free:             false,
+      parking:          false,
+    }
+  });
+
+  // --- データ読み込み ---
+  useEffect(() => {
+    async function fetchData() {
+      if (id.startsWith('u_')) {
+        const userToilets = loadUserToilets();
+        const found = userToilets.find(t => t.id === id);
+        if (found) applyDataToForm(found);
+        else { alert('データが見つかりません'); setLoading(false); }
+      } else {
+        try {
+          const res = await fetch(`${API_BASE_URL}/${id}`);
+          if (res.ok) applyDataToForm(await res.json());
+          else { alert('データの取得に失敗しました'); navigate('/search'); }
+        } catch (err) {
+          console.error(err);
+          alert('通信エラーが発生しました');
+        }
+      }
+    }
+    fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const applyDataToForm = (data) => {
+    const eqSet = normalizeEquipment(data);
+
+    const imageList = data.image
+      ? data.image.split(',').filter(url => url.trim() !== '')
+      : [];
+
+    setFormData({
+      name:             data.name || '',
+      address:          data.address || '',
+      description:      data.description || '',
+      lat:              data.lat,
+      lng:              data.lng,
+      images:           imageList,
+      cleanliness:      data.cleanliness || 3,
+      facilityCategory: data.facilityCategory || '',
+      conditions: {
+        wheelchair:       eqSet.has('WHEELCHAIR'),
+        diaper:           eqSet.has('DIAPER'),
+        open24h:          eqSet.has('OPEN_24H'),
+        ostomate:         eqSet.has('OSTOMATE'),
+        nursing_room:     eqSet.has('NURSING_ROOM'),
+        baby_chair:       eqSet.has('BABY_CHAIR'),
+        washlet:          eqSet.has('WASHLET'),
+        gender_separated: eqSet.has('GENDER_SEPARATED'),
+        free:             eqSet.has('FREE'),
+        parking:          eqSet.has('PARKING'),
+      }
+    });
+
+    setLoading(false);
+  };
+
+  // --- 送信処理 ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!confirm('この内容で更新しますか？')) return;
+    setSubmitting(true);
+
+    const payload = {
+      name:             formData.name,
+      address:          formData.address,
+      description:      formData.description,
+      lat:              Number(formData.lat),
+      lng:              Number(formData.lng),
+      cleanliness:      Number(formData.cleanliness),
+      image:            formData.images.join(','),
+      facilityCategory: formData.facilityCategory,
+      equipment:        buildEquipmentArray(formData.conditions),
+    };
+
+    try {
+      if (id.startsWith('u_')) {
+        const userToilets = loadUserToilets();
+        const index = userToilets.findIndex(t => t.id === id);
+        if (index !== -1) {
+          userToilets[index] = { ...userToilets[index], ...payload, updatedAt: new Date().toISOString() };
+          saveUserToilets(userToilets);
+          alert('更新しました（ローカル）');
+          navigate(`/detail/${id}`);
+        }
+      } else {
+        const res = await fetch(`${API_BASE_URL}/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          alert('更新しました！');
+          navigate(`/detail/${id}`);
+        } else if (res.status === 400) {
+          try {
+            const errData = await res.json();
+            const msgs = errData.errors
+              ? Object.values(errData.errors).join('\n')
+              : errData.message || '入力内容に誤りがあります';
+            alert('入力エラー:\n' + msgs);
+          } catch {
+            alert('入力内容に誤りがあります。');
+          }
+        } else {
+          alert('更新に失敗しました。');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert('エラーが発生しました。');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) return <div className="container" style={{ padding: '20px' }}>データを読み込んでいます...</div>;
+
+  return (
+    <ToiletForm
+      formData={formData}
+      setFormData={setFormData}
+      onSubmit={handleSubmit}
+      uploading={uploading}
+      setUploading={setUploading}
+      submitting={submitting}
+      mode="edit"
+      backLink={`/detail/${id}`}
+      backLabel="詳細に戻る"
+      title="トイレ情報を編集"
+      submitLabel="更新内容を保存"
+      submitIcon={<EditIcon sx={{ mr: 1 }} />}
+      mapTitle="場所の修正"
+      mapSub="ピンをドラッグして位置を微調整できます"
+    />
+  );
+}
+
+export default Edit;
+</file>
+
 <file path="toilet-frontend/src/search.css">
 /* =========================================================
    search.css (3カラム・フルハイト版 + モバイル対応)
@@ -7517,6 +7917,31 @@ public class ToiletApiControllerTest {
   flex-direction: column;
   gap: 8px;
 }
+
+/* 入力欄とボタンを横並びにするラッパー */
+.search-input-row {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-input-row:focus-within {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+}
+.search-input-row .input-search-side {
+  border: none;
+  border-radius: 0;
+  flex: 1;
+  box-shadow: none;
+}
+.search-input-row .input-search-side:focus {
+  outline: none;
+}
+
 .input-search-side {
   width: 100%;
   padding: 10px;
@@ -7527,24 +7952,79 @@ public class ToiletApiControllerTest {
 .search-actions {
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
 }
+
 .btn-icon-side {
-  flex: 1;
+  flex: 0 0 auto;
   background: #f5f5f5;
   border: 1px solid #ddd;
   border-radius: 6px;
-  padding: 6px;
+  padding: 6px 12px;
   cursor: pointer;
   color: #555;
   display: flex;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
+  gap: 4px;
   height: 36px;
 }
 .btn-icon-side:hover {
   background: #e3f2fd;
   color: #1976d2;
   border-color: #1976d2;
+}
+
+.btn-search-inline {
+  background: transparent;
+  border: none;
+  border-left: 1px solid #eee;
+  padding: 0 8px;
+  cursor: pointer;
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 38px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.btn-search-inline:hover {
+  color: #1976d2;
+  background: #f0f7ff;
+}
+
+/* 📍現在地ボタン：緑色 */
+.btn-search-location {
+  color: #4CAF50;
+}
+.btn-search-location:hover {
+  color: #388e3c;
+  background: #f0fdf4;
+}
+
+/* モバイル現在地ボタン（小さめ） */
+.btn-location-mobile {
+  padding: 0 12px !important;
+  min-width: 44px;
+}
+
+/* ボタン内テキストラベル（PC用） */
+.btn-label {
+  font-size: 0.65rem;
+  line-height: 1;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* 検索ヒントテキスト（PC用） */
+.search-hint {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 4px 0 0;
+  line-height: 1.6;
 }
 
 /* ラジオボタンリスト */
@@ -8048,6 +8528,19 @@ public class ToiletApiControllerTest {
   .desktop-only-btn {
     display: none !important;
   }
+  /* タブレット・モバイルではヒントテキストも非表示 */
+  .search-hint {
+    display: none;
+  }
+
+  .btn-location {
+    flex-direction: row !important;
+    gap: 4px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    flex: 0 0 auto !important;
+    padding: 0 16px !important;
+  }
 
   .filter-section-top {
     margin-bottom: 0;
@@ -8057,21 +8550,72 @@ public class ToiletApiControllerTest {
 
   /* ★画像モックアップ風：検索窓と現在地ボタンの横並び */
   .search-box-group {
-    flex-direction: row; 
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   }
-  .input-search-side {
-    flex: 1; 
-    padding: 12px 16px;
-    border-radius: 24px; 
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-  }
-  .search-actions {
-    display: flex;
-    flex-shrink: 0;
-  }
+
+/* 入力欄 + アイコンボタンを1行に収めるラッパー */
+.search-input-row {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-input-row:focus-within {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+}
+.search-input-row .input-search-side {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  padding: 10px 8px;
+  font-size: 0.9rem;
+  width: auto;
+  box-shadow: none;
+}
+.search-input-row .input-search-side:focus {
+  outline: none;
+}
+
+/* 入力欄内の🔍ボタン */
+.btn-search-inline {
+  background: transparent;
+  border: none;
+  border-left: 1px solid #eee;
+  padding: 0 8px;
+  cursor: pointer;
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 38px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.btn-search-inline:hover {
+  color: #1976d2;
+  background: #f0f7ff;
+}
+
+/* 📍ボタンだけ緑色 */
+.btn-search-location {
+  color: #4CAF50;
+}
+.btn-search-location:hover {
+  color: #388e3c;
+  background: #f0fdf4;
+}
+
+.search-actions {
+  display: flex;
+  gap: 8px;
+}
   
   /* ★現在地ボタンのモックアップ化 */
   .btn-location {
@@ -8363,302 +8907,6 @@ public class ToiletApiControllerTest {
     flex: 1 !important;
   }
 }
-</file>
-
-<file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletRepository.java">
-package com.imatoilet.backend;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.lang.NonNull;
-import java.util.List;
-import java.util.Optional;
-
-public interface ToiletRepository extends JpaRepository<Toilet, Long> {
-
-    @Override
-    @EntityGraph(attributePaths = {"equipmentList"})
-    @NonNull
-    List<Toilet> findAll();
-
-    @Override
-    @EntityGraph(attributePaths = {"equipmentList"})
-    @NonNull
-    Optional<Toilet> findById(@NonNull Long id);
-
-    // ★追加: 表示領域（Bounding Box）による検索クエリ
-    @Query(value = "SELECT t.id FROM toilet t WHERE " +
-           "t.lat >= :minLat AND t.lat <= :maxLat AND t.lng >= :minLng AND t.lng <= :maxLng " +
-           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
-           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
-           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
-           countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
-           "t.lat >= :minLat AND t.lat <= :maxLat AND t.lng >= :minLng AND t.lng <= :maxLng " +
-           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
-           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
-           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
-           nativeQuery = true)
-    Page<Long> findIdsWithinBoundsWithSpecs(
-        @Param("minLat") Double minLat,
-        @Param("maxLat") Double maxLat,
-        @Param("minLng") Double minLng,
-        @Param("maxLng") Double maxLng,
-        @Param("facilityCategory") String facilityCategory,
-        @Param("minCleanliness") Integer minCleanliness,
-        @Param("keyword") String keyword,
-        @Param("publicUse") Boolean publicUse,
-        @Param("equipmentTypes") List<String> equipmentTypes,
-        @Param("typeCount") Integer typeCount,
-        Pageable pageable
-    );
-
-    // 既存: 位置検索 + フィルタリングのネイティブクエリ
-    @Query(value = "SELECT t.id FROM toilet t WHERE " +
-           "(6371 * acos(least(1.0, greatest(-1.0, " +
-           "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
-           "  cos(radians(t.lng) - radians(:lng)) + " +
-           "  sin(radians(:lat)) * sin(radians(t.lat))" +
-           ")))) <= :radius " +
-           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
-           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
-           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
-           countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
-           "(6371 * acos(least(1.0, greatest(-1.0, cos(radians(:lat)) * cos(radians(t.lat)) * cos(radians(t.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(t.lat)))))) <= :radius " +
-           "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
-           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
-           "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
-           nativeQuery = true)
-    Page<Long> findIdsWithinRadiusWithSpecs(
-        @Param("lat") Double lat,
-        @Param("lng") Double lng,
-        @Param("radius") Double radius,
-        @Param("facilityCategory") String facilityCategory,
-        @Param("minCleanliness") Integer minCleanliness,
-        @Param("keyword") String keyword,
-        @Param("publicUse") Boolean publicUse,
-        @Param("equipmentTypes") List<String> equipmentTypes,
-        @Param("typeCount") Integer typeCount,
-        Pageable pageable
-    );
-
-    // 既存: 条件検索のJPQL
-    @Query("SELECT t.id FROM Toilet t " +
-           "WHERE (:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) " +
-           "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:publicUse IS NULL OR t.publicUse = :publicUse) " +
-           "AND (:typeCount = 0L OR (SELECT COUNT(DISTINCT e.type) FROM Equipment e WHERE e.toilet.id = t.id AND e.type IN :equipmentTypes) = :typeCount)")
-    Page<Long> searchIdsBySpecs(
-        @Param("facilityCategory") String facilityCategory,
-        @Param("minCleanliness") Integer minCleanliness,
-        @Param("keyword") String keyword,
-        @Param("publicUse") Boolean publicUse,
-        @Param("equipmentTypes") List<EquipmentType> equipmentTypes,
-        @Param("typeCount") Long typeCount,
-        Pageable pageable
-    );
-
-    // 2段階フェッチ用（N+1回避）
-    @EntityGraph(attributePaths = {"equipmentList"})
-    @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
-    List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
-}
-</file>
-
-<file path="toilet-frontend/src/pages/Edit.jsx">
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { loadUserToilets, saveUserToilets, buildEquipmentArray, normalizeEquipment } from '../utils';
-import { API_BASE_URL } from '../config/api';
-import './Register.css';
-import ToiletForm from '../components/ToiletForm';
-import EditIcon from '@mui/icons-material/Edit';
-
-function Edit() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    description: '',
-    lat: '',
-    lng: '',
-    images: [],
-    cleanliness: 3,
-    facilityCategory: '',
-    conditions: {
-      wheelchair:       false,
-      diaper:           false,
-      open24h:          false,
-      ostomate:         false,
-      nursing_room:     false,
-      baby_chair:       false,
-      washlet:          false,
-      gender_separated: false,
-      free:             false,
-      parking:          false,
-    }
-  });
-
-  // --- データ読み込み ---
-  useEffect(() => {
-    async function fetchData() {
-      if (id.startsWith('u_')) {
-        const userToilets = loadUserToilets();
-        const found = userToilets.find(t => t.id === id);
-        if (found) applyDataToForm(found);
-        else { alert('データが見つかりません'); setLoading(false); }
-      } else {
-        try {
-          const res = await fetch(`${API_BASE_URL}/${id}`);
-          if (res.ok) applyDataToForm(await res.json());
-          else { alert('データの取得に失敗しました'); navigate('/search'); }
-        } catch (err) {
-          console.error(err);
-          alert('通信エラーが発生しました');
-        }
-      }
-    }
-    fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const applyDataToForm = (data) => {
-    const eqSet = normalizeEquipment(data);
-
-    const imageList = data.image
-      ? data.image.split(',').filter(url => url.trim() !== '')
-      : [];
-
-    setFormData({
-      name:             data.name || '',
-      address:          data.address || '',
-      description:      data.description || '',
-      lat:              data.lat,
-      lng:              data.lng,
-      images:           imageList,
-      cleanliness:      data.cleanliness || 3,
-      facilityCategory: data.facilityCategory || '',
-      conditions: {
-        wheelchair:       eqSet.has('WHEELCHAIR'),
-        diaper:           eqSet.has('DIAPER'),
-        open24h:          eqSet.has('OPEN_24H'),
-        ostomate:         eqSet.has('OSTOMATE'),
-        nursing_room:     eqSet.has('NURSING_ROOM'),
-        baby_chair:       eqSet.has('BABY_CHAIR'),
-        washlet:          eqSet.has('WASHLET'),
-        gender_separated: eqSet.has('GENDER_SEPARATED'),
-        free:             eqSet.has('FREE'),
-        parking:          eqSet.has('PARKING'),
-      }
-    });
-
-    setLoading(false);
-  };
-
-  // --- 送信処理 ---
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!confirm('この内容で更新しますか？')) return;
-    setSubmitting(true);
-
-    const payload = {
-      name:             formData.name,
-      address:          formData.address,
-      description:      formData.description,
-      lat:              Number(formData.lat),
-      lng:              Number(formData.lng),
-      cleanliness:      Number(formData.cleanliness),
-      image:            formData.images.join(','),
-      facilityCategory: formData.facilityCategory,
-      equipment:        buildEquipmentArray(formData.conditions),
-    };
-
-    try {
-      if (id.startsWith('u_')) {
-        const userToilets = loadUserToilets();
-        const index = userToilets.findIndex(t => t.id === id);
-        if (index !== -1) {
-          userToilets[index] = { ...userToilets[index], ...payload, updatedAt: new Date().toISOString() };
-          saveUserToilets(userToilets);
-          alert('更新しました（ローカル）');
-          navigate(`/detail/${id}`);
-        }
-      } else {
-        const res = await fetch(`${API_BASE_URL}/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          alert('更新しました！');
-          navigate(`/detail/${id}`);
-        } else if (res.status === 400) {
-          try {
-            const errData = await res.json();
-            const msgs = errData.errors
-              ? Object.values(errData.errors).join('\n')
-              : errData.message || '入力内容に誤りがあります';
-            alert('入力エラー:\n' + msgs);
-          } catch {
-            alert('入力内容に誤りがあります。');
-          }
-        } else {
-          alert('更新に失敗しました。');
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      alert('エラーが発生しました。');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading) return <div className="container" style={{ padding: '20px' }}>データを読み込んでいます...</div>;
-
-  return (
-    <ToiletForm
-      formData={formData}
-      setFormData={setFormData}
-      onSubmit={handleSubmit}
-      uploading={uploading}
-      setUploading={setUploading}
-      submitting={submitting}
-      mode="edit"
-      backLink={`/detail/${id}`}
-      backLabel="詳細に戻る"
-      title="トイレ情報を編集"
-      submitLabel="更新内容を保存"
-      submitIcon={<EditIcon sx={{ mr: 1 }} />}
-      mapTitle="場所の修正"
-      mapSub="ピンをドラッグして位置を微調整できます"
-    />
-  );
-}
-
-export default Edit;
 </file>
 
 <file path="backend/backend/src/main/java/com/imatoilet/backend/ToiletService.java">
@@ -9654,7 +9902,6 @@ export const useToiletSearch = () => {
           const lng = hit.geometry.location.lng();
           setCurrentLocation({ lat, lng, address: hit.formatted_address || hit.name });
           let statusMsg = `「${hit.name}」周辺`;
-          if (hit.rating) statusMsg += ` (★${hit.rating})`;
           setSearchStatus(statusMsg + ' を表示中');
         } else {
           const geocoder = new window.google.maps.Geocoder();
@@ -9895,9 +10142,7 @@ export const useToiletSearch = () => {
       setFilteredToilets(uniqueResult);
       setSearchStatus(prev => {
         if (uniqueResult.length > 0) {
-          return prev.includes('検索中') || prev.includes('読み込み中')
-            ? `${uniqueResult.length}件のトイレが見つかりました`
-            : prev;
+          return `${uniqueResult.length}件のトイレが見つかりました`;
         }
         return prev.includes('付近') ? prev : '条件に一致するトイレは見つかりませんでした';
       });
