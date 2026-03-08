@@ -1,13 +1,21 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import * as Sentry from '@sentry/react'
 import App from './App.jsx'
-import ErrorBoundary from './components/ErrorBoundary.jsx' // 追加
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import './index.css'
+
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  environment: import.meta.env.MODE,
+  tracesSampleRate: 0.2,
+  enabled: import.meta.env.PROD,
+})
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ErrorBoundary> {/* アプリ全体を囲む */}
+    <ErrorBoundary>
       <BrowserRouter>
         <App />
       </BrowserRouter>
