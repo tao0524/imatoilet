@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import Detail from './Detail';
 import { describe, it, expect } from 'vitest';
-import { http, HttpResponse } from 'msw';        // 追加
-import { server } from '../mocks/server';        // 追加
+import { http, HttpResponse } from 'msw';
+import { server } from '../mocks/server';
 
 describe('Detail Page', () => {
   it('APIからデータを取得して詳細が表示されること', async () => {
@@ -25,9 +25,9 @@ describe('Detail Page', () => {
   });
 
   it('APIエラー時にエラーメッセージが表示されること', async () => {
-    // このテストの間だけ、APIがエラー(500)を返すように設定を上書き
+    // ★ここを修正: URLの末尾に /:id を追加
     server.use(
-      http.get('http://localhost:8080/api/toilets', () => {
+      http.get('http://localhost:8080/api/toilets/:id', () => {
         return new HttpResponse(null, { status: 500 });
       })
     );
