@@ -2,6 +2,11 @@
 
 [English](README.md)
 
+[![Vercel](https://img.shields.io/badge/デプロイ先-Vercel-black?logo=vercel)](https://imatoilet.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-tao0524%2Fimatoilet-181717?logo=github)](https://github.com/tao0524/imatoilet)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Sentry](https://img.shields.io/badge/エラー監視-Sentry-362D59?logo=sentry)](https://sentry.io)
+
 > 日本全国のトイレを、今すぐ見つける。清潔さ・バリアフリー設備・場所から絞り込めるトイレ検索Webアプリ。
 
 <p align="center">
@@ -59,6 +64,7 @@
 | 地図 | Google Maps JavaScript API（`@react-google-maps/api`） |
 | マーカークラスタリング | `@googlemaps/markerclusterer` |
 | 画像ホスティング | Cloudinary（オプション） |
+| エラー監視 | Sentry（`@sentry/react`） |
 | テスト | Vitest + Testing Library |
 
 ### アーキテクチャ
@@ -249,6 +255,44 @@ imatoilet/
     │   └── utils.js           # ユーティリティ（距離計算・設備情報正規化）
     └── public/                # PWAアイコン・マニフェスト
 ```
+
+---
+
+## 🔒 セキュリティ・監視体制
+
+### エラー監視（Sentry）
+
+フロントエンドに `@sentry/react` を導入済みです。本番環境で発生したランタイムエラーをSentryに自動送信し、リアルタイムで検知・通知する体制を整えています。
+
+- `main.jsx` にて `tracesSampleRate: 0.2` で初期化
+- 本番環境のみ有効（`enabled: import.meta.env.PROD`）
+- `ErrorBoundary` コンポーネントが `Sentry.captureException()` を呼び出しレンダリングエラーを補足
+- ユーザープライバシー保護のため `sendDefaultPii` は意図的に `false` に設定
+
+### CD（継続的デプロイ）
+
+フロントエンド・バックエンドともに自動デプロイを設定・稼働確認済みです。
+
+| 対象 | プラットフォーム | トリガー |
+| --- | --- | --- |
+| フロントエンド | Vercel | `main` ブランチへのプッシュ |
+| バックエンド | Railway | `main` ブランチへのプッシュ |
+
+平均ビルド時間: 15〜28秒。
+
+### APIキーの管理
+
+- APIキーやシークレットはすべて環境変数（`.env` / Vercel / Railway の設定画面）で管理
+- ソースコードへの直書きは**絶対禁止**
+- Google Maps APIキーはGoogle Cloud Console上でHTTPリファラー制限を設定済み
+
+### Gitの履歴クリーニング（git filter-repo）
+
+過去にGitの履歴に混入したGoogle Maps APIキーを、`git filter-repo` を使って全コミット履歴から完全削除済みです。GitHubへの強制プッシュにより、リモートリポジトリの履歴も同様にクリーニング済みです。
+
+### GitGuardian連携
+
+本リポジトリは [GitGuardian](https://www.gitguardian.com/) と連携済みです。シークレットが誤ってコミットされた場合、即座にアラートが発報される体制を整えています。
 
 ---
 

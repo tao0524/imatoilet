@@ -2,6 +2,11 @@
 
 [日本語](README.ja.md)
 
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://imatoilet.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-tao0524%2Fimatoilet-181717?logo=github)](https://github.com/tao0524/imatoilet)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Sentry](https://img.shields.io/badge/Error%20Monitoring-Sentry-362D59?logo=sentry)](https://sentry.io)
+
 > Find the nearest toilet in Japan, right now. A toilet search web app with filtering by cleanliness, accessibility features, and location.
 
 <p align="center">
@@ -59,6 +64,7 @@ A full-stack web application that quickly locates available toilets based on you
 | Maps | Google Maps JavaScript API (`@react-google-maps/api`) |
 | Marker Clustering | `@googlemaps/markerclusterer` |
 | Image Hosting | Cloudinary (optional) |
+| Error Monitoring | Sentry (`@sentry/react`) |
 | Testing | Vitest + Testing Library |
 
 ### Architecture
@@ -249,6 +255,44 @@ imatoilet/
     │   └── utils.js           # Utilities (distance calculation, equipment normalization)
     └── public/                # PWA icons and manifest
 ```
+
+---
+
+## 🔒 Security & Monitoring
+
+### Error Monitoring (Sentry)
+
+`@sentry/react` is integrated into the frontend. Runtime errors are automatically captured and reported to Sentry, enabling real-time visibility into production issues.
+
+- Initialized in `main.jsx` with `tracesSampleRate: 0.2`
+- Active in production only (`enabled: import.meta.env.PROD`)
+- `ErrorBoundary` component calls `Sentry.captureException()` for React rendering errors
+- `sendDefaultPii` is intentionally set to `false` to protect user privacy
+
+### CD (Continuous Deployment)
+
+Automatic deployment is configured for both frontend and backend:
+
+| Service | Platform | Trigger |
+| --- | --- | --- |
+| Frontend | Vercel | Push to `main` branch |
+| Backend | Railway | Push to `main` branch |
+
+Average build time: 15–28 seconds.
+
+### API Key Security
+
+- All API keys and secrets are managed exclusively via environment variables (`.env` / Vercel / Railway settings)
+- API keys are **never** hardcoded in source files
+- The Google Maps API key is restricted by HTTP referrer in the Google Cloud Console
+
+### Git History Sanitization
+
+A previously exposed Google Maps API key was fully removed from the entire Git history using `git filter-repo`. The repository has been force-pushed to GitHub with a clean history.
+
+### GitGuardian Integration
+
+This repository is connected to [GitGuardian](https://www.gitguardian.com/) for automated secret detection. Any accidental commit of secrets triggers an immediate alert.
 
 ---
 
