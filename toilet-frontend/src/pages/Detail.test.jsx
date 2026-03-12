@@ -27,7 +27,7 @@ describe('Detail Page', () => {
   it('APIエラー時にエラーメッセージが表示されること', async () => {
     // ★ここを修正: URLの末尾に /:id を追加
     server.use(
-      http.get('/api/toilets/:id', () => {
+      http.get('http://localhost:8080/api/toilets/:id', () => {
         return new HttpResponse(null, { status: 500 });
       })
     );
