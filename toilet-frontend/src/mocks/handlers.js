@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 // APIのエンドポイントと、返すデータを定義します
 export const handlers = [
   // 1. 一覧取得APIのモック（既存のまま）
-  http.get('http://localhost:8080/api/toilets', () => {
+  http.get('/api/toilets', () => {
     return HttpResponse.json([
       {
         id: 1,
@@ -35,7 +35,7 @@ export const handlers = [
   }),
 
   // 2. 【追加】個別取得APIのモック
-  http.get('http://localhost:8080/api/toilets/:id', ({ params }) => {
+  http.get('/api/toilets/:id', ({ params }) => {
     // 存在しないIDの場合は404を返す
     if (params.id === '999') {
       return new HttpResponse(null, { status: 404 });
@@ -56,7 +56,7 @@ export const handlers = [
   }),
 
   // 3. 【追加】レビュー取得APIのモック
-  http.get('http://localhost:8080/api/toilets/:id/reviews', () => {
+  http.get('/api/toilets/:id/reviews', () => {
     // 空のレビュー一覧を返す
     return HttpResponse.json([]);
   })
