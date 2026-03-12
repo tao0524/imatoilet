@@ -6,6 +6,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-tao0524%2Fimatoilet-181717?logo=github)](https://github.com/tao0524/imatoilet)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Sentry](https://img.shields.io/badge/Error%20Monitoring-Sentry-362D59?logo=sentry)](https://sentry.io)
+[![CI](https://github.com/tao0524/imatoilet/actions/workflows/ci.yml/badge.svg)](https://github.com/tao0524/imatoilet/actions/workflows/ci.yml)
 
 > Find the nearest toilet in Japan, right now. A toilet search web app with filtering by cleanliness, accessibility features, and location.
 

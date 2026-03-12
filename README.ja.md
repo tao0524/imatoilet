@@ -6,6 +6,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-tao0524%2Fimatoilet-181717?logo=github)](https://github.com/tao0524/imatoilet)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Sentry](https://img.shields.io/badge/エラー監視-Sentry-362D59?logo=sentry)](https://sentry.io)
+[![CI](https://github.com/tao0524/imatoilet/actions/workflows/ci.yml/badge.svg)](https://github.com/tao0524/imatoilet/actions/workflows/ci.yml)
 
 > 日本全国のトイレを、今すぐ見つける。清潔さ・バリアフリー設備・場所から絞り込めるトイレ検索Webアプリ。
 
