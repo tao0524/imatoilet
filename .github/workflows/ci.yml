@@ -1,34 +1,37 @@
-name: Frontend CI
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  test-frontend:
+  frontend-test:
     runs-on: ubuntu-latest
-
-    # フロントエンドのディレクトリ内でコマンドを実行する設定
-    defaults:
-      run:
-        working-directory: ./toilet-frontend
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: toilet-frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: toilet-frontend
+        run: npm ci
+      - name: Run tests
+        working-directory: toilet-frontend
+        run: npm run test
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: './toilet-frontend/package-lock.json'
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Run tests
-      # CI環境ではテストを監視モード(watch)にせず、1回だけ実行して終了させるため --run を付与します
-      run: npm run test -- --run
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Run backend tests
+        working-directory: backend/backend
+        run: mvn test
