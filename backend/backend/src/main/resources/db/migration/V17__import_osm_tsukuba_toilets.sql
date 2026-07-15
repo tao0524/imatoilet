@@ -6,8 +6,6 @@
 -- 重複除外: -7件
 -- 最終INSERT: 82件
 
-BEGIN;
-
 -- ============================================================
 -- toilet テーブルへの INSERT
 -- ============================================================
@@ -262,79 +260,77 @@ VALUES ('公衆トイレ', 36.0865897, 140.1060429, null, true, 'public', null, 
 -- equipment テーブルへの INSERT
 -- ============================================================
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/1077015412';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/3794311093';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/3856040395';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'DIAPER' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/4803115388';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'FREE' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/4803115388';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'GENDER_SEPARATED' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/4811369816';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'GENDER_SEPARATED' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/4811369817';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/4834208350';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'FREE' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/4834208350';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'GENDER_SEPARATED' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/4834208350';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'UNISEX' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/4834208350';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'FREE' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/5279146110';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/5298812184';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'FREE' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/5316317422';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'UNISEX' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/5316317422';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/6839486608';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/node/11892838841';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/way/454879181';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'GENDER_SEPARATED' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/way/454879181';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'FREE' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/way/557558599';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'GENDER_SEPARATED' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/way/557558599';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'WHEELCHAIR' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/way/636829532';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'GENDER_SEPARATED' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/way/636829532';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'FREE' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/way/673849707';
 
-INSERT INTO equipment (toilet_id, equipment_type)
+INSERT INTO equipment (toilet_id, type)
 SELECT t.id, 'GENDER_SEPARATED' FROM toilet t WHERE t.source_url = 'https://www.openstreetmap.org/way/673849707';
-
-COMMIT;
