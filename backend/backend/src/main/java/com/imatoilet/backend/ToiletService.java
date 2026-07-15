@@ -15,6 +15,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.imatoilet.backend.dto.ImportResultDto;
+import com.imatoilet.backend.dto.ToiletImportItemDto;
+
 @Service
 @Transactional
 public class ToiletService {
@@ -154,5 +157,53 @@ public class ToiletService {
             } catch (IllegalArgumentException ignored) { }
         }
         return list.isEmpty() ? null : list;
+    }
+
+    public ImportResultDto importToilets(List<ToiletImportItemDto> items) {
+        int inserted = 0;
+        int skipped = 0;
+        List<String> skippedReasons = new ArrayList<>();
+
+        for (ToiletImportItemDto item : items) {
+            // 50m以内の重複チェック（0.05km）
+            List<Long> nearby = toiletRepository.findNearbyToiletIds(
+                    item.getLat(), item.getLng(), 0.05);
+            if (!nearby.isEmpty()) {
+                skipped++;
+                skippedReasons.add(String.format(
+                        "lat=%.6f,lng=%.6f: 既存ID#%dと重複",
+                        item.getLat(), item.getLng(), nearby.get(0)));
+                continue;
+            }
+
+            // 新規登録
+            Toilet toilet = new Toilet();
+            toilet.setName(item.getName() != null && !item.getName().isBlank()
+                    ? item.getName() : "公衆トイレ");
+            toilet.setLat(item.getLat());
+            toilet.setLng(item.getLng());
+            toilet.setAddress(item.getAddress());
+            toilet.setPublicUse(item.getPublicUse());
+            toilet.setFacilityCategory(item.getFacilityCategory());
+            toilet.setSource(item.getSource());
+            toilet.setSourceUrl(item.getSourceUrl());
+            toilet.setLastVerified(item.getLastVerified());
+            toilet.setCleanliness(3);
+
+            Toilet saved = toiletRepository.save(toilet);
+
+            if (item.getEquipment() != null && !item.getEquipment().isEmpty()) {
+                updateEquipmentList(saved, item.getEquipment());
+                toiletRepository.save(saved);
+            }
+
+            inserted++;
+        }
+
+        ImportResultDto result = new ImportResultDto();
+        result.setInserted(inserted);
+        result.setSkipped(skipped);
+        result.setSkippedReasons(skippedReasons);
+        return result;
     }
 }

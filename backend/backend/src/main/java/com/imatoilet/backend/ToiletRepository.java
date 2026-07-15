@@ -106,4 +106,19 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @EntityGraph(attributePaths = {"equipmentList"})
     @Query("SELECT t FROM Toilet t WHERE t.id IN :ids")
     List<Toilet> findAllByIdWithEquipment(@Param("ids") List<Long> ids);
+
+    // 一括インポート用: 50m以内の既存トイレIDを1件取得（重複チェック）
+    @Query(value = "SELECT t.id FROM toilet t WHERE " +
+           "(6371 * acos(least(1.0, greatest(-1.0, " +
+           "  cos(radians(:lat)) * cos(radians(t.lat)) * " +
+           "  cos(radians(t.lng) - radians(:lng)) + " +
+           "  sin(radians(:lat)) * sin(radians(t.lat))" +
+           ")))) <= :radiusKm " +
+           "LIMIT 1",
+           nativeQuery = true)
+    List<Long> findNearbyToiletIds(
+        @Param("lat") Double lat,
+        @Param("lng") Double lng,
+        @Param("radiusKm") Double radiusKm
+    );
 }

@@ -35,7 +35,12 @@ public class AdminTokenFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (PROTECTED_METHODS.contains(request.getMethod())) {
+        String method = request.getMethod();
+        String path = request.getRequestURI();
+        boolean needsAuth = PROTECTED_METHODS.contains(method)
+                || ("POST".equals(method) && path.startsWith("/api/admin/"));
+
+        if (needsAuth) {
             String token = request.getHeader("X-Admin-Token");
 
             if (token == null || !token.equals(adminToken)) {
