@@ -14,13 +14,17 @@ public class FeedbackService {
 
     private final ToiletFeedbackRepository feedbackRepository;
     private final ToiletRepository toiletRepository;
+    private final UserRepository userRepository;
 
-    public FeedbackService(ToiletFeedbackRepository feedbackRepository, ToiletRepository toiletRepository) {
+    public FeedbackService(ToiletFeedbackRepository feedbackRepository,
+                           ToiletRepository toiletRepository,
+                           UserRepository userRepository) {
         this.feedbackRepository = feedbackRepository;
         this.toiletRepository = toiletRepository;
+        this.userRepository = userRepository;
     }
 
-    public FeedbackResponseDto processFeedback(Long toiletId, FeedbackRequestDto dto) {
+    public FeedbackResponseDto processFeedback(Long toiletId, FeedbackRequestDto dto, String userId) {
         // 1. トイレの存在確認
         Toilet toilet = toiletRepository.findById(toiletId)
                 .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", toiletId));
@@ -31,6 +35,14 @@ public class FeedbackService {
         feedback.setFeeling(dto.getFeeling());
         feedback.setIssueTags(dto.getIssueTags());
         feedback.setUserLevel(dto.getUserLevel());
+        if (userId != null) {
+            userRepository.findById(userId).orElseGet(() -> {
+                User newUser = new User();
+                newUser.setId(userId);
+                return userRepository.save(newUser);
+            });
+            feedback.setUserId(userId);
+        }
         feedbackRepository.save(feedback);
 
         // 3. TrustScoreの再計算 (直近30件)

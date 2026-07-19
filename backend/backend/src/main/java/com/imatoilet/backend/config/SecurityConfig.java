@@ -26,9 +26,11 @@ public class SecurityConfig {
     private boolean allowCredentials;
 
     private final AdminTokenFilter adminTokenFilter;
+    private final FirebaseAuthFilter firebaseAuthFilter;
 
-    public SecurityConfig(AdminTokenFilter adminTokenFilter) {
+    public SecurityConfig(AdminTokenFilter adminTokenFilter, FirebaseAuthFilter firebaseAuthFilter) {
         this.adminTokenFilter = adminTokenFilter;
+        this.firebaseAuthFilter = firebaseAuthFilter;
     }
 
     @Bean
@@ -49,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .anyRequest().denyAll()
             )
+            .addFilterBefore(firebaseAuthFilter, AnonymousAuthenticationFilter.class)
             .addFilterBefore(adminTokenFilter, AnonymousAuthenticationFilter.class);
 
         return http.build();

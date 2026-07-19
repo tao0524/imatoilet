@@ -27,6 +27,9 @@ public class ToiletFeedback {
     @Column(name = "user_level")
     private Integer userLevel;
 
+    @Column(name = "user_id", length = 128)
+    private String userId;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
