@@ -1,0 +1,2 @@
+ALTER TABLE daily_quests ALTER COLUMN id TYPE BIGINT;
+ALTER TABLE user_quest_progress ALTER COLUMN id TYPE BIGINT;
