@@ -2,6 +2,7 @@ package com.imatoilet.backend.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -13,4 +14,11 @@ public class FeedbackResponseDto {
     private Integer totalExp;
     private Integer userLevel;
     private Integer contributionCount;
+    private boolean isFirstCheckin;
+    private List<QuestResultDto> questResults;
+    private boolean allQuestsCompleted;
+    private int completionBonusExp;
+    private boolean isPurified;
+    private int raidContributionExp;
+    private int raidFinishingBlowExp;
 }

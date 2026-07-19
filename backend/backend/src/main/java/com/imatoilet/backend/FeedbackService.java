@@ -2,11 +2,18 @@ package com.imatoilet.backend;
 
 import com.imatoilet.backend.dto.FeedbackRequestDto;
 import com.imatoilet.backend.dto.FeedbackResponseDto;
+import com.imatoilet.backend.dto.QuestResultDto;
 import com.imatoilet.backend.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -28,19 +35,30 @@ public class FeedbackService {
     private final ToiletFeedbackRepository feedbackRepository;
     private final ToiletRepository toiletRepository;
     private final UserRepository userRepository;
+    private final DailyQuestRepository dailyQuestRepository;
+    private final UserQuestProgressRepository progressRepository;
 
     public FeedbackService(ToiletFeedbackRepository feedbackRepository,
                            ToiletRepository toiletRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           DailyQuestRepository dailyQuestRepository,
+                           UserQuestProgressRepository progressRepository) {
         this.feedbackRepository = feedbackRepository;
         this.toiletRepository = toiletRepository;
         this.userRepository = userRepository;
+        this.dailyQuestRepository = dailyQuestRepository;
+        this.progressRepository = progressRepository;
     }
 
     public FeedbackResponseDto processFeedback(Long toiletId, FeedbackRequestDto dto, String userId) {
+
         // 1. トイレの存在確認
         Toilet toilet = toiletRepository.findById(toiletId)
                 .orElseThrow(() -> new ResourceNotFoundException("トイレ", "id", toiletId));
+
+        // レイドボス判定用: チェックイン前のtrustScore
+        Double oldTrustScore = toilet.getTrustScore();
+        boolean wasBossActive = oldTrustScore != null && oldTrustScore < 40.0;
 
         // 2. フィードバックの保存
         ToiletFeedback feedback = new ToiletFeedback();
@@ -49,10 +67,19 @@ public class FeedbackService {
         feedback.setIssueTags(dto.getIssueTags());
         feedback.setUserLevel(dto.getUserLevel());
 
-        int earnedExp = 0;
+        int baseExp = 0;
+        boolean isFirstCheckin = false;
         Integer updatedTotalExp = null;
         Integer updatedLevel = null;
         Integer updatedContributionCount = null;
+
+        List<QuestResultDto> questResults = null;
+        int questExpTotal = 0;
+        int completionBonusExp = 0;
+        boolean allQuestsCompleted = false;
+        int raidContributionExp = 0;
+        int raidFinishingBlowExp = 0;
+        boolean isPurified = false;
 
         if (userId != null) {
             User user = userRepository.findById(userId).orElseGet(() -> {
@@ -62,30 +89,130 @@ public class FeedbackService {
             });
             feedback.setUserId(userId);
 
-            // EXP計算
-            earnedExp = 10;
+            // ベースEXP計算
+            baseExp = 10;
             if (dto.getIssueTags() != null && !dto.getIssueTags().isEmpty()) {
-                earnedExp += 5;
+                baseExp += 5;
             }
-            boolean isFirstCheckin = !feedbackRepository.existsByUserIdAndToiletId(userId, toiletId);
+            isFirstCheckin = !feedbackRepository.existsByUserIdAndToiletId(userId, toiletId);
             if (isFirstCheckin) {
-                earnedExp += 10;
+                baseExp += 10;
             }
 
-            user.setTotalExp(user.getTotalExp() + earnedExp);
-            user.setLevel(calcLevel(user.getTotalExp()));
+            // フィードバックを先に保存（クエスト判定クエリに含めるため）
+            feedbackRepository.save(feedback);
+
+            // レイドボス貢献報酬
+            if (wasBossActive && !"BAD".equals(dto.getFeeling())) {
+                raidContributionExp = 10;
+            }
+
+            // デイリークエスト達成判定
+            ZoneId jst = ZoneId.of("Asia/Tokyo");
+            LocalDate todayJst = LocalDate.now(jst);
+
+            Optional<DailyQuest> dailyQuestOpt = dailyQuestRepository.findByQuestDate(todayJst);
+
+            if (dailyQuestOpt.isPresent()) {
+                DailyQuest dailyQuest = dailyQuestOpt.get();
+
+                List<UserQuestProgress> progressList =
+                    progressRepository.findByUserIdAndQuestDate(userId, todayJst);
+
+                if (progressList.isEmpty()) {
+                    progressList = new ArrayList<>();
+                    for (int slot = 1; slot <= 3; slot++) {
+                        UserQuestProgress p = new UserQuestProgress();
+                        p.setUserId(userId);
+                        p.setQuestDate(todayJst);
+                        p.setSlot(slot);
+                        p.setCompleted(false);
+                        progressList.add(progressRepository.save(p));
+                    }
+                }
+
+                long completedBefore = progressList.stream()
+                    .filter(UserQuestProgress::getCompleted)
+                    .count();
+
+                String[] questTypes = {
+                    dailyQuest.getQuestType1(),
+                    dailyQuest.getQuestType2(),
+                    dailyQuest.getQuestType3()
+                };
+
+                LocalDateTime dayStart = todayJst.atStartOfDay(jst)
+                    .toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+                LocalDateTime dayEnd = todayJst.plusDays(1).atStartOfDay(jst)
+                    .toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+
+                questResults = new ArrayList<>();
+
+                for (int i = 0; i < 3; i++) {
+                    final int slotNum = i + 1;
+                    String questTypeName = questTypes[i];
+                    DailyQuestService.QuestType qt =
+                        DailyQuestService.QuestType.valueOf(questTypeName);
+
+                    UserQuestProgress progress = progressList.stream()
+                        .filter(p -> p.getSlot() == slotNum)
+                        .findFirst()
+                        .orElseThrow();
+
+                    boolean justCompleted = false;
+                    int questExp = 0;
+
+                    if (!progress.getCompleted()) {
+                        boolean achieved = checkQuestCondition(
+                            qt, userId, toiletId, toilet, isFirstCheckin,
+                            dto.getFeeling(), dayStart, dayEnd
+                        );
+
+                        if (achieved) {
+                            progress.setCompleted(true);
+                            progress.setCompletedAt(OffsetDateTime.now());
+                            progressRepository.save(progress);
+                            justCompleted = true;
+                            questExp = 10;
+                            questExpTotal += 10;
+                        }
+                    }
+
+                    questResults.add(new QuestResultDto(
+                        slotNum, questTypeName, qt.title, justCompleted, questExp
+                    ));
+                }
+
+                long completedAfter = progressList.stream()
+                    .filter(UserQuestProgress::getCompleted)
+                    .count();
+                allQuestsCompleted = completedAfter == 3;
+
+                if (completedBefore < 3 && completedAfter == 3) {
+                    completionBonusExp = 20;
+                }
+            }
+
+            // EXP合算（トドメ報酬はtrustScore再計算後に加算）
+            int expBeforeFinishingBlow = baseExp + questExpTotal + completionBonusExp + raidContributionExp;
+            user.setTotalExp(user.getTotalExp() + expBeforeFinishingBlow);
             user.setContributionCount(user.getContributionCount() + 1);
             userRepository.save(user);
 
             updatedTotalExp = user.getTotalExp();
             updatedLevel = user.getLevel();
             updatedContributionCount = user.getContributionCount();
+        } else {
+            feedbackRepository.save(feedback);
         }
 
-        feedbackRepository.save(feedback);
-
-        // 3. TrustScoreの再計算 (直近30件)
-        List<ToiletFeedback> recentFeedbacks = feedbackRepository.findTop30ByToiletIdOrderByCreatedAtDesc(toiletId);
+        // 3. TrustScoreの再計算
+        List<ToiletFeedback> recentFeedbacks =
+            feedbackRepository.findTop30ByToiletIdOrderByCreatedAtDesc(toiletId);
 
         double totalScore = 0.0;
         int validCount = 0;
@@ -107,6 +234,27 @@ public class FeedbackService {
             newTrustScore = (double) Math.round((totalScore / validCount) * 1000.0) / 10.0;
         }
 
+        // レイドボス・トドメ報酬判定
+        if (userId != null && wasBossActive && newTrustScore != null && newTrustScore >= 40.0) {
+            isPurified = true;
+            raidFinishingBlowExp = 20;
+
+            User user = userRepository.findById(userId).orElseThrow();
+            user.setTotalExp(user.getTotalExp() + raidFinishingBlowExp);
+            user.setLevel(calcLevel(user.getTotalExp()));
+            userRepository.save(user);
+
+            updatedTotalExp = user.getTotalExp();
+            updatedLevel = user.getLevel();
+        } else if (userId != null) {
+            User user = userRepository.findById(userId).orElseThrow();
+            user.setLevel(calcLevel(user.getTotalExp()));
+            userRepository.save(user);
+
+            updatedTotalExp = user.getTotalExp();
+            updatedLevel = user.getLevel();
+        }
+
         // 4. トイレ情報の更新
         toilet.setTrustScore(newTrustScore);
         int currentCount = toilet.getFeedbackCount() != null ? toilet.getFeedbackCount() : 0;
@@ -115,7 +263,43 @@ public class FeedbackService {
 
         return new FeedbackResponseDto(
             true, newTrustScore, toilet.getFeedbackCount(),
-            earnedExp, updatedTotalExp, updatedLevel, updatedContributionCount
+            baseExp, updatedTotalExp, updatedLevel, updatedContributionCount,
+            isFirstCheckin, questResults, allQuestsCompleted,
+            completionBonusExp, isPurified, raidContributionExp, raidFinishingBlowExp
         );
+    }
+
+    private boolean checkQuestCondition(
+            DailyQuestService.QuestType questType,
+            String userId, Long toiletId, Toilet toilet,
+            boolean isFirstCheckin, String feeling,
+            LocalDateTime dayStart, LocalDateTime dayEnd) {
+
+        switch (questType) {
+            case FIRST_STEP:
+                return feedbackRepository.countByUserIdAndCreatedAtBetween(
+                    userId, dayStart, dayEnd) >= 1;
+
+            case KEEN_REPORTER:
+                return feedbackRepository.countByUserIdAndFeelingAndCreatedAtBetween(
+                    userId, "GREAT", dayStart, dayEnd) >= 1;
+
+            case WIDE_PATROL:
+                return feedbackRepository.countDistinctToiletIdByUserIdAndCreatedAtBetween(
+                    userId, dayStart, dayEnd) >= 2;
+
+            case PURIFY_WARRIOR:
+                return toilet.getTrustScore() != null && toilet.getTrustScore() < 60.0;
+
+            case UNCHARTED:
+                return isFirstCheckin;
+
+            case VETERAN_SURVEYOR:
+                return feedbackRepository.countDistinctToiletIdByUserIdAndCreatedAtBetween(
+                    userId, dayStart, dayEnd) >= 3;
+
+            default:
+                return false;
+        }
     }
 }
