@@ -8,4 +8,6 @@ import java.util.List;
 public interface ToiletFeedbackRepository extends JpaRepository<ToiletFeedback, Long> {
     // 直近30件のフィードバックを作成日時の降順で取得（TrustScore計算用）
     List<ToiletFeedback> findTop30ByToiletIdOrderByCreatedAtDesc(Long toiletId);
+
+    boolean existsByUserIdAndToiletId(String userId, Long toiletId);
 }

@@ -24,6 +24,9 @@ public class User {
     @Column(nullable = false)
     private Integer level = 1;
 
+    @Column(name = "contribution_count", nullable = false)
+    private Integer contributionCount = 0;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
