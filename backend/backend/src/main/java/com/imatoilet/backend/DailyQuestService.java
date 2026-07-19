@@ -38,13 +38,16 @@ public class DailyQuestService {
     private final DailyQuestRepository dailyQuestRepository;
     private final UserQuestProgressRepository progressRepository;
     private final ToiletRepository toiletRepository;
+    private final UserRepository userRepository;
 
     public DailyQuestService(DailyQuestRepository dailyQuestRepository,
                              UserQuestProgressRepository progressRepository,
-                             ToiletRepository toiletRepository) {
+                             ToiletRepository toiletRepository,
+                             UserRepository userRepository) {
         this.dailyQuestRepository = dailyQuestRepository;
         this.progressRepository = progressRepository;
         this.toiletRepository = toiletRepository;
+        this.userRepository = userRepository;
     }
 
     public DailyQuestResponseDto getDailyQuests(String userId) {
@@ -129,6 +132,15 @@ public class DailyQuestService {
     }
 
     private List<UserQuestProgress> getOrCreateProgress(String userId, LocalDate today) {
+        if (userRepository.findById(userId).isEmpty()) {
+            User user = new User();
+            user.setId(userId);
+            user.setLevel(1);
+            user.setTotalExp(0);
+            user.setContributionCount(0);
+            userRepository.save(user);
+        }
+
         List<UserQuestProgress> existing = progressRepository.findByUserIdAndQuestDate(userId, today);
         if (existing.size() == 3) {
             return existing;
