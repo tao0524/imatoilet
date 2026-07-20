@@ -1,6 +1,9 @@
 package com.imatoilet.backend;
 
+import com.imatoilet.backend.dto.AddToiletRequestDto;
+import com.imatoilet.backend.dto.AddToiletResponseDto;
 import com.imatoilet.backend.dto.ToiletUpdateDto;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/toilets")
@@ -51,9 +55,31 @@ public class ToiletApiController {
     }
 
     @PostMapping
-    public ResponseEntity<Toilet> createToilet(@RequestBody @Valid Toilet toilet) {
-        Toilet saved = toiletService.createToilet(toilet);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    public ResponseEntity<?> createToilet(
+            @RequestBody @Valid AddToiletRequestDto dto,
+            HttpServletRequest request) {
+
+        String userId = (String) request.getAttribute(
+            com.imatoilet.backend.config.FirebaseAuthFilter.FIREBASE_UID_ATTR
+        );
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "認証が必要です"));
+        }
+
+        try {
+            Toilet saved = toiletService.createToiletByUser(dto, userId);
+            AddToiletResponseDto response = new AddToiletResponseDto(
+                saved.getId(), saved.getName(), saved.getLat(), saved.getLng(), false
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (com.imatoilet.backend.exception.DuplicateToiletException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                    "error", e.getMessage(),
+                    "existingToiletId", e.getExistingToiletId()
+                ));
+        }
     }
     
     @PutMapping("/{id}")

@@ -15,8 +15,10 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.imatoilet.backend.dto.AddToiletRequestDto;
 import com.imatoilet.backend.dto.ImportResultDto;
 import com.imatoilet.backend.dto.ToiletImportItemDto;
+import com.imatoilet.backend.exception.DuplicateToiletException;
 
 @Service
 @Transactional
@@ -87,6 +89,42 @@ public class ToiletService {
         Toilet savedToilet = toiletRepository.save(toilet);
         updateEquipmentList(savedToilet, toilet.getEquipmentInput());
         return toiletRepository.save(savedToilet);
+    }
+
+    public Toilet createToiletByUser(AddToiletRequestDto dto, String userId) {
+        List<Long> nearby = toiletRepository.findNearbyToiletIds(dto.getLat(), dto.getLng(), 0.05);
+        if (!nearby.isEmpty()) {
+            throw new DuplicateToiletException(nearby.get(0));
+        }
+
+        Toilet toilet = new Toilet();
+        toilet.setName(dto.getName());
+        toilet.setLat(dto.getLat());
+        toilet.setLng(dto.getLng());
+        toilet.setFacilityCategory(dto.getFacilityCategory());
+        toilet.setDescription(dto.getDescription());
+        toilet.setCleanliness(3);
+        toilet.setCreatedBy(userId);
+        toilet.setSource("user");
+
+        if (dto.getUsageConditions() != null) {
+            switch (dto.getUsageConditions()) {
+                case "PUBLIC_FREE" -> toilet.setPublicUse(true);
+                case "FACILITY_FREE" -> toilet.setPublicUse(true);
+                case "PURCHASE_REQUIRED" -> toilet.setPublicUse(false);
+            }
+        } else {
+            toilet.setPublicUse(true);
+        }
+
+        Toilet saved = toiletRepository.save(toilet);
+
+        if (dto.getEquipment() != null && !dto.getEquipment().isEmpty()) {
+            updateEquipmentList(saved, dto.getEquipment());
+            saved = toiletRepository.save(saved);
+        }
+
+        return saved;
     }
 
     public Toilet updateToilet(Long id, Toilet details) {
