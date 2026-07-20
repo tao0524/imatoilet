@@ -27,14 +27,14 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
            "t.lat >= :minLat AND t.lat <= :maxLat AND t.lng >= :minLng AND t.lng <= :maxLng " +
            "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
            "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
            "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
            countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
            "t.lat >= :minLat AND t.lat <= :maxLat AND t.lng >= :minLng AND t.lng <= :maxLng " +
            "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
            "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
            "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
            nativeQuery = true)
@@ -61,14 +61,14 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
            ")))) <= :radius " +
            "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
            "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
            "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
            countQuery = "SELECT count(t.id) FROM toilet t WHERE " +
            "(6371 * acos(least(1.0, greatest(-1.0, cos(radians(:lat)) * cos(radians(t.lat)) * cos(radians(t.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(t.lat)))))) <= :radius " +
            "AND (:facilityCategory IS NULL OR t.facility_category = :facilityCategory) " +
            "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:publicUse IS NULL OR t.public_use = :publicUse) " +
            "AND (:typeCount = 0 OR (SELECT COUNT(DISTINCT e.type) FROM equipment e WHERE e.toilet_id = t.id AND e.type IN (:equipmentTypes)) = :typeCount)",
            nativeQuery = true)
@@ -89,7 +89,7 @@ public interface ToiletRepository extends JpaRepository<Toilet, Long> {
     @Query("SELECT t.id FROM Toilet t " +
            "WHERE (:facilityCategory IS NULL OR t.facilityCategory = :facilityCategory) " +
            "AND (:minCleanliness IS NULL OR t.cleanliness >= :minCleanliness) " +
-           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:keyword IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:publicUse IS NULL OR t.publicUse = :publicUse) " +
            "AND (:typeCount = 0L OR (SELECT COUNT(DISTINCT e.type) FROM Equipment e WHERE e.toilet.id = t.id AND e.type IN :equipmentTypes) = :typeCount)")
     Page<Long> searchIdsBySpecs(
