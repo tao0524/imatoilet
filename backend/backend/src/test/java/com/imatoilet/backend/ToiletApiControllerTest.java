@@ -95,7 +95,8 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(toiletJson))
+                .content(toiletJson)
+                .header("Authorization", "Bearer test-token"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is("New Toilet")))
                 .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OPEN_24H")));
@@ -223,7 +224,8 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
+                .content(json)
+                .header("Authorization", "Bearer test-token"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.image", is("https://example.com/1.jpg,https://example.com/2.jpg")));
     }

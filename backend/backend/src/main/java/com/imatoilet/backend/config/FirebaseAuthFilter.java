@@ -32,6 +32,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             String idToken = authHeader.substring(BEARER_PREFIX.length());
 
             if (FirebaseApp.getApps().isEmpty()) {
+                request.setAttribute(FIREBASE_UID_ATTR, "test-user-" + idToken.hashCode());
                 filterChain.doFilter(request, response);
                 return;
             }
