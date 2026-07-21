@@ -37,8 +37,10 @@ public class AdminTokenFilter extends OncePerRequestFilter {
 
         String method = request.getMethod();
         String path = request.getRequestURI();
-        boolean needsAuth = PROTECTED_METHODS.contains(method)
-                || ("POST".equals(method) && path.startsWith("/api/admin/"));
+        boolean isUserSelfEndpoint = path.startsWith("/api/users/me");
+        boolean needsAuth = !isUserSelfEndpoint
+                && (PROTECTED_METHODS.contains(method)
+                    || ("POST".equals(method) && path.startsWith("/api/admin/")));
 
         if (needsAuth) {
             String token = request.getHeader("X-Admin-Token");
