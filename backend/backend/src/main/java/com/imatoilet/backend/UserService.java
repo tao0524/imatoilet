@@ -75,11 +75,10 @@ public class UserService {
             throw new IllegalArgumentException(
                     item.getDisplayName() + " は " + expectedSlot.name() + " スロットに装備できません");
         }
-        // TODO: テスト用 — テスト完了後に復元
-        // if (userLevel < item.getRequiredLevel()) {
-        //     throw new IllegalArgumentException(
-        //             item.getDisplayName() + " にはレベル " + item.getRequiredLevel() + " が必要です（現在Lv." + userLevel + "）");
-        // }
+        if (userLevel < item.getRequiredLevel()) {
+            throw new IllegalArgumentException(
+                    item.getDisplayName() + " にはレベル " + item.getRequiredLevel() + " が必要です（現在Lv." + userLevel + "）");
+        }
         return item;
     }
 
