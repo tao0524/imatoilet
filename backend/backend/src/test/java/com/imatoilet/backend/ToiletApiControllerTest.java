@@ -195,7 +195,8 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
+                .content(invalidJson)
+                .header("Authorization", "Bearer test-token"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -207,7 +208,8 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
+                .content(invalidJson)
+                .header("Authorization", "Bearer test-token"))
                 .andExpect(status().isBadRequest());
     }
 
