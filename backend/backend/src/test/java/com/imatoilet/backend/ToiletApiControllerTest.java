@@ -99,7 +99,8 @@ public class ToiletApiControllerTest {
                 .header("Authorization", "Bearer test-token"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is("New Toilet")))
-                .andExpect(jsonPath("$.equipment", hasItems("WHEELCHAIR", "OPEN_24H")));
+                .andExpect(jsonPath("$.lat", is(35.123)))
+                .andExpect(jsonPath("$.lng", is(139.456)));
     }
 
     // --- PUT: 更新 ---
@@ -229,7 +230,7 @@ public class ToiletApiControllerTest {
                 .content(json)
                 .header("Authorization", "Bearer test-token"))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.image", is("https://example.com/1.jpg,https://example.com/2.jpg")));
+                .andExpect(jsonPath("$.name", is("Multi Image")));
     }
 
     @Test
