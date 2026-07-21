@@ -27,6 +27,15 @@ public class User {
     @Column(name = "contribution_count", nullable = false)
     private Integer contributionCount = 0;
 
+    @Column(name = "equipped_head", length = 50)
+    private String equippedHead = "TRAVELERS_HAT";
+
+    @Column(name = "equipped_right_hand", length = 50)
+    private String equippedRightHand = "WOODEN_STICK";
+
+    @Column(name = "equipped_aura", length = 50)
+    private String equippedAura = "NONE";
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

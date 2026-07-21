@@ -10,4 +10,7 @@ public class UserResponseDto {
     private Integer level;
     private Integer contributionCount;
     private String nickname;
+    private String equippedHead;
+    private String equippedRightHand;
+    private String equippedAura;
 }
