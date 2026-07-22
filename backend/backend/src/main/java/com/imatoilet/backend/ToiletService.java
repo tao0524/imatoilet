@@ -244,4 +244,70 @@ public class ToiletService {
         result.setSkippedReasons(skippedReasons);
         return result;
     }
+
+    public Toilet editToiletByUser(Long toiletId, EditToiletRequestDto dto, String userId) {
+        Toilet toilet = getToilet(toiletId);
+
+        // facilityCategory の変更記録・反映
+        if (dto.getFacilityCategory() != null) {
+            String oldVal = toilet.getFacilityCategory();
+            String newVal = dto.getFacilityCategory();
+            if (!java.util.Objects.equals(oldVal, newVal)) {
+                saveEdit(toiletId, userId, "facility_category", oldVal, newVal);
+                toilet.setFacilityCategory(newVal);
+            }
+        }
+
+        // usageConditions の変更記録・反映
+        if (dto.getUsageConditions() != null) {
+            String oldCondition = toilet.getPublicUse() == null ? null
+                    : toilet.getPublicUse() ? "PUBLIC_FREE" : "PURCHASE_REQUIRED";
+            String newCondition = dto.getUsageConditions();
+            if (!java.util.Objects.equals(oldCondition, newCondition)) {
+                saveEdit(toiletId, userId, "usage_conditions", oldCondition, newCondition);
+                switch (newCondition) {
+                    case "PUBLIC_FREE", "FACILITY_FREE" -> toilet.setPublicUse(true);
+                    case "PURCHASE_REQUIRED" -> toilet.setPublicUse(false);
+                }
+            }
+        }
+
+        // equipment の変更記録・反映
+        if (dto.getEquipment() != null) {
+            List<String> oldEquip = toilet.getEquipmentNames();
+            List<String> newEquip = dto.getEquipment();
+            java.util.Collections.sort(oldEquip);
+            java.util.Collections.sort(newEquip);
+            if (!oldEquip.equals(newEquip)) {
+                saveEdit(toiletId, userId, "equipment",
+                        String.join(",", oldEquip), String.join(",", newEquip));
+                updateEquipmentList(toilet, newEquip);
+            }
+        }
+
+        return toiletRepository.save(toilet);
+    }
+
+    public ToiletReport reportToilet(Long toiletId, ReportToiletRequestDto dto, String userId) {
+        // トイレ存在確認
+        getToilet(toiletId);
+
+        ToiletReport report = new ToiletReport();
+        report.setToiletId(toiletId);
+        report.setUserId(userId);
+        report.setCategory(dto.getCategory());
+        report.setComment(dto.getComment());
+        return toiletReportRepository.save(report);
+    }
+
+    private void saveEdit(Long toiletId, String userId, String fieldName,
+                          String oldValue, String newValue) {
+        ToiletEdit edit = new ToiletEdit();
+        edit.setToiletId(toiletId);
+        edit.setUserId(userId);
+        edit.setFieldName(fieldName);
+        edit.setOldValue(oldValue);
+        edit.setNewValue(newValue);
+        toiletEditRepository.save(edit);
+    }
 }

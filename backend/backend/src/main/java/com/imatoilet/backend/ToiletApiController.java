@@ -1,6 +1,8 @@
 package com.imatoilet.backend;
 
 import com.imatoilet.backend.dto.AddToiletRequestDto;
+import com.imatoilet.backend.dto.EditToiletRequestDto;
+import com.imatoilet.backend.dto.ReportToiletRequestDto;
 import com.imatoilet.backend.dto.AddToiletResponseDto;
 import com.imatoilet.backend.dto.ToiletUpdateDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -115,5 +117,42 @@ public class ToiletApiController {
     public ResponseEntity<Void> deleteToilet(@PathVariable Long id) {
         toiletService.deleteToilet(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/edit")
+    public ResponseEntity<?> editToiletByUser(
+            @PathVariable Long id,
+            @RequestBody EditToiletRequestDto dto,
+            HttpServletRequest request) {
+
+        String userId = (String) request.getAttribute(
+            com.imatoilet.backend.config.FirebaseAuthFilter.FIREBASE_UID_ATTR
+        );
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "認証が必要です"));
+        }
+
+        Toilet updated = toiletService.editToiletByUser(id, dto, userId);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping("/{id}/reports")
+    public ResponseEntity<?> reportToilet(
+            @PathVariable Long id,
+            @RequestBody @Valid ReportToiletRequestDto dto,
+            HttpServletRequest request) {
+
+        String userId = (String) request.getAttribute(
+            com.imatoilet.backend.config.FirebaseAuthFilter.FIREBASE_UID_ATTR
+        );
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "認証が必要です"));
+        }
+
+        ToiletReport report = toiletService.reportToilet(id, dto, userId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(Map.of("success", true, "reportId", report.getId()));
     }
 }
