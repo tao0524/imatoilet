@@ -13,4 +13,5 @@ public class UserResponseDto {
     private String equippedHead;
     private String equippedRightHand;
     private String equippedAura;
+    private String activeTitle;
 }

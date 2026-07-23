@@ -1,5 +1,6 @@
 package com.imatoilet.backend;
 
+import com.imatoilet.backend.dto.AchievementResponseDto;
 import com.imatoilet.backend.dto.FeedbackRequestDto;
 import com.imatoilet.backend.dto.FeedbackResponseDto;
 import com.imatoilet.backend.dto.QuestResultDto;
@@ -37,17 +38,20 @@ public class FeedbackService {
     private final UserRepository userRepository;
     private final DailyQuestRepository dailyQuestRepository;
     private final UserQuestProgressRepository progressRepository;
+    private final AchievementService achievementService;
 
     public FeedbackService(ToiletFeedbackRepository feedbackRepository,
                            ToiletRepository toiletRepository,
                            UserRepository userRepository,
                            DailyQuestRepository dailyQuestRepository,
-                           UserQuestProgressRepository progressRepository) {
+                           UserQuestProgressRepository progressRepository,
+                           AchievementService achievementService) {
         this.feedbackRepository = feedbackRepository;
         this.toiletRepository = toiletRepository;
         this.userRepository = userRepository;
         this.dailyQuestRepository = dailyQuestRepository;
         this.progressRepository = progressRepository;
+        this.achievementService = achievementService;
     }
 
     public FeedbackResponseDto processFeedback(Long toiletId, FeedbackRequestDto dto, String userId) {
@@ -80,6 +84,7 @@ public class FeedbackService {
         int raidContributionExp = 0;
         int raidFinishingBlowExp = 0;
         boolean isPurified = false;
+        List<AchievementResponseDto> newAchievements = List.of();
 
         if (userId != null) {
             User user = userRepository.findById(userId).orElseGet(() -> {
@@ -261,11 +266,17 @@ public class FeedbackService {
         toilet.setFeedbackCount(currentCount + 1);
         toiletRepository.save(toilet);
 
+        // 5. 称号解放判定
+        if (userId != null && updatedContributionCount != null) {
+            newAchievements = achievementService.checkAndUnlock(userId, updatedContributionCount);
+        }
+
         return new FeedbackResponseDto(
             true, newTrustScore, toilet.getFeedbackCount(),
             baseExp, updatedTotalExp, updatedLevel, updatedContributionCount,
             isFirstCheckin, questResults, allQuestsCompleted,
-            completionBonusExp, isPurified, raidContributionExp, raidFinishingBlowExp
+            completionBonusExp, isPurified, raidContributionExp, raidFinishingBlowExp,
+            newAchievements
         );
     }
 

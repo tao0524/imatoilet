@@ -12,9 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserAchievementRepository achievementRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository,
+                       UserAchievementRepository achievementRepository) {
         this.userRepository = userRepository;
+        this.achievementRepository = achievementRepository;
     }
 
     public UserResponseDto getMe(String firebaseUid) {
@@ -66,6 +69,33 @@ public class UserService {
         return toDto(user);
     }
 
+    @Transactional
+    public UserResponseDto updateTitle(String firebaseUid, String titleKey) {
+        User user = userRepository.findById(firebaseUid)
+                .orElseThrow(() -> new ResourceNotFoundException("ユーザー", "id", firebaseUid));
+
+        if (titleKey == null || titleKey.isEmpty()) {
+            // 称号を外す
+            user.setActiveTitle(null);
+        } else {
+            // 称号キーが有効か確認
+            try {
+                AchievementType.valueOf(titleKey);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("不明な称号: " + titleKey);
+            }
+            // ユーザーが解放済みか確認
+            AchievementType type = AchievementType.valueOf(titleKey);
+            if (!achievementRepository.existsByUserIdAndAchievementKey(firebaseUid, type)) {
+                throw new IllegalArgumentException("未解放の称号です: " + type.getDisplayName());
+            }
+            user.setActiveTitle(titleKey);
+        }
+
+        userRepository.save(user);
+        return toDto(user);
+    }
+
     private EquipmentItem validateEquipment(String itemName, EquipmentSlot expectedSlot, int userLevel) {
         EquipmentItem item = EquipmentItem.fromName(itemName);
         if (item == null) {
@@ -90,7 +120,8 @@ public class UserService {
                 user.getNickname(),
                 user.getEquippedHead(),
                 user.getEquippedRightHand(),
-                user.getEquippedAura()
+                user.getEquippedAura(),
+                user.getActiveTitle()
         );
     }
 }

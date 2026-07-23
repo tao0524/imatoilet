@@ -36,6 +36,9 @@ public class User {
     @Column(name = "equipped_aura", length = 50)
     private String equippedAura = "NONE";
 
+    @Column(name = "active_title", length = 50)
+    private String activeTitle;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

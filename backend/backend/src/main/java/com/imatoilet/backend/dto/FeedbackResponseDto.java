@@ -21,4 +21,5 @@ public class FeedbackResponseDto {
     private boolean isPurified;
     private int raidContributionExp;
     private int raidFinishingBlowExp;
+    private List<AchievementResponseDto> newAchievements;
 }
