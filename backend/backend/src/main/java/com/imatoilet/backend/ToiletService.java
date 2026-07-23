@@ -16,6 +16,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.imatoilet.backend.dto.AddToiletRequestDto;
+import com.imatoilet.backend.dto.EditToiletRequestDto;
+import com.imatoilet.backend.dto.ReportToiletRequestDto;
 import com.imatoilet.backend.dto.ImportResultDto;
 import com.imatoilet.backend.dto.ToiletImportItemDto;
 import com.imatoilet.backend.exception.DuplicateToiletException;
@@ -25,10 +27,16 @@ import com.imatoilet.backend.exception.DuplicateToiletException;
 public class ToiletService {
 
     private final ToiletRepository toiletRepository;
+private final ToiletEditRepository toiletEditRepository;
+private final ToiletReportRepository toiletReportRepository;
 
-    public ToiletService(ToiletRepository toiletRepository) {
-        this.toiletRepository = toiletRepository;
-    }
+public ToiletService(ToiletRepository toiletRepository,
+                     ToiletEditRepository toiletEditRepository,
+                     ToiletReportRepository toiletReportRepository) {
+    this.toiletRepository = toiletRepository;
+    this.toiletEditRepository = toiletEditRepository;
+    this.toiletReportRepository = toiletReportRepository;
+}
 
     // ★修正: 引数に bounds (minLat, maxLat, minLng, maxLng) を追加
     public Page<Toilet> searchToilets(
