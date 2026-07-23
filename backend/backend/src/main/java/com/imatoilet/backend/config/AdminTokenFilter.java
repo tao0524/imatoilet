@@ -38,7 +38,8 @@ public class AdminTokenFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         String path = request.getRequestURI();
         boolean isUserSelfEndpoint = path.startsWith("/api/users/me");
-        boolean needsAuth = !isUserSelfEndpoint
+        boolean isUserEditEndpoint = path.matches("/api/toilets/\\d+/edit");
+        boolean needsAuth = !isUserSelfEndpoint && !isUserEditEndpoint
                 && (PROTECTED_METHODS.contains(method)
                     || ("POST".equals(method) && path.startsWith("/api/admin/")));
 
