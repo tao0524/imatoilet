@@ -13,11 +13,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserAchievementRepository achievementRepository;
+    private final UserInventoryRepository inventoryRepository;
 
     public UserService(UserRepository userRepository,
-                       UserAchievementRepository achievementRepository) {
+                       UserAchievementRepository achievementRepository,
+                       UserInventoryRepository inventoryRepository) {
         this.userRepository = userRepository;
         this.achievementRepository = achievementRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     public UserResponseDto getMe(String firebaseUid) {
@@ -53,15 +56,18 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("ユーザー", "id", firebaseUid));
 
         if (request.getEquippedHead() != null) {
-            EquipmentItem item = validateEquipment(request.getEquippedHead(), EquipmentSlot.HEAD, user.getLevel());
+            EquipmentItem item = validateEquipment(
+                    request.getEquippedHead(), EquipmentSlot.HEAD, user.getLevel(), firebaseUid);
             user.setEquippedHead(item.name());
         }
         if (request.getEquippedRightHand() != null) {
-            EquipmentItem item = validateEquipment(request.getEquippedRightHand(), EquipmentSlot.RIGHT_HAND, user.getLevel());
+            EquipmentItem item = validateEquipment(
+                    request.getEquippedRightHand(), EquipmentSlot.RIGHT_HAND, user.getLevel(), firebaseUid);
             user.setEquippedRightHand(item.name());
         }
         if (request.getEquippedAura() != null) {
-            EquipmentItem item = validateEquipment(request.getEquippedAura(), EquipmentSlot.AURA, user.getLevel());
+            EquipmentItem item = validateEquipment(
+                    request.getEquippedAura(), EquipmentSlot.AURA, user.getLevel(), firebaseUid);
             user.setEquippedAura(item.name());
         }
 
@@ -75,16 +81,13 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("ユーザー", "id", firebaseUid));
 
         if (titleKey == null || titleKey.isEmpty()) {
-            // 称号を外す
             user.setActiveTitle(null);
         } else {
-            // 称号キーが有効か確認
             try {
                 AchievementType.valueOf(titleKey);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("不明な称号: " + titleKey);
             }
-            // ユーザーが解放済みか確認
             AchievementType type = AchievementType.valueOf(titleKey);
             if (!achievementRepository.existsByUserIdAndAchievementKey(firebaseUid, type)) {
                 throw new IllegalArgumentException("未解放の称号です: " + type.getDisplayName());
@@ -96,7 +99,8 @@ public class UserService {
         return toDto(user);
     }
 
-    private EquipmentItem validateEquipment(String itemName, EquipmentSlot expectedSlot, int userLevel) {
+    private EquipmentItem validateEquipment(String itemName, EquipmentSlot expectedSlot,
+                                            int userLevel, String userId) {
         EquipmentItem item = EquipmentItem.fromName(itemName);
         if (item == null) {
             throw new IllegalArgumentException("不明な装備: " + itemName);
@@ -105,9 +109,24 @@ public class UserService {
             throw new IllegalArgumentException(
                     item.getDisplayName() + " は " + expectedSlot.name() + " スロットに装備できません");
         }
-        if (userLevel < item.getRequiredLevel()) {
-            throw new IllegalArgumentException(
-                    item.getDisplayName() + " にはレベル " + item.getRequiredLevel() + " が必要です（現在Lv." + userLevel + "）");
+
+        if (item.getRequiredMaterial() != null) {
+            // 素材解放装備: インベントリの素材数をチェック
+            int qty = inventoryRepository.findByUserIdAndMaterialKey(userId, item.getRequiredMaterial().name())
+                    .map(UserInventory::getQuantity).orElse(0);
+            if (qty < item.getRequiredMaterialCount()) {
+                throw new IllegalArgumentException(
+                        item.getDisplayName() + " には " +
+                        item.getRequiredMaterial().getDisplayName() + " が " +
+                        item.getRequiredMaterialCount() + " 個必要です");
+            }
+        } else {
+            // レベル解放装備: レベルをチェック
+            if (userLevel < item.getRequiredLevel()) {
+                throw new IllegalArgumentException(
+                        item.getDisplayName() + " にはレベル " + item.getRequiredLevel() +
+                        " が必要です（現在Lv." + userLevel + "）");
+            }
         }
         return item;
     }

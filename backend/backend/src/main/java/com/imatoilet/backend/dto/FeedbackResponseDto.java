@@ -22,4 +22,7 @@ public class FeedbackResponseDto {
     private int raidContributionExp;
     private int raidFinishingBlowExp;
     private List<AchievementResponseDto> newAchievements;
+    // Phase2 追加
+    private MaterialDropDto droppedMaterial;
+    private List<String> newUnlockedEquipments;
 }

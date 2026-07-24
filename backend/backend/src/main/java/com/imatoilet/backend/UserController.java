@@ -3,6 +3,7 @@ package com.imatoilet.backend;
 import com.imatoilet.backend.config.FirebaseAuthFilter;
 import com.imatoilet.backend.dto.AchievementResponseDto;
 import com.imatoilet.backend.dto.EquipmentRequestDto;
+import com.imatoilet.backend.dto.InventoryResponseDto;
 import com.imatoilet.backend.dto.MigrationRequestDto;
 import com.imatoilet.backend.dto.UserResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,10 +20,14 @@ public class UserController {
 
     private final UserService userService;
     private final AchievementService achievementService;
+    private final InventoryService inventoryService;
 
-    public UserController(UserService userService, AchievementService achievementService) {
+    public UserController(UserService userService,
+                          AchievementService achievementService,
+                          InventoryService inventoryService) {
         this.userService = userService;
         this.achievementService = achievementService;
+        this.inventoryService = inventoryService;
     }
 
     @GetMapping("/me")
@@ -88,5 +93,15 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @GetMapping("/me/inventory")
+    public ResponseEntity<List<InventoryResponseDto>> getInventory(HttpServletRequest request) {
+        String userId = (String) request.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<InventoryResponseDto> inventory = inventoryService.getInventory(userId);
+        return ResponseEntity.ok(inventory);
     }
 }

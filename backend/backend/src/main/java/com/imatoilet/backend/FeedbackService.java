@@ -3,6 +3,7 @@ package com.imatoilet.backend;
 import com.imatoilet.backend.dto.AchievementResponseDto;
 import com.imatoilet.backend.dto.FeedbackRequestDto;
 import com.imatoilet.backend.dto.FeedbackResponseDto;
+import com.imatoilet.backend.dto.MaterialDropDto;
 import com.imatoilet.backend.dto.QuestResultDto;
 import com.imatoilet.backend.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
@@ -39,19 +40,22 @@ public class FeedbackService {
     private final DailyQuestRepository dailyQuestRepository;
     private final UserQuestProgressRepository progressRepository;
     private final AchievementService achievementService;
+    private final InventoryService inventoryService;
 
     public FeedbackService(ToiletFeedbackRepository feedbackRepository,
                            ToiletRepository toiletRepository,
                            UserRepository userRepository,
                            DailyQuestRepository dailyQuestRepository,
                            UserQuestProgressRepository progressRepository,
-                           AchievementService achievementService) {
+                           AchievementService achievementService,
+                           InventoryService inventoryService) {
         this.feedbackRepository = feedbackRepository;
         this.toiletRepository = toiletRepository;
         this.userRepository = userRepository;
         this.dailyQuestRepository = dailyQuestRepository;
         this.progressRepository = progressRepository;
         this.achievementService = achievementService;
+        this.inventoryService = inventoryService;
     }
 
     public FeedbackResponseDto processFeedback(Long toiletId, FeedbackRequestDto dto, String userId) {
@@ -85,6 +89,8 @@ public class FeedbackService {
         int raidFinishingBlowExp = 0;
         boolean isPurified = false;
         List<AchievementResponseDto> newAchievements = List.of();
+        MaterialDropDto droppedMaterial = null;
+        List<String> newUnlockedEquipments = List.of();
 
         if (userId != null) {
             User user = userRepository.findById(userId).orElseGet(() -> {
@@ -271,12 +277,22 @@ public class FeedbackService {
             newAchievements = achievementService.checkAndUnlock(userId, updatedContributionCount);
         }
 
+        // 6. 素材ドロップ処理
+        if (userId != null) {
+            InventoryService.DropResult dropResult =
+                    inventoryService.processDrop(userId, toilet.getFacilityCategory());
+            droppedMaterial = dropResult.getDroppedMaterial();
+            newUnlockedEquipments = dropResult.getNewlyUnlockedEquipments().stream()
+                    .map(EquipmentItem::name)
+                    .toList();
+        }
+
         return new FeedbackResponseDto(
             true, newTrustScore, toilet.getFeedbackCount(),
             baseExp, updatedTotalExp, updatedLevel, updatedContributionCount,
             isFirstCheckin, questResults, allQuestsCompleted,
             completionBonusExp, isPurified, raidContributionExp, raidFinishingBlowExp,
-            newAchievements
+            newAchievements, droppedMaterial, newUnlockedEquipments
         );
     }
 
