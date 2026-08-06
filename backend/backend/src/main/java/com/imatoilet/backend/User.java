@@ -39,6 +39,33 @@ public class User {
     @Column(name = "active_title", length = 50)
     private String activeTitle;
 
+    @Column(name = "battle_level")
+    private Integer battleLevel = 1;
+
+    @Column(name = "battle_exp")
+    private Integer battleExp = 0;
+
+    @Column(name = "weapon_attribute", length = 20)
+    private String weaponAttribute = "NATURE";
+
+    @Column(name = "weapon_tier")
+    private Integer weaponTier = 1;
+
+    @Column(name = "weapon_enhancement")
+    private Integer weaponEnhancement = 0;
+
+    @Column(name = "armor_tier")
+    private Integer armorTier = 1;
+
+    @Column(name = "armor_enhancement")
+    private Integer armorEnhancement = 0;
+
+    @Column(name = "aura_tier")
+    private Integer auraTier = 1;
+
+    @Column(name = "aura_enhancement")
+    private Integer auraEnhancement = 0;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

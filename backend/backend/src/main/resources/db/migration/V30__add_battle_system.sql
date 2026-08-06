@@ -1,0 +1,28 @@
+-- V30: バトルシステム（users拡張 + battle_results テーブル）
+
+-- ユーザーにバトル関連カラムを追加
+ALTER TABLE users ADD COLUMN battle_level INT DEFAULT 1;
+ALTER TABLE users ADD COLUMN battle_exp INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN weapon_attribute VARCHAR(20) DEFAULT 'NATURE';
+ALTER TABLE users ADD COLUMN weapon_tier INT DEFAULT 1;
+ALTER TABLE users ADD COLUMN weapon_enhancement INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN armor_tier INT DEFAULT 1;
+ALTER TABLE users ADD COLUMN armor_enhancement INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN aura_tier INT DEFAULT 1;
+ALTER TABLE users ADD COLUMN aura_enhancement INT DEFAULT 0;
+
+-- 戦闘結果テーブル
+CREATE TABLE battle_results (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(128) NOT NULL REFERENCES users(id),
+    enemy_id VARCHAR(50) NOT NULL,
+    enemy_star INT NOT NULL DEFAULT 1,
+    result VARCHAR(10) NOT NULL,
+    exp_gained INT DEFAULT 0,
+    crystal_attribute VARCHAR(20),
+    crystal_count INT DEFAULT 0,
+    toilet_id BIGINT,
+    fought_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_battle_results_user_id ON battle_results(user_id);

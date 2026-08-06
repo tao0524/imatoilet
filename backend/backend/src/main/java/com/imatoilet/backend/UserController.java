@@ -3,6 +3,7 @@ package com.imatoilet.backend;
 import com.imatoilet.backend.config.FirebaseAuthFilter;
 import com.imatoilet.backend.dto.AchievementResponseDto;
 import com.imatoilet.backend.dto.EquipmentRequestDto;
+import com.imatoilet.backend.dto.GameDataResponseDto;
 import com.imatoilet.backend.dto.InventoryResponseDto;
 import com.imatoilet.backend.dto.MigrationRequestDto;
 import com.imatoilet.backend.dto.UserResponseDto;
@@ -21,13 +22,16 @@ public class UserController {
     private final UserService userService;
     private final AchievementService achievementService;
     private final InventoryService inventoryService;
+    private final BattleService battleService;
 
     public UserController(UserService userService,
                           AchievementService achievementService,
-                          InventoryService inventoryService) {
+                          InventoryService inventoryService,
+                          BattleService battleService) {
         this.userService = userService;
         this.achievementService = achievementService;
         this.inventoryService = inventoryService;
+        this.battleService = battleService;
     }
 
     @GetMapping("/me")
@@ -93,6 +97,16 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @GetMapping("/me/game-data")
+    public ResponseEntity<GameDataResponseDto> getGameData(HttpServletRequest request) {
+        String userId = (String) request.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        GameDataResponseDto response = battleService.getGameData(userId);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me/inventory")
