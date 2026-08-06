@@ -61,6 +61,15 @@ public class BattleService {
         return buildGameData(user);
     }
 
+    @Transactional
+    public GameDataResponseDto updateWeaponAttribute(String firebaseUid, String weaponAttribute) {
+        User user = userRepository.findById(firebaseUid)
+                .orElseThrow(() -> new ResourceNotFoundException("ユーザー", "id", firebaseUid));
+        user.setWeaponAttribute(weaponAttribute);
+        userRepository.save(user);
+        return buildGameData(user);
+    }
+
     public GameDataResponseDto getGameData(String firebaseUid) {
         User user = userRepository.findById(firebaseUid)
                 .orElseThrow(() -> new ResourceNotFoundException("ユーザー", "id", firebaseUid));

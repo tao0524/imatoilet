@@ -4,10 +4,12 @@ import com.imatoilet.backend.config.FirebaseAuthFilter;
 import com.imatoilet.backend.dto.AchievementResponseDto;
 import com.imatoilet.backend.dto.EquipmentRequestDto;
 import com.imatoilet.backend.dto.GameDataResponseDto;
+import com.imatoilet.backend.dto.GameEquipmentRequestDto;
 import com.imatoilet.backend.dto.InventoryResponseDto;
 import com.imatoilet.backend.dto.MigrationRequestDto;
 import com.imatoilet.backend.dto.UserResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -97,6 +99,18 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @PutMapping("/me/game-equipment")
+    public ResponseEntity<GameDataResponseDto> updateGameEquipment(
+            HttpServletRequest request,
+            @Valid @RequestBody GameEquipmentRequestDto body) {
+        String userId = (String) request.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        GameDataResponseDto response = battleService.updateWeaponAttribute(userId, body.getWeaponAttribute());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me/game-data")
