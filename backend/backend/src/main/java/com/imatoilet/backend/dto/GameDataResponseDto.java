@@ -18,4 +18,6 @@ public class GameDataResponseDto {
     private int auraEnhancement;
     private long totalWins;
     private long totalBattles;
+    private int storyChapter;
+    private int storyScene;
 }

@@ -7,6 +7,8 @@ import com.imatoilet.backend.dto.GameDataResponseDto;
 import com.imatoilet.backend.dto.GameEquipmentRequestDto;
 import com.imatoilet.backend.dto.InventoryResponseDto;
 import com.imatoilet.backend.dto.MigrationRequestDto;
+import com.imatoilet.backend.dto.StoryProgressRequestDto;
+import com.imatoilet.backend.dto.StoryProgressResponseDto;
 import com.imatoilet.backend.dto.UserResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -25,15 +27,18 @@ public class UserController {
     private final AchievementService achievementService;
     private final InventoryService inventoryService;
     private final BattleService battleService;
+    private final StoryService storyService;
 
     public UserController(UserService userService,
                           AchievementService achievementService,
                           InventoryService inventoryService,
-                          BattleService battleService) {
+                          BattleService battleService,
+                          StoryService storyService) {
         this.userService = userService;
         this.achievementService = achievementService;
         this.inventoryService = inventoryService;
         this.battleService = battleService;
+        this.storyService = storyService;
     }
 
     @GetMapping("/me")
@@ -131,5 +136,21 @@ public class UserController {
         }
         List<InventoryResponseDto> inventory = inventoryService.getInventory(userId);
         return ResponseEntity.ok(inventory);
+    }
+
+    @PostMapping("/me/story-progress")
+    public ResponseEntity<StoryProgressResponseDto> advanceStory(
+            HttpServletRequest request,
+            @Valid @RequestBody StoryProgressRequestDto body) {
+        String userId = (String) request.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            StoryProgressResponseDto response = storyService.advanceStory(userId, body);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

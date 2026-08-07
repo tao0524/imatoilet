@@ -96,7 +96,9 @@ public class BattleService {
                 user.getAuraTier(),
                 user.getAuraEnhancement(),
                 totalWins,
-                totalBattles
+                totalBattles,
+                user.getStoryChapter(),
+                user.getStoryScene()
         );
     }
 }

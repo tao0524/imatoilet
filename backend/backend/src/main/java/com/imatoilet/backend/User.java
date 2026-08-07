@@ -66,6 +66,12 @@ public class User {
     @Column(name = "aura_enhancement")
     private Integer auraEnhancement = 0;
 
+    @Column(name = "story_chapter")
+    private Integer storyChapter = 0;
+
+    @Column(name = "story_scene")
+    private Integer storyScene = 0;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
