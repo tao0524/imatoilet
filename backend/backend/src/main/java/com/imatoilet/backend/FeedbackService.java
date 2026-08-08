@@ -302,6 +302,21 @@ public class FeedbackService {
             } else if (chapter == 1 && scene == 0 && checkins >= 2) {
                 triggeredStoryChapter = 1;
                 triggeredStoryScene = 1;
+            } else if (chapter == 1 && scene == 1 && checkins >= 5) {
+                triggeredStoryChapter = 2;
+                triggeredStoryScene = 0;
+            } else if (chapter == 2 && scene == 0 && checkins >= 7) {
+                triggeredStoryChapter = 2;
+                triggeredStoryScene = 1;
+            } else if (chapter == 2 && scene == 1 && checkins >= 9) {
+                triggeredStoryChapter = 2;
+                triggeredStoryScene = 2;
+            } else if (chapter == 2 && scene == 2 && checkins >= 10) {
+                triggeredStoryChapter = 2;
+                triggeredStoryScene = 3;
+            } else if (chapter == 2 && scene == 3 && checkins >= 15) {
+                triggeredStoryChapter = 2;
+                triggeredStoryScene = 4;
             }
         }
 
