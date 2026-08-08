@@ -25,4 +25,7 @@ public class FeedbackResponseDto {
     // Phase2 追加
     private MaterialDropDto droppedMaterial;
     private List<String> newUnlockedEquipments;
+    // ストーリートリガー
+    private Integer triggeredStoryChapter;
+    private Integer triggeredStoryScene;
 }

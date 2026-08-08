@@ -287,12 +287,31 @@ public class FeedbackService {
                     .toList();
         }
 
+        // 7. ストーリートリガー判定（DBは更新しない）
+        Integer triggeredStoryChapter = null;
+        Integer triggeredStoryScene = null;
+        if (userId != null) {
+            User storyUser = userRepository.findById(userId).orElseThrow();
+            int chapter = storyUser.getStoryChapter();
+            int scene = storyUser.getStoryScene();
+            int checkins = storyUser.getContributionCount();
+
+            if (chapter == 0 && scene == 0 && checkins >= 1) {
+                triggeredStoryChapter = 1;
+                triggeredStoryScene = 0;
+            } else if (chapter == 1 && scene == 0 && checkins >= 2) {
+                triggeredStoryChapter = 1;
+                triggeredStoryScene = 1;
+            }
+        }
+
         return new FeedbackResponseDto(
             true, newTrustScore, toilet.getFeedbackCount(),
             baseExp, updatedTotalExp, updatedLevel, updatedContributionCount,
             isFirstCheckin, questResults, allQuestsCompleted,
             completionBonusExp, isPurified, raidContributionExp, raidFinishingBlowExp,
-            newAchievements, droppedMaterial, newUnlockedEquipments
+            newAchievements, droppedMaterial, newUnlockedEquipments,
+            triggeredStoryChapter, triggeredStoryScene
         );
     }
 
