@@ -101,6 +101,52 @@ public class InventoryService {
         return result;
     }
 
+    public void addMaterial(String userId, String materialKey, int count) {
+        UserInventory inv = inventoryRepository.findByUserIdAndMaterialKey(userId, materialKey)
+                .orElseGet(() -> {
+                    UserInventory newInv = new UserInventory();
+                    newInv.setUserId(userId);
+                    newInv.setMaterialKey(materialKey);
+                    newInv.setQuantity(0);
+                    return newInv;
+                });
+        inv.setQuantity(inv.getQuantity() + count);
+        inv.setUpdatedAt(LocalDateTime.now());
+        inventoryRepository.save(inv);
+    }
+
+    public void consumeMaterial(String userId, String materialKey, int cost) {
+        UserInventory inv = inventoryRepository.findByUserIdAndMaterialKey(userId, materialKey)
+                .orElseThrow(() -> new IllegalStateException("素材不足: " + materialKey));
+        if (inv.getQuantity() < cost) {
+            throw new IllegalStateException(
+                    "素材不足: " + materialKey + " (所持: " + inv.getQuantity() + ", 必要: " + cost + ")");
+        }
+        inv.setQuantity(inv.getQuantity() - cost);
+        inv.setUpdatedAt(LocalDateTime.now());
+        inventoryRepository.save(inv);
+    }
+
+    @Transactional(readOnly = true)
+    public int getQuantity(String userId, String materialKey) {
+        return inventoryRepository.findByUserIdAndMaterialKey(userId, materialKey)
+                .map(UserInventory::getQuantity)
+                .orElse(0);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getCrystalQuantities(String userId) {
+        List<UserInventory> inventory = inventoryRepository.findByUserId(userId);
+        Map<String, Integer> quantityMap = inventory.stream()
+                .filter(inv -> inv.getMaterialKey().startsWith("crystal_"))
+                .collect(Collectors.toMap(UserInventory::getMaterialKey, UserInventory::getQuantity));
+        Map<String, Integer> crystals = new HashMap<>();
+        for (String key : List.of("crystal_nature", "crystal_steel", "crystal_pure", "crystal_chaos")) {
+            crystals.put(key, quantityMap.getOrDefault(key, 0));
+        }
+        return crystals;
+    }
+
     @Data
     @AllArgsConstructor
     public static class DropResult {

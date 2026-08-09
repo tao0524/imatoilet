@@ -6,6 +6,8 @@ import com.imatoilet.backend.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Service
 @Transactional(readOnly = true)
 public class BattleService {
@@ -27,10 +29,14 @@ public class BattleService {
 
     private final UserRepository userRepository;
     private final BattleResultRepository battleResultRepository;
+    private final InventoryService inventoryService;
 
-    public BattleService(UserRepository userRepository, BattleResultRepository battleResultRepository) {
+    public BattleService(UserRepository userRepository,
+                         BattleResultRepository battleResultRepository,
+                         InventoryService inventoryService) {
         this.userRepository = userRepository;
         this.battleResultRepository = battleResultRepository;
+        this.inventoryService = inventoryService;
     }
 
     @Transactional
@@ -56,6 +62,11 @@ public class BattleService {
                 user.setBattleLevel(user.getBattleLevel() + 1);
             }
             userRepository.save(user);
+        }
+
+        if (dto.getCrystalAttribute() != null && dto.getCrystalCount() > 0) {
+            String materialKey = "crystal_" + dto.getCrystalAttribute().toLowerCase();
+            inventoryService.addMaterial(firebaseUid, materialKey, dto.getCrystalCount());
         }
 
         return buildGameData(user);
@@ -84,6 +95,8 @@ public class BattleService {
                 ? LEVEL_THRESHOLDS[user.getBattleLevel()] - user.getBattleExp()
                 : 0;
 
+        Map<String, Integer> crystals = inventoryService.getCrystalQuantities(user.getId());
+
         return new GameDataResponseDto(
                 user.getBattleLevel(),
                 user.getBattleExp(),
@@ -98,7 +111,11 @@ public class BattleService {
                 totalWins,
                 totalBattles,
                 user.getStoryChapter(),
-                user.getStoryScene()
+                user.getStoryScene(),
+                crystals.getOrDefault("crystal_nature", 0),
+                crystals.getOrDefault("crystal_steel", 0),
+                crystals.getOrDefault("crystal_pure", 0),
+                crystals.getOrDefault("crystal_chaos", 0)
         );
     }
 }

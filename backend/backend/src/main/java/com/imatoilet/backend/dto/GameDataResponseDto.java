@@ -20,4 +20,8 @@ public class GameDataResponseDto {
     private long totalBattles;
     private int storyChapter;
     private int storyScene;
+    private int crystalNature;
+    private int crystalSteel;
+    private int crystalPure;
+    private int crystalChaos;
 }
