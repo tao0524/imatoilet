@@ -2,6 +2,7 @@ package com.imatoilet.backend;
 
 import com.imatoilet.backend.config.FirebaseAuthFilter;
 import com.imatoilet.backend.dto.AchievementResponseDto;
+import com.imatoilet.backend.dto.EnhanceRequestDto;
 import com.imatoilet.backend.dto.EquipmentRequestDto;
 import com.imatoilet.backend.dto.GameDataResponseDto;
 import com.imatoilet.backend.dto.GameEquipmentRequestDto;
@@ -28,17 +29,20 @@ public class UserController {
     private final InventoryService inventoryService;
     private final BattleService battleService;
     private final StoryService storyService;
+    private final EnhanceService enhanceService;
 
     public UserController(UserService userService,
                           AchievementService achievementService,
                           InventoryService inventoryService,
                           BattleService battleService,
-                          StoryService storyService) {
+                          StoryService storyService,
+                          EnhanceService enhanceService) {
         this.userService = userService;
         this.achievementService = achievementService;
         this.inventoryService = inventoryService;
         this.battleService = battleService;
         this.storyService = storyService;
+        this.enhanceService = enhanceService;
     }
 
     @GetMapping("/me")
@@ -115,6 +119,18 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         GameDataResponseDto response = battleService.updateWeaponAttribute(userId, body.getWeaponAttribute());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/me/game-equipment/enhance")
+    public ResponseEntity<GameDataResponseDto> enhanceEquipment(
+            HttpServletRequest request,
+            @Valid @RequestBody EnhanceRequestDto body) {
+        String userId = (String) request.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        GameDataResponseDto response = enhanceService.enhance(userId, body);
         return ResponseEntity.ok(response);
     }
 
