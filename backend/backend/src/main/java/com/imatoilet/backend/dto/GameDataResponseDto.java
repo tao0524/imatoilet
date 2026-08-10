@@ -24,4 +24,7 @@ public class GameDataResponseDto {
     private int crystalSteel;
     private int crystalPure;
     private int crystalChaos;
+    private int coreSwamp;
+    private int coreRuins;
+    private int corePurify;
 }

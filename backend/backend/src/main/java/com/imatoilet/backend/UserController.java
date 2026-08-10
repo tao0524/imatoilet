@@ -4,6 +4,7 @@ import com.imatoilet.backend.config.FirebaseAuthFilter;
 import com.imatoilet.backend.dto.AchievementResponseDto;
 import com.imatoilet.backend.dto.EnhanceRequestDto;
 import com.imatoilet.backend.dto.EquipmentRequestDto;
+import com.imatoilet.backend.dto.EvolveRequestDto;
 import com.imatoilet.backend.dto.GameDataResponseDto;
 import com.imatoilet.backend.dto.GameEquipmentRequestDto;
 import com.imatoilet.backend.dto.InventoryResponseDto;
@@ -30,19 +31,22 @@ public class UserController {
     private final BattleService battleService;
     private final StoryService storyService;
     private final EnhanceService enhanceService;
+    private final EvolveService evolveService;
 
     public UserController(UserService userService,
                           AchievementService achievementService,
                           InventoryService inventoryService,
                           BattleService battleService,
                           StoryService storyService,
-                          EnhanceService enhanceService) {
+                          EnhanceService enhanceService,
+                          EvolveService evolveService) {
         this.userService = userService;
         this.achievementService = achievementService;
         this.inventoryService = inventoryService;
         this.battleService = battleService;
         this.storyService = storyService;
         this.enhanceService = enhanceService;
+        this.evolveService = evolveService;
     }
 
     @GetMapping("/me")
@@ -131,6 +135,18 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         GameDataResponseDto response = enhanceService.enhance(userId, body);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/me/game-equipment/evolve")
+    public ResponseEntity<GameDataResponseDto> evolveEquipment(
+            HttpServletRequest request,
+            @Valid @RequestBody EvolveRequestDto body) {
+        String userId = (String) request.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        GameDataResponseDto response = evolveService.evolve(userId, body);
         return ResponseEntity.ok(response);
     }
 

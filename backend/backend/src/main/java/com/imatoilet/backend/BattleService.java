@@ -97,6 +97,10 @@ public class BattleService {
 
         Map<String, Integer> crystals = inventoryService.getCrystalQuantities(user.getId());
 
+        int coreSwamp = inventoryService.getQuantity(user.getId(), "core_swamp");
+        int coreRuins = inventoryService.getQuantity(user.getId(), "core_ruins");
+        int corePurify = inventoryService.getQuantity(user.getId(), "core_purify");
+
         return new GameDataResponseDto(
                 user.getBattleLevel(),
                 user.getBattleExp(),
@@ -115,7 +119,10 @@ public class BattleService {
                 crystals.getOrDefault("crystal_nature", 0),
                 crystals.getOrDefault("crystal_steel", 0),
                 crystals.getOrDefault("crystal_pure", 0),
-                crystals.getOrDefault("crystal_chaos", 0)
+                crystals.getOrDefault("crystal_chaos", 0),
+                coreSwamp,
+                coreRuins,
+                corePurify
         );
     }
 }
