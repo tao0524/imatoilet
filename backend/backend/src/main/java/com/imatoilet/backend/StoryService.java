@@ -6,9 +6,13 @@ import com.imatoilet.backend.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Service
 @Transactional(readOnly = true)
 public class StoryService {
+
+    private static final Map<String, String> DOOR_GRANT_MAP = Map.of();
 
     private final UserRepository userRepository;
 
@@ -43,6 +47,13 @@ public class StoryService {
 
         user.setStoryChapter(newChapter);
         user.setStoryScene(newScene);
+
+        String doorKey = newChapter + "-" + newScene;
+        String doorEnemyId = DOOR_GRANT_MAP.get(doorKey);
+        if (doorEnemyId != null) {
+            user.setHeldDoorEnemyId(doorEnemyId);
+        }
+
         userRepository.save(user);
 
         return new StoryProgressResponseDto(user.getStoryChapter(), user.getStoryScene());

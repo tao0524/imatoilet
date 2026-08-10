@@ -56,17 +56,26 @@ public class BattleService {
         battleResultRepository.save(record);
 
         if ("WIN".equals(dto.getResult())) {
+            if (dto.getEnemyId() != null && dto.getEnemyId().startsWith("star4_")) {
+                String crystalKey = "crystal_" + dto.getEnemyId().replace("star4_", "");
+                inventoryService.addMaterial(firebaseUid, crystalKey, 5);
+                String coreKey = getBossCoreKey(dto.getEnemyId());
+                inventoryService.addMaterial(firebaseUid, coreKey, 1);
+                user.setPurifyStone(user.getPurifyStone() + 1);
+                user.setHeldDoorEnemyId(null);
+            } else {
+                if (dto.getCrystalAttribute() != null && dto.getCrystalCount() > 0) {
+                    String materialKey = "crystal_" + dto.getCrystalAttribute().toLowerCase();
+                    inventoryService.addMaterial(firebaseUid, materialKey, dto.getCrystalCount());
+                }
+            }
+
             user.setBattleExp(user.getBattleExp() + dto.getExpGained());
             while (user.getBattleLevel() < MAX_LEVEL
                     && user.getBattleExp() >= LEVEL_THRESHOLDS[user.getBattleLevel()]) {
                 user.setBattleLevel(user.getBattleLevel() + 1);
             }
             userRepository.save(user);
-        }
-
-        if (dto.getCrystalAttribute() != null && dto.getCrystalCount() > 0) {
-            String materialKey = "crystal_" + dto.getCrystalAttribute().toLowerCase();
-            inventoryService.addMaterial(firebaseUid, materialKey, dto.getCrystalCount());
         }
 
         return buildGameData(user);
@@ -122,7 +131,19 @@ public class BattleService {
                 crystals.getOrDefault("crystal_chaos", 0),
                 coreSwamp,
                 coreRuins,
-                corePurify
+                corePurify,
+                user.getHeldDoorEnemyId(),
+                user.getPurifyStone()
         );
+    }
+
+    private String getBossCoreKey(String enemyId) {
+        return switch (enemyId) {
+            case "star4_nature" -> "core_swamp";
+            case "star4_steel"  -> "core_ruins";
+            case "star4_pure"   -> "core_purify";
+            case "star4_chaos"  -> "core_swamp";
+            default -> throw new IllegalArgumentException("Unknown boss: " + enemyId);
+        };
     }
 }

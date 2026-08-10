@@ -72,6 +72,12 @@ public class User {
     @Column(name = "story_scene")
     private Integer storyScene = 0;
 
+    @Column(name = "held_door_enemy_id")
+    private String heldDoorEnemyId;
+
+    @Column(name = "purify_stone", nullable = false)
+    private int purifyStone = 0;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

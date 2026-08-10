@@ -27,4 +27,6 @@ public class GameDataResponseDto {
     private int coreSwamp;
     private int coreRuins;
     private int corePurify;
+    private String heldDoorEnemyId;
+    private int purifyStone;
 }
