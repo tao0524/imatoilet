@@ -12,7 +12,7 @@ public class BattleResultRequestDto {
     @NotBlank
     private String enemyId;
 
-    @Min(1) @Max(3)
+    @Min(1) @Max(4)
     private int enemyStar;
 
     @NotBlank
