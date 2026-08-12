@@ -12,6 +12,9 @@ import com.imatoilet.backend.dto.MigrationRequestDto;
 import com.imatoilet.backend.dto.StoryProgressRequestDto;
 import com.imatoilet.backend.dto.StoryProgressResponseDto;
 import com.imatoilet.backend.dto.UserResponseDto;
+import com.imatoilet.backend.dto.ItemCraftRequestDto;
+import com.imatoilet.backend.dto.ItemUseRequestDto;
+import com.imatoilet.backend.dto.ItemUseResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -32,6 +35,7 @@ public class UserController {
     private final StoryService storyService;
     private final EnhanceService enhanceService;
     private final EvolveService evolveService;
+    private final ItemService itemService;
 
     public UserController(UserService userService,
                           AchievementService achievementService,
@@ -39,7 +43,8 @@ public class UserController {
                           BattleService battleService,
                           StoryService storyService,
                           EnhanceService enhanceService,
-                          EvolveService evolveService) {
+                          EvolveService evolveService,
+                          ItemService itemService) {
         this.userService = userService;
         this.achievementService = achievementService;
         this.inventoryService = inventoryService;
@@ -47,6 +52,7 @@ public class UserController {
         this.storyService = storyService;
         this.enhanceService = enhanceService;
         this.evolveService = evolveService;
+        this.itemService = itemService;
     }
 
     @GetMapping("/me")
@@ -184,5 +190,23 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @PostMapping("/me/items/craft")
+    public ResponseEntity<GameDataResponseDto> craftItem(
+            @Valid @RequestBody ItemCraftRequestDto request,
+            HttpServletRequest httpRequest) {
+        String uid = (String) httpRequest.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        itemService.craft(uid, request.getItemKey(), request.getCrystalAttribute(), request.getCount());
+        return ResponseEntity.ok(battleService.getGameData(uid));
+    }
+
+    @PostMapping("/me/items/use")
+    public ResponseEntity<ItemUseResponseDto> useItem(
+            @Valid @RequestBody ItemUseRequestDto request,
+            HttpServletRequest httpRequest) {
+        String uid = (String) httpRequest.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        int newQty = itemService.use(uid, request.getItemKey());
+        return ResponseEntity.ok(new ItemUseResponseDto(request.getItemKey(), newQty));
     }
 }

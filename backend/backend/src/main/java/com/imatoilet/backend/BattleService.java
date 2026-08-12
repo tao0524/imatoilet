@@ -110,6 +110,11 @@ public class BattleService {
         int coreRuins = inventoryService.getQuantity(user.getId(), "core_ruins");
         int corePurify = inventoryService.getQuantity(user.getId(), "core_purify");
 
+        int itemCleanWater = inventoryService.getQuantity(user.getId(), "item_clean_water");
+        int itemPurifyDrop = inventoryService.getQuantity(user.getId(), "item_purify_drop");
+        int itemHolySpring = inventoryService.getQuantity(user.getId(), "item_holy_spring");
+        int itemMegamiDrop = inventoryService.getQuantity(user.getId(), "item_megami_drop");
+
         return new GameDataResponseDto(
                 user.getBattleLevel(),
                 user.getBattleExp(),
@@ -133,7 +138,11 @@ public class BattleService {
                 coreRuins,
                 corePurify,
                 user.getHeldDoorEnemyId(),
-                user.getPurifyStone()
+                user.getPurifyStone(),
+                itemCleanWater,
+                itemPurifyDrop,
+                itemHolySpring,
+                itemMegamiDrop
         );
     }
 

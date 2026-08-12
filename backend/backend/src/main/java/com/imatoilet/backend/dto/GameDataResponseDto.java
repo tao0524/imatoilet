@@ -29,4 +29,8 @@ public class GameDataResponseDto {
     private int corePurify;
     private String heldDoorEnemyId;
     private int purifyStone;
+    private int itemCleanWater;
+    private int itemPurifyDrop;
+    private int itemHolySpring;
+    private int itemMegamiDrop;
 }
