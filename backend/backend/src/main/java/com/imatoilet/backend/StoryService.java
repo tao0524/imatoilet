@@ -12,7 +12,10 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class StoryService {
 
-    private static final Map<String, String> DOOR_GRANT_MAP = Map.of();
+    private static final Map<String, String> DOOR_GRANT_MAP = Map.of(
+        "2-5", "star4_nature",  // 第1章シーン6: おおぬまのあるじ
+        "3-4", "star4_steel"    // 第2章シーン5: はいきょのばんにん
+    );
 
     private final UserRepository userRepository;
 

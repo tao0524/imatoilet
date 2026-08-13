@@ -41,6 +41,7 @@ public class FeedbackService {
     private final UserQuestProgressRepository progressRepository;
     private final AchievementService achievementService;
     private final InventoryService inventoryService;
+    private final BattleResultRepository battleResultRepository;
 
     public FeedbackService(ToiletFeedbackRepository feedbackRepository,
                            ToiletRepository toiletRepository,
@@ -48,7 +49,8 @@ public class FeedbackService {
                            DailyQuestRepository dailyQuestRepository,
                            UserQuestProgressRepository progressRepository,
                            AchievementService achievementService,
-                           InventoryService inventoryService) {
+                           InventoryService inventoryService,
+                           BattleResultRepository battleResultRepository) {
         this.feedbackRepository = feedbackRepository;
         this.toiletRepository = toiletRepository;
         this.userRepository = userRepository;
@@ -56,6 +58,7 @@ public class FeedbackService {
         this.progressRepository = progressRepository;
         this.achievementService = achievementService;
         this.inventoryService = inventoryService;
+        this.battleResultRepository = battleResultRepository;
     }
 
     public FeedbackResponseDto processFeedback(Long toiletId, FeedbackRequestDto dto, String userId) {
@@ -317,7 +320,36 @@ public class FeedbackService {
             } else if (chapter == 2 && scene == 3 && checkins >= 15) {
                 triggeredStoryChapter = 2;
                 triggeredStoryScene = 4;
+
+            // ── 第2章トリガー（code chapter 3）──
+            // シーン1: 錆びた気配（第1章クリア後チェックイン3回目）
+            } else if (chapter == 2 && scene == 4 && checkins >= 18) {
+                triggeredStoryChapter = 3;
+                triggeredStoryScene = 0;
+            // シーン2: ★3初遭遇（チェックイン5回目相当）
+            } else if (chapter == 3 && scene == 0 && checkins >= 20) {
+                triggeredStoryChapter = 3;
+                triggeredStoryScene = 1;
+            // シーン3: 限界突破チュートリアル（★3初撃破後）
+            } else if (chapter == 3 && scene == 1) {
+                long star3Wins = battleResultRepository.countByUserIdAndResultAndEnemyStarGreaterThanEqual(
+                    storyUser.getId(), "WIN", 3);
+                if (star3Wins > 0) {
+                    triggeredStoryChapter = 3;
+                    triggeredStoryScene = 2;
+                }
+            // シーン4: 廃墟の記憶（武器+3以上）
+            } else if (chapter == 3 && scene == 2) {
+                if (storyUser.getWeaponEnhancement() >= 3) {
+                    triggeredStoryChapter = 3;
+                    triggeredStoryScene = 3;
+                }
+            // シーン5: はいきょのばんにん（ボス戦トリガー）
+            } else if (chapter == 3 && scene == 3 && checkins >= 30) {
+                triggeredStoryChapter = 3;
+                triggeredStoryScene = 4;
             }
+            // シーン6: ボス撃破後はstory-progressで進行（FeedbackServiceでは扱わない）
         }
 
         return new FeedbackResponseDto(

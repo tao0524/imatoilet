@@ -68,6 +68,15 @@ public class BattleService {
                     String materialKey = "crystal_" + dto.getCrystalAttribute().toLowerCase();
                     inventoryService.addMaterial(firebaseUid, materialKey, dto.getCrystalCount());
                 }
+                // 初回★3 WIN: 浄化の輝石を確定ドロップ
+                if (dto.getEnemyStar() >= 3) {
+                    long priorStar3Wins = battleResultRepository.countByUserIdAndResultAndEnemyStarGreaterThanEqual(
+                        firebaseUid, "WIN", 3);
+                    // priorStar3Wins == 1 = 今回のレコードが最初の★3 WIN（既にsave済み）
+                    if (priorStar3Wins == 1) {
+                        user.setPurifyStone(user.getPurifyStone() + 1);
+                    }
+                }
             }
 
             user.setBattleExp(user.getBattleExp() + dto.getExpGained());
