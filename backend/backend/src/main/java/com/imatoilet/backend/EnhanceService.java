@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class EnhanceService {
 
-    private static final int MAX_ENHANCEMENT = 3;
+    private static final int MAX_ENHANCEMENT = 5;
 
     private final UserRepository userRepository;
     private final InventoryService inventoryService;
@@ -56,6 +56,17 @@ public class EnhanceService {
                     "Not enough crystals. Required: " + cost + ", available: " + available);
         }
 
+        // 限界突破（+3→+4, +4→+5）は浄化の輝石を消費
+        int stoneCost = getLimitBreakStoneCost(currentEnhancement);
+        if (stoneCost > 0) {
+            int availableStones = user.getPurifyStone();
+            if (availableStones < stoneCost) {
+                throw new IllegalArgumentException(
+                        "Not enough purify stones. Required: " + stoneCost + ", available: " + availableStones);
+            }
+            user.setPurifyStone(availableStones - stoneCost);
+        }
+
         inventoryService.consumeMaterial(userId, materialKey, cost);
 
         switch (request.getTargetSlot()) {
@@ -73,7 +84,17 @@ public class EnhanceService {
             case 0 -> 3;
             case 1 -> 5;
             case 2 -> 8;
+            case 3 -> 6;
+            case 4 -> 10;
             default -> throw new IllegalArgumentException("Enhancement already at max");
+        };
+    }
+
+    private int getLimitBreakStoneCost(int currentEnhancement) {
+        return switch (currentEnhancement) {
+            case 3 -> 1;
+            case 4 -> 2;
+            default -> 0;
         };
     }
 }
