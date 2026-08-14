@@ -55,6 +55,7 @@ public class StoryEvolveService {
 
             user.setWeaponTier(currentTier + 1);
             user.setArmorTier(currentTier + 1);
+            user.setAuraTier(currentTier + 1);
         }
 
         userRepository.save(user);
