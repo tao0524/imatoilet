@@ -351,6 +351,34 @@ public class FeedbackService {
             } else if (chapter == 3 && scene == 4 && storyUser.getHeldDoorEnemyId() == null) {
                 triggeredStoryChapter = 3;
                 triggeredStoryScene = 5;
+
+            // ── 第3章トリガー（code chapter 4）──
+            // シーン1: 白い静寂（第2章クリア後）
+            } else if (chapter == 3 && scene == 5 && checkins >= 33) {
+                triggeredStoryChapter = 4;
+                triggeredStoryScene = 0;
+            // シーン2: 歪んだ祈り
+            } else if (chapter == 4 && scene == 0 && checkins >= 36) {
+                triggeredStoryChapter = 4;
+                triggeredStoryScene = 1;
+            // シーン3: 弱点なき敵（★3うつろいのカオ確定遭遇）
+            } else if (chapter == 4 && scene == 1 && checkins >= 40) {
+                triggeredStoryChapter = 4;
+                triggeredStoryScene = 2;
+            // シーン4: 師匠の覚悟（武器+4以上）
+            } else if (chapter == 4 && scene == 2) {
+                if (storyUser.getWeaponEnhancement() >= 4) {
+                    triggeredStoryChapter = 4;
+                    triggeredStoryScene = 3;
+                }
+            // シーン5: くちはてたじょうかしん（ボス戦トリガー）
+            } else if (chapter == 4 && scene == 3 && checkins >= 50) {
+                triggeredStoryChapter = 4;
+                triggeredStoryScene = 4;
+            // シーン6: まじんのまこと（ボス撃破後）
+            } else if (chapter == 4 && scene == 4 && storyUser.getHeldDoorEnemyId() == null) {
+                triggeredStoryChapter = 4;
+                triggeredStoryScene = 5;
             }
             // シーン6: ボス撃破後はstory-progressで進行（FeedbackServiceでは扱わない）
         }

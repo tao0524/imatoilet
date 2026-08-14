@@ -14,7 +14,8 @@ public class StoryService {
 
     private static final Map<String, String> DOOR_GRANT_MAP = Map.of(
         "2-5", "star4_nature",  // 第1章シーン6: おおぬまのあるじ
-        "3-4", "star4_steel"    // 第2章シーン5: はいきょのばんにん
+        "3-4", "star4_steel",   // 第2章シーン5: はいきょのばんにん
+        "4-4", "star4_pure"     // 第3章シーン5: くちはてたじょうかしん
     );
 
     private final UserRepository userRepository;
