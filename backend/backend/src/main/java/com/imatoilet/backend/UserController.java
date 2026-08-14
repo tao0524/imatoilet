@@ -251,6 +251,12 @@ public class UserController {
             Object val = body.get("heldDoorEnemyId");
             user.setHeldDoorEnemyId(val == null ? null : val.toString());
         }
+        if (body.containsKey("weaponTier")) {
+            user.setWeaponTier(((Number) body.get("weaponTier")).intValue());
+        }
+        if (body.containsKey("weaponEnhancement")) {
+            user.setWeaponEnhancement(((Number) body.get("weaponEnhancement")).intValue());
+        }
 
         userRepository.save(user);
 
