@@ -257,6 +257,12 @@ public class UserController {
         if (body.containsKey("weaponEnhancement")) {
             user.setWeaponEnhancement(((Number) body.get("weaponEnhancement")).intValue());
         }
+        if (body.containsKey("armorTier")) {
+            user.setArmorTier(((Number) body.get("armorTier")).intValue());
+        }
+        if (body.containsKey("auraTier")) {
+            user.setAuraTier(((Number) body.get("auraTier")).intValue());
+        }
 
         userRepository.save(user);
 
