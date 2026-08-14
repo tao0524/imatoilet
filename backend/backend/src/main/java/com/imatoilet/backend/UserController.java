@@ -38,7 +38,6 @@ public class UserController {
     private final EvolveService evolveService;
     private final StoryEvolveService storyEvolveService;
     private final ItemService itemService;
-    private final UserRepository userRepository;
 
     public UserController(UserService userService,
                           AchievementService achievementService,
@@ -48,8 +47,7 @@ public class UserController {
                           EnhanceService enhanceService,
                           EvolveService evolveService,
                           StoryEvolveService storyEvolveService,
-                          ItemService itemService,
-                          UserRepository userRepository) {
+                          ItemService itemService) {
         this.userService = userService;
         this.achievementService = achievementService;
         this.inventoryService = inventoryService;
@@ -59,7 +57,6 @@ public class UserController {
         this.evolveService = evolveService;
         this.storyEvolveService = storyEvolveService;
         this.itemService = itemService;
-        this.userRepository = userRepository;
     }
 
     @GetMapping("/me")
@@ -229,47 +226,4 @@ public class UserController {
         return ResponseEntity.ok(new ItemUseResponseDto(request.getItemKey(), newQty));
     }
 
-    // ★★★ テスト用：ストーリーリセット（テスト完了後に必ず削除）★★★
-    @PostMapping("/me/story-reset")
-    public ResponseEntity<?> resetStoryProgress(
-            @RequestBody java.util.Map<String, Object> body,
-            HttpServletRequest request) {
-        String uid = (String) request.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
-        if (uid == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        User user = userRepository.findById(uid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (body.containsKey("storyChapter")) {
-            user.setStoryChapter(((Number) body.get("storyChapter")).intValue());
-        }
-        if (body.containsKey("storyScene")) {
-            user.setStoryScene(((Number) body.get("storyScene")).intValue());
-        }
-        if (body.containsKey("heldDoorEnemyId")) {
-            Object val = body.get("heldDoorEnemyId");
-            user.setHeldDoorEnemyId(val == null ? null : val.toString());
-        }
-        if (body.containsKey("weaponTier")) {
-            user.setWeaponTier(((Number) body.get("weaponTier")).intValue());
-        }
-        if (body.containsKey("weaponEnhancement")) {
-            user.setWeaponEnhancement(((Number) body.get("weaponEnhancement")).intValue());
-        }
-        if (body.containsKey("armorTier")) {
-            user.setArmorTier(((Number) body.get("armorTier")).intValue());
-        }
-        if (body.containsKey("auraTier")) {
-            user.setAuraTier(((Number) body.get("auraTier")).intValue());
-        }
-
-        userRepository.save(user);
-
-        java.util.Map<String, Object> result = new java.util.HashMap<>();
-        result.put("storyChapter", user.getStoryChapter());
-        result.put("storyScene", user.getStoryScene());
-        result.put("heldDoorEnemyId", user.getHeldDoorEnemyId());
-        return ResponseEntity.ok(result);
-    }
 }
