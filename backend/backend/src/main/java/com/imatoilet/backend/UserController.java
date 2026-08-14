@@ -15,6 +15,7 @@ import com.imatoilet.backend.dto.UserResponseDto;
 import com.imatoilet.backend.dto.ItemCraftRequestDto;
 import com.imatoilet.backend.dto.ItemUseRequestDto;
 import com.imatoilet.backend.dto.ItemUseResponseDto;
+import com.imatoilet.backend.dto.StoryEvolveRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,7 @@ public class UserController {
     private final StoryService storyService;
     private final EnhanceService enhanceService;
     private final EvolveService evolveService;
+    private final StoryEvolveService storyEvolveService;
     private final ItemService itemService;
 
     public UserController(UserService userService,
@@ -44,6 +46,7 @@ public class UserController {
                           StoryService storyService,
                           EnhanceService enhanceService,
                           EvolveService evolveService,
+                          StoryEvolveService storyEvolveService,
                           ItemService itemService) {
         this.userService = userService;
         this.achievementService = achievementService;
@@ -52,6 +55,7 @@ public class UserController {
         this.storyService = storyService;
         this.enhanceService = enhanceService;
         this.evolveService = evolveService;
+        this.storyEvolveService = storyEvolveService;
         this.itemService = itemService;
     }
 
@@ -153,6 +157,18 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         GameDataResponseDto response = evolveService.evolve(userId, body);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/me/game-equipment/story-evolve")
+    public ResponseEntity<GameDataResponseDto> storyEvolve(
+            HttpServletRequest request,
+            @Valid @RequestBody StoryEvolveRequestDto body) {
+        String userId = (String) request.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        GameDataResponseDto response = storyEvolveService.storyEvolve(userId, body);
         return ResponseEntity.ok(response);
     }
 
