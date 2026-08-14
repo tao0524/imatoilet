@@ -37,7 +37,7 @@ public class EnhanceService {
         };
 
         if (currentEnhancement >= MAX_ENHANCEMENT) {
-            throw new IllegalArgumentException("Equipment already at max enhancement (+3)");
+            throw new IllegalArgumentException("Equipment already at max enhancement (+" + MAX_ENHANCEMENT + ")");
         }
 
         int cost = getEnhanceCost(currentEnhancement);

@@ -348,6 +348,9 @@ public class FeedbackService {
             } else if (chapter == 3 && scene == 3 && checkins >= 30) {
                 triggeredStoryChapter = 3;
                 triggeredStoryScene = 4;
+            } else if (chapter == 3 && scene == 4 && storyUser.getHeldDoorEnemyId() == null) {
+                triggeredStoryChapter = 3;
+                triggeredStoryScene = 5;
             }
             // シーン6: ボス撃破後はstory-progressで進行（FeedbackServiceでは扱わない）
         }
