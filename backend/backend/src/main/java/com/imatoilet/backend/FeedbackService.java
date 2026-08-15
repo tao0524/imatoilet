@@ -379,8 +379,35 @@ public class FeedbackService {
             } else if (chapter == 4 && scene == 4 && storyUser.getHeldDoorEnemyId() == null) {
                 triggeredStoryChapter = 4;
                 triggeredStoryScene = 5;
+
+            // ── 第4章トリガー（code chapter 5）──
+            // シーン1: すべてが混ざる場所（第3章クリア後チェックイン3回）
+            } else if (chapter == 4 && scene == 5 && checkins >= 53) {
+                triggeredStoryChapter = 5;
+                triggeredStoryScene = 0;
+            // シーン2: 灰色の敵（うつろいのカオ確定遭遇）
+            } else if (chapter == 5 && scene == 0 && checkins >= 55) {
+                triggeredStoryChapter = 5;
+                triggeredStoryScene = 1;
+            // シーン3: 壁画の記憶
+            } else if (chapter == 5 && scene == 1 && checkins >= 58) {
+                triggeredStoryChapter = 5;
+                triggeredStoryScene = 2;
+            // シーン4: 最後の準備（武器+5到達）
+            } else if (chapter == 5 && scene == 2) {
+                if (storyUser.getWeaponEnhancement() >= 5) {
+                    triggeredStoryChapter = 5;
+                    triggeredStoryScene = 3;
+                }
+            // シーン5: ふじょうのまじん（ボス戦トリガー）
+            } else if (chapter == 5 && scene == 3 && checkins >= 65) {
+                triggeredStoryChapter = 5;
+                triggeredStoryScene = 4;
+            // シーン6: 終わらない日常（ボス撃破後）
+            } else if (chapter == 5 && scene == 4 && storyUser.getHeldDoorEnemyId() == null) {
+                triggeredStoryChapter = 5;
+                triggeredStoryScene = 5;
             }
-            // シーン6: ボス撃破後はstory-progressで進行（FeedbackServiceでは扱わない）
         }
 
         return new FeedbackResponseDto(
