@@ -9,6 +9,7 @@ import com.imatoilet.backend.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -16,6 +17,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @Transactional
@@ -408,6 +410,21 @@ public class FeedbackService {
                 triggeredStoryChapter = 5;
                 triggeredStoryScene = 5;
             }
+            // 8. 幻影の扉 出現判定（第4章クリア後のみ）
+            if (chapter == 5 && scene == 5
+                    && storyUser.getHeldPhantomDoorEnemyId() == null
+                    && newTrustScore != null && newTrustScore >= 80.0) {
+                LocalDate todayForPhantom = LocalDate.now(ZoneId.of("Asia/Tokyo"));
+                if (storyUser.getLastPhantomDoorDate() == null
+                        || !storyUser.getLastPhantomDoorDate().equals(todayForPhantom)) {
+                    if (ThreadLocalRandom.current().nextInt(100) < 55) {
+                        String phantomBoss = getPhantomBossForDay(todayForPhantom);
+                        storyUser.setHeldPhantomDoorEnemyId(phantomBoss);
+                        storyUser.setLastPhantomDoorDate(todayForPhantom);
+                        userRepository.save(storyUser);
+                    }
+                }
+            }
         }
 
         return new FeedbackResponseDto(
@@ -452,5 +469,21 @@ public class FeedbackService {
             default:
                 return false;
         }
+    }
+
+    private String getPhantomBossForDay(LocalDate date) {
+        return switch (date.getDayOfWeek()) {
+            case MONDAY    -> "phantom_star4_nature";
+            case TUESDAY   -> "phantom_star4_steel";
+            case WEDNESDAY -> "phantom_star4_pure";
+            case THURSDAY  -> "phantom_star4_chaos";
+            default -> {
+                String[] bosses = {
+                    "phantom_star4_nature", "phantom_star4_steel",
+                    "phantom_star4_pure", "phantom_star4_chaos"
+                };
+                yield bosses[ThreadLocalRandom.current().nextInt(4)];
+            }
+        };
     }
 }

@@ -56,7 +56,13 @@ public class BattleService {
         battleResultRepository.save(record);
 
         if ("WIN".equals(dto.getResult())) {
-            if (dto.getEnemyId() != null && dto.getEnemyId().startsWith("star4_")) {
+            if (dto.getEnemyId() != null && dto.getEnemyId().startsWith("phantom_star4_")) {
+                // 幻影ボス撃破: Tier5素材 + 結晶 + 幻影扉クリア
+                String attribute = dto.getEnemyId().replace("phantom_star4_", "");
+                inventoryService.addMaterial(firebaseUid, "phantom_" + attribute, 1);
+                inventoryService.addMaterial(firebaseUid, "crystal_" + attribute, 5);
+                user.setHeldPhantomDoorEnemyId(null);
+            } else if (dto.getEnemyId() != null && dto.getEnemyId().startsWith("star4_")) {
                 String crystalKey = "crystal_" + dto.getEnemyId().replace("star4_", "");
                 inventoryService.addMaterial(firebaseUid, crystalKey, 5);
                 String coreKey = getBossCoreKey(dto.getEnemyId());
@@ -124,6 +130,11 @@ public class BattleService {
         int itemHolySpring = inventoryService.getQuantity(user.getId(), "item_holy_spring");
         int itemMegamiDrop = inventoryService.getQuantity(user.getId(), "item_megami_drop");
 
+        int phantomNature = inventoryService.getQuantity(user.getId(), "phantom_nature");
+        int phantomSteel = inventoryService.getQuantity(user.getId(), "phantom_steel");
+        int phantomPure = inventoryService.getQuantity(user.getId(), "phantom_pure");
+        int phantomChaos = inventoryService.getQuantity(user.getId(), "phantom_chaos");
+
         return new GameDataResponseDto(
                 user.getBattleLevel(),
                 user.getBattleExp(),
@@ -151,7 +162,12 @@ public class BattleService {
                 itemCleanWater,
                 itemPurifyDrop,
                 itemHolySpring,
-                itemMegamiDrop
+                itemMegamiDrop,
+                user.getHeldPhantomDoorEnemyId(),
+                phantomNature,
+                phantomSteel,
+                phantomPure,
+                phantomChaos
         );
     }
 

@@ -3,6 +3,7 @@ package com.imatoilet.backend;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -77,6 +78,12 @@ public class User {
 
     @Column(name = "purify_stone", nullable = false)
     private int purifyStone = 0;
+
+    @Column(name = "held_phantom_door_enemy_id", length = 32)
+    private String heldPhantomDoorEnemyId;
+
+    @Column(name = "last_phantom_door_date")
+    private LocalDate lastPhantomDoorDate;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

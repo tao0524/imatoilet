@@ -33,4 +33,9 @@ public class GameDataResponseDto {
     private int itemPurifyDrop;
     private int itemHolySpring;
     private int itemMegamiDrop;
+    private String heldPhantomDoorEnemyId;
+    private int phantomNature;
+    private int phantomSteel;
+    private int phantomPure;
+    private int phantomChaos;
 }
