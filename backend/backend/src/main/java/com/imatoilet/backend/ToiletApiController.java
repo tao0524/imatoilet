@@ -61,13 +61,10 @@ public class ToiletApiController {
             @RequestBody @Valid AddToiletRequestDto dto,
             HttpServletRequest request) {
 
+        // Authorizationヘッダー・UIDがあればログインユーザーとして紐づけ、なければ匿名投稿として扱う（任意認証）
         String userId = (String) request.getAttribute(
             com.imatoilet.backend.config.FirebaseAuthFilter.FIREBASE_UID_ATTR
         );
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("error", "認証が必要です"));
-        }
 
         try {
             Toilet saved = toiletService.createToiletByUser(dto, userId);
