@@ -48,6 +48,19 @@ const getPinIcon = (toilet, isFavorite) => {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
+// 同一処理単位のmarker追加・削除をまとめ、clusterer.render()を1回に集約する
+const pendingClusterRenders = new WeakSet();
+
+const scheduleClusterRender = (clusterer) => {
+  if (pendingClusterRenders.has(clusterer)) return;
+
+  pendingClusterRenders.add(clusterer);
+  queueMicrotask(() => {
+    pendingClusterRenders.delete(clusterer);
+    clusterer.render();
+  });
+};
+
 const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
   const onClickRef = useRef(onClick);
 
@@ -86,7 +99,8 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
     });
 
     if (clusterer) {
-      clusterer.addMarker(marker);
+      clusterer.addMarker(marker, true);
+      scheduleClusterRender(clusterer);
     }
 
     const listener = marker.addListener('gmp-click', () => {
@@ -96,7 +110,8 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
     return () => {
       window.google.maps.event.removeListener(listener);
       if (clusterer) {
-        clusterer.removeMarker(marker);
+        clusterer.removeMarker(marker, true);
+        scheduleClusterRender(clusterer);
       } else {
         marker.map = null;
       }
@@ -143,26 +158,38 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
   }, [currentLocation, map, selectedToiletId]);
 
   // ★ 地図の移動やズームが終わったタイミングで表示領域（Bounds）を親に伝える
+  const idleDebounceRef = useRef(null);
+
   useEffect(() => {
     if (!map || !setMapBounds || !window.google) return;
 
     const listener = map.addListener('idle', () => {
-      const bounds = map.getBounds();
-      if (bounds) {
-        const ne = bounds.getNorthEast(); 
-        const sw = bounds.getSouthWest(); 
-        
-        setMapBounds({
-          minLat: sw.lat(),
-          maxLat: ne.lat(),
-          minLng: sw.lng(),
-          maxLng: ne.lng()
-        });
+      // ★デバウンス: idleが短時間に連続発火しても、最後の1回のみ反映する
+      if (idleDebounceRef.current) {
+        clearTimeout(idleDebounceRef.current);
       }
+
+      idleDebounceRef.current = setTimeout(() => {
+        const bounds = map.getBounds();
+        if (bounds) {
+          const ne = bounds.getNorthEast();
+          const sw = bounds.getSouthWest();
+
+          setMapBounds({
+            minLat: sw.lat(),
+            maxLat: ne.lat(),
+            minLng: sw.lng(),
+            maxLng: ne.lng()
+          });
+        }
+      }, 400);
     });
 
     return () => {
       window.google.maps.event.removeListener(listener);
+      if (idleDebounceRef.current) {
+        clearTimeout(idleDebounceRef.current);
+      }
     };
   }, [map, setMapBounds]);
 
