@@ -1,5 +1,10 @@
 package com.imatoilet.backend;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,7 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @SpringBootApplication
 public class BackendApplication {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws NoSuchAlgorithmException {
 		String dbPassword = System.getenv("DB_PASSWORD");
 		String expectedPassword = System.getenv("DB_PASSWORD_EXPECTED");
 		System.out.printf(
@@ -20,6 +25,14 @@ public class BackendApplication {
 			expectedPassword == null ? -1 : expectedPassword.length(),
 			dbPassword != null && expectedPassword != null && dbPassword.equals(expectedPassword)
 		);
+		if (dbPassword == null) {
+			System.out.println("DB_PASSWORD_FINGERPRINT unavailable");
+		} else {
+			byte[] sha256 = MessageDigest.getInstance("SHA-256")
+				.digest(dbPassword.getBytes(StandardCharsets.UTF_8));
+			String sha256Prefix = HexFormat.of().formatHex(sha256, 0, 6);
+			System.out.println("DB_PASSWORD_FINGERPRINT sha256Prefix=" + sha256Prefix);
+		}
 		SpringApplication.run(BackendApplication.class, args);
 	}
 
