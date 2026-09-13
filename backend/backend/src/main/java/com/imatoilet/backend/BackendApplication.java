@@ -39,16 +39,22 @@ public class BackendApplication {
 		boolean argPassword = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.password="));
 		boolean argProfiles = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.profiles.active="));
 		System.out.printf(
-			"RUNTIME_OVERRIDE_DIAG envUrl=%s envUsername=%s envPassword=%s envApplicationJson=%s envProfiles=%s sysUrl=%s sysUsername=%s sysPassword=%s sysProfiles=%s argUrl=%s argUsername=%s argPassword=%s argProfiles=%s%n",
+			"RUNTIME_OVERRIDE_ENV envUrl=%s envUsername=%s envPassword=%s envApplicationJson=%s envProfiles=%s%n",
 			System.getenv("SPRING_DATASOURCE_URL") != null,
 			System.getenv("SPRING_DATASOURCE_USERNAME") != null,
 			System.getenv("SPRING_DATASOURCE_PASSWORD") != null,
 			System.getenv("SPRING_APPLICATION_JSON") != null,
-			System.getenv("SPRING_PROFILES_ACTIVE") != null,
+			System.getenv("SPRING_PROFILES_ACTIVE") != null
+		);
+		System.out.printf(
+			"RUNTIME_OVERRIDE_SYS sysUrl=%s sysUsername=%s sysPassword=%s sysProfiles=%s%n",
 			System.getProperty("spring.datasource.url") != null,
 			System.getProperty("spring.datasource.username") != null,
 			System.getProperty("spring.datasource.password") != null,
-			System.getProperty("spring.profiles.active") != null,
+			System.getProperty("spring.profiles.active") != null
+		);
+		System.out.printf(
+			"RUNTIME_OVERRIDE_ARGS argUrl=%s argUsername=%s argPassword=%s argProfiles=%s%n",
 			argUrl,
 			argUsername,
 			argPassword,
