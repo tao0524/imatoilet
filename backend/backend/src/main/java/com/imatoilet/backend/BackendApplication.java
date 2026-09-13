@@ -1,5 +1,7 @@
 package com.imatoilet.backend;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -33,6 +35,38 @@ public class BackendApplication {
 				.digest(dbPassword.getBytes(StandardCharsets.UTF_8));
 			String sha256Prefix = HexFormat.of().formatHex(sha256, 0, 6);
 			System.out.println("DB_PASSWORD_FINGERPRINT sha256Prefix=" + sha256Prefix);
+		}
+		String dbUrl = System.getenv("DB_URL");
+		String dbUser = System.getenv("DB_USER");
+		if (dbUrl == null) {
+			System.out.println("DB_TARGET_FINGERPRINT unavailable reason=db_url_missing");
+		} else if (dbUser == null || dbUser.isEmpty()) {
+			System.out.println("DB_TARGET_FINGERPRINT unavailable reason=db_user_missing");
+		} else if (!dbUrl.startsWith("jdbc:postgresql://")) {
+			System.out.println("DB_TARGET_FINGERPRINT unavailable reason=invalid_format");
+		} else {
+			try {
+				URI dbUri = new URI(dbUrl.substring("jdbc:".length()));
+				String host = dbUri.getHost();
+				int port = dbUri.getPort();
+				String path = dbUri.getPath();
+				if (host == null || host.isEmpty()) {
+					System.out.println("DB_TARGET_FINGERPRINT unavailable reason=host_missing");
+				} else if (port < 0) {
+					System.out.println("DB_TARGET_FINGERPRINT unavailable reason=port_missing");
+				} else if (path == null || path.length() <= 1) {
+					System.out.println("DB_TARGET_FINGERPRINT unavailable reason=database_missing");
+				} else {
+					String database = path.substring(1);
+					String target = host + "|" + port + "|" + database + "|" + dbUser;
+					byte[] sha256 = MessageDigest.getInstance("SHA-256")
+						.digest(target.getBytes(StandardCharsets.UTF_8));
+					String sha256Prefix = HexFormat.of().formatHex(sha256, 0, 6);
+					System.out.println("DB_TARGET_FINGERPRINT sha256Prefix=" + sha256Prefix);
+				}
+			} catch (URISyntaxException e) {
+				System.out.println("DB_TARGET_FINGERPRINT unavailable reason=parse_error");
+			}
 		}
 		boolean argUrl = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.url="));
 		boolean argUsername = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.username="));
