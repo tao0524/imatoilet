@@ -3,6 +3,7 @@ package com.imatoilet.backend;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HexFormat;
 
 import org.springframework.boot.CommandLineRunner;
@@ -33,6 +34,26 @@ public class BackendApplication {
 			String sha256Prefix = HexFormat.of().formatHex(sha256, 0, 6);
 			System.out.println("DB_PASSWORD_FINGERPRINT sha256Prefix=" + sha256Prefix);
 		}
+		boolean argUrl = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.url="));
+		boolean argUsername = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.username="));
+		boolean argPassword = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.password="));
+		boolean argProfiles = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.profiles.active="));
+		System.out.printf(
+			"RUNTIME_OVERRIDE_DIAG envUrl=%s envUsername=%s envPassword=%s envApplicationJson=%s envProfiles=%s sysUrl=%s sysUsername=%s sysPassword=%s sysProfiles=%s argUrl=%s argUsername=%s argPassword=%s argProfiles=%s%n",
+			System.getenv("SPRING_DATASOURCE_URL") != null,
+			System.getenv("SPRING_DATASOURCE_USERNAME") != null,
+			System.getenv("SPRING_DATASOURCE_PASSWORD") != null,
+			System.getenv("SPRING_APPLICATION_JSON") != null,
+			System.getenv("SPRING_PROFILES_ACTIVE") != null,
+			System.getProperty("spring.datasource.url") != null,
+			System.getProperty("spring.datasource.username") != null,
+			System.getProperty("spring.datasource.password") != null,
+			System.getProperty("spring.profiles.active") != null,
+			argUrl,
+			argUsername,
+			argPassword,
+			argProfiles
+		);
 		SpringApplication.run(BackendApplication.class, args);
 	}
 
