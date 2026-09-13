@@ -1,13 +1,5 @@
 package com.imatoilet.backend;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.HexFormat;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,95 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @SpringBootApplication
 public class BackendApplication {
 
-	public static void main(String[] args) throws NoSuchAlgorithmException {
-		String dbPassword = System.getenv("DB_PASSWORD");
-		String expectedPassword = System.getenv("DB_PASSWORD_EXPECTED");
-		System.out.printf(
-			"DB_PASSWORD_DIAG dbPresent=%s dbLength=%d expectedPresent=%s expectedLength=%d same=%s%n",
-			dbPassword != null,
-			dbPassword == null ? -1 : dbPassword.length(),
-			expectedPassword != null,
-			expectedPassword == null ? -1 : expectedPassword.length(),
-			dbPassword != null && expectedPassword != null && dbPassword.equals(expectedPassword)
-		);
-		if (dbPassword == null) {
-			System.out.println("DB_PASSWORD_FINGERPRINT unavailable");
-		} else {
-			byte[] sha256 = MessageDigest.getInstance("SHA-256")
-				.digest(dbPassword.getBytes(StandardCharsets.UTF_8));
-			String sha256Prefix = HexFormat.of().formatHex(sha256, 0, 6);
-			System.out.println("DB_PASSWORD_FINGERPRINT sha256Prefix=" + sha256Prefix);
-		}
-		String dbUrl = System.getenv("DB_URL");
-		String dbUser = System.getenv("DB_USER");
-		if (dbUrl == null) {
-			System.out.println("DB_TARGET_FINGERPRINT unavailable reason=db_url_missing");
-		} else if (dbUser == null || dbUser.isEmpty()) {
-			System.out.println("DB_TARGET_FINGERPRINT unavailable reason=db_user_missing");
-		} else if (!dbUrl.startsWith("jdbc:postgresql://")) {
-			System.out.println("DB_TARGET_FINGERPRINT unavailable reason=invalid_format");
-		} else {
-			try {
-				URI dbUri = new URI(dbUrl.substring("jdbc:".length()));
-				String host = dbUri.getHost();
-				int port = dbUri.getPort();
-				String path = dbUri.getPath();
-				if (host == null || host.isEmpty()) {
-					System.out.println("DB_TARGET_FINGERPRINT unavailable reason=host_missing");
-				} else if (port < 0) {
-					System.out.println("DB_TARGET_FINGERPRINT unavailable reason=port_missing");
-				} else if (path == null || path.length() <= 1) {
-					System.out.println("DB_TARGET_FINGERPRINT unavailable reason=database_missing");
-				} else {
-					String database = path.substring(1);
-					String target = host + "|" + port + "|" + database + "|" + dbUser;
-					byte[] sha256 = MessageDigest.getInstance("SHA-256")
-						.digest(target.getBytes(StandardCharsets.UTF_8));
-					String sha256Prefix = HexFormat.of().formatHex(sha256, 0, 6);
-					System.out.println("DB_TARGET_FINGERPRINT sha256Prefix=" + sha256Prefix);
-					String hostSha256Prefix = HexFormat.of().formatHex(
-						MessageDigest.getInstance("SHA-256").digest(host.getBytes(StandardCharsets.UTF_8)), 0, 6);
-					String portSha256Prefix = HexFormat.of().formatHex(
-						MessageDigest.getInstance("SHA-256").digest(Integer.toString(port).getBytes(StandardCharsets.UTF_8)), 0, 6);
-					String databaseSha256Prefix = HexFormat.of().formatHex(
-						MessageDigest.getInstance("SHA-256").digest(database.getBytes(StandardCharsets.UTF_8)), 0, 6);
-					String userSha256Prefix = HexFormat.of().formatHex(
-						MessageDigest.getInstance("SHA-256").digest(dbUser.getBytes(StandardCharsets.UTF_8)), 0, 6);
-					System.out.println("DB_TARGET_HOST_FP sha256Prefix=" + hostSha256Prefix);
-					System.out.println("DB_TARGET_PORT_FP sha256Prefix=" + portSha256Prefix);
-					System.out.println("DB_TARGET_DATABASE_FP sha256Prefix=" + databaseSha256Prefix);
-					System.out.println("DB_TARGET_USER_FP sha256Prefix=" + userSha256Prefix);
-				}
-			} catch (URISyntaxException e) {
-				System.out.println("DB_TARGET_FINGERPRINT unavailable reason=parse_error");
-			}
-		}
-		boolean argUrl = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.url="));
-		boolean argUsername = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.username="));
-		boolean argPassword = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.datasource.password="));
-		boolean argProfiles = Arrays.stream(args).anyMatch(arg -> arg.startsWith("--spring.profiles.active="));
-		System.out.printf(
-			"RUNTIME_OVERRIDE_ENV envUrl=%s envUsername=%s envPassword=%s envApplicationJson=%s envProfiles=%s%n",
-			System.getenv("SPRING_DATASOURCE_URL") != null,
-			System.getenv("SPRING_DATASOURCE_USERNAME") != null,
-			System.getenv("SPRING_DATASOURCE_PASSWORD") != null,
-			System.getenv("SPRING_APPLICATION_JSON") != null,
-			System.getenv("SPRING_PROFILES_ACTIVE") != null
-		);
-		System.out.printf(
-			"RUNTIME_OVERRIDE_SYS sysUrl=%s sysUsername=%s sysPassword=%s sysProfiles=%s%n",
-			System.getProperty("spring.datasource.url") != null,
-			System.getProperty("spring.datasource.username") != null,
-			System.getProperty("spring.datasource.password") != null,
-			System.getProperty("spring.profiles.active") != null
-		);
-		System.out.printf(
-			"RUNTIME_OVERRIDE_ARGS argUrl=%s argUsername=%s argPassword=%s argProfiles=%s%n",
-			argUrl,
-			argUsername,
-			argPassword,
-			argProfiles
-		);
+	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);
 	}
 
