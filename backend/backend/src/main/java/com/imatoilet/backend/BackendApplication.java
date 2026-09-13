@@ -63,6 +63,18 @@ public class BackendApplication {
 						.digest(target.getBytes(StandardCharsets.UTF_8));
 					String sha256Prefix = HexFormat.of().formatHex(sha256, 0, 6);
 					System.out.println("DB_TARGET_FINGERPRINT sha256Prefix=" + sha256Prefix);
+					String hostSha256Prefix = HexFormat.of().formatHex(
+						MessageDigest.getInstance("SHA-256").digest(host.getBytes(StandardCharsets.UTF_8)), 0, 6);
+					String portSha256Prefix = HexFormat.of().formatHex(
+						MessageDigest.getInstance("SHA-256").digest(Integer.toString(port).getBytes(StandardCharsets.UTF_8)), 0, 6);
+					String databaseSha256Prefix = HexFormat.of().formatHex(
+						MessageDigest.getInstance("SHA-256").digest(database.getBytes(StandardCharsets.UTF_8)), 0, 6);
+					String userSha256Prefix = HexFormat.of().formatHex(
+						MessageDigest.getInstance("SHA-256").digest(dbUser.getBytes(StandardCharsets.UTF_8)), 0, 6);
+					System.out.println("DB_TARGET_HOST_FP sha256Prefix=" + hostSha256Prefix);
+					System.out.println("DB_TARGET_PORT_FP sha256Prefix=" + portSha256Prefix);
+					System.out.println("DB_TARGET_DATABASE_FP sha256Prefix=" + databaseSha256Prefix);
+					System.out.println("DB_TARGET_USER_FP sha256Prefix=" + userSha256Prefix);
 				}
 			} catch (URISyntaxException e) {
 				System.out.println("DB_TARGET_FINGERPRINT unavailable reason=parse_error");
