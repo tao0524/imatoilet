@@ -10,6 +10,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class BackendApplication {
 
 	public static void main(String[] args) {
+		String dbPassword = System.getenv("DB_PASSWORD");
+		String expectedPassword = System.getenv("DB_PASSWORD_EXPECTED");
+		System.out.printf(
+			"DB_PASSWORD_DIAG dbPresent=%s dbLength=%d expectedPresent=%s expectedLength=%d same=%s%n",
+			dbPassword != null,
+			dbPassword == null ? -1 : dbPassword.length(),
+			expectedPassword != null,
+			expectedPassword == null ? -1 : expectedPassword.length(),
+			dbPassword != null && expectedPassword != null && dbPassword.equals(expectedPassword)
+		);
 		SpringApplication.run(BackendApplication.class, args);
 	}
 
