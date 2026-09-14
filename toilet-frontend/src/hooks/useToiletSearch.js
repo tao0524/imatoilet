@@ -150,6 +150,7 @@ export const useToiletSearch = () => {
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
+        setPlaceQuery('');
 
         if (window.google?.maps?.Geocoder) {
           const geocoder = new window.google.maps.Geocoder();
