@@ -213,6 +213,9 @@ public class UserController {
             @Valid @RequestBody ItemCraftRequestDto request,
             HttpServletRequest httpRequest) {
         String uid = (String) httpRequest.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (uid == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         itemService.craft(uid, request.getItemKey(), request.getCrystalAttribute(), request.getCount());
         return ResponseEntity.ok(battleService.getGameData(uid));
     }
@@ -222,6 +225,9 @@ public class UserController {
             @Valid @RequestBody ItemUseRequestDto request,
             HttpServletRequest httpRequest) {
         String uid = (String) httpRequest.getAttribute(FirebaseAuthFilter.FIREBASE_UID_ATTR);
+        if (uid == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         int newQty = itemService.use(uid, request.getItemKey());
         return ResponseEntity.ok(new ItemUseResponseDto(request.getItemKey(), newQty));
     }

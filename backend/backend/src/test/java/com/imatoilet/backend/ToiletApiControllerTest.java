@@ -95,8 +95,7 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(toiletJson)
-                .header("Authorization", "Bearer test-token"))
+                .content(toiletJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is("New Toilet")))
                 .andExpect(jsonPath("$.lat", is(35.123)))
@@ -196,8 +195,7 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson)
-                .header("Authorization", "Bearer test-token"))
+                .content(invalidJson))
                 .andExpect(status().isBadRequest());
     }
 
@@ -209,8 +207,7 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson)
-                .header("Authorization", "Bearer test-token"))
+                .content(invalidJson))
                 .andExpect(status().isBadRequest());
     }
 
@@ -227,8 +224,7 @@ public class ToiletApiControllerTest {
 
         mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json)
-                .header("Authorization", "Bearer test-token"))
+                .content(json))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is("Multi Image")));
     }

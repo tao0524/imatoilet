@@ -31,9 +31,13 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
             String idToken = authHeader.substring(BEARER_PREFIX.length());
 
+            if (idToken.isBlank()) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+
             if (FirebaseApp.getApps().isEmpty()) {
-                request.setAttribute(FIREBASE_UID_ATTR, "test-user-" + idToken.hashCode());
-                filterChain.doFilter(request, response);
+                response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 return;
             }
 
@@ -41,7 +45,8 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                 FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
                 request.setAttribute(FIREBASE_UID_ATTR, decodedToken.getUid());
             } catch (FirebaseAuthException e) {
-                System.err.println("Firebase token verification failed: " + e.getMessage());
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
         }
 
