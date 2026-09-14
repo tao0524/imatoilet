@@ -1,0 +1,8 @@
+-- V26__add_equipment_columns.sql
+BEGIN;
+
+ALTER TABLE users ADD COLUMN equipped_head VARCHAR(50) DEFAULT 'TRAVELERS_HAT';
+ALTER TABLE users ADD COLUMN equipped_right_hand VARCHAR(50) DEFAULT 'WOODEN_STICK';
+ALTER TABLE users ADD COLUMN equipped_aura VARCHAR(50) DEFAULT 'NONE';
+
+COMMIT;

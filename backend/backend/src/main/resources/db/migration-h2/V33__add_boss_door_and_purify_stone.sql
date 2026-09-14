@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN held_door_enemy_id VARCHAR(32);
+ALTER TABLE users ADD COLUMN purify_stone INTEGER NOT NULL DEFAULT 0;

@@ -1,0 +1,1 @@
+ALTER TABLE toilet ADD COLUMN created_by VARCHAR(128);
