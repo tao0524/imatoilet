@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { loadUserToilets, saveUserToilets, buildEquipmentArray, normalizeEquipment } from '../utils';
-import { API_BASE_URL } from '../config/api';
 import './Register.css';
 import ToiletForm from '../components/ToiletForm';
 import EditIcon from '@mui/icons-material/Edit';
@@ -9,6 +8,7 @@ import EditIcon from '@mui/icons-material/Edit';
 function Edit() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isLocalToilet = id.startsWith('u_');
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -40,21 +40,15 @@ function Edit() {
   // --- データ読み込み ---
   useEffect(() => {
     async function fetchData() {
-      if (id.startsWith('u_')) {
-        const userToilets = loadUserToilets();
-        const found = userToilets.find(t => t.id === id);
-        if (found) applyDataToForm(found);
-        else { alert('データが見つかりません'); setLoading(false); }
-      } else {
-        try {
-          const res = await fetch(`${API_BASE_URL}/${id}`);
-          if (res.ok) applyDataToForm(await res.json());
-          else { alert('データの取得に失敗しました'); navigate('/search'); }
-        } catch (err) {
-          console.error(err);
-          alert('通信エラーが発生しました');
-        }
+      if (!isLocalToilet) {
+        setLoading(false);
+        return;
       }
+
+      const userToilets = loadUserToilets();
+      const found = userToilets.find(t => t.id === id);
+      if (found) applyDataToForm(found);
+      else { alert('データが見つかりません'); setLoading(false); }
     }
     fetchData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,6 +90,7 @@ function Edit() {
   // --- 送信処理 ---
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isLocalToilet) return;
     if (!confirm('この内容で更新しますか？')) return;
     setSubmitting(true);
 
@@ -112,41 +107,13 @@ function Edit() {
     };
 
     try {
-      if (id.startsWith('u_')) {
-        const userToilets = loadUserToilets();
-        const index = userToilets.findIndex(t => t.id === id);
-        if (index !== -1) {
-          userToilets[index] = { ...userToilets[index], ...payload, updatedAt: new Date().toISOString() };
-          saveUserToilets(userToilets);
-          alert('更新しました（ローカル）');
-          navigate(`/detail/${id}`);
-        }
-      } else {
-        const res = await fetch(`${API_BASE_URL}/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          alert('更新しました！');
-          navigate(`/detail/${id}`);
-        } else if (res.status === 400) {
-          try {
-            const errData = await res.json();
-            const msgs = errData.errors
-              ? Object.values(errData.errors).join('\n')
-              : errData.message || '入力内容に誤りがあります';
-            alert('入力エラー:\n' + msgs);
-          } catch {
-            alert('入力内容に誤りがあります。');
-          }
-        } else {
-          alert('更新に失敗しました。');
-        }
+      const userToilets = loadUserToilets();
+      const index = userToilets.findIndex(t => t.id === id);
+      if (index !== -1) {
+        userToilets[index] = { ...userToilets[index], ...payload, updatedAt: new Date().toISOString() };
+        saveUserToilets(userToilets);
+        alert('更新しました（ローカル）');
+        navigate(`/detail/${id}`);
       }
     } catch (err) {
       console.error(err);
@@ -157,6 +124,16 @@ function Edit() {
   };
 
   if (loading) return <div className="container" style={{ padding: '20px' }}>データを読み込んでいます...</div>;
+
+  if (!isLocalToilet) return (
+    <div className="container" style={{ padding: '20px' }}>
+      <h1>このトイレは編集できません</h1>
+      <p>このトイレは現在この画面から編集できません。</p>
+      <button type="button" className="btn" onClick={() => navigate(`/detail/${id}`)}>
+        詳細に戻る
+      </button>
+    </div>
+  );
 
   return (
     <ToiletForm

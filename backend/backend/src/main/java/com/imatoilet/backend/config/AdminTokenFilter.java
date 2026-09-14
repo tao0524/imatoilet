@@ -1,5 +1,6 @@
 package com.imatoilet.backend.config;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,13 @@ public class AdminTokenFilter extends OncePerRequestFilter {
 
     @Value("${app.admin.token}")
     private String adminToken;
+
+    @PostConstruct
+    void validateAdminToken() {
+        if (adminToken == null || adminToken.isBlank()) {
+            throw new IllegalStateException("ADMIN_TOKEN must be configured and must not be blank");
+        }
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

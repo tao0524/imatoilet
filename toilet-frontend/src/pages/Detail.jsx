@@ -33,6 +33,7 @@ import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isLocalToilet = id.startsWith('u_');
   const [toilet, setToilet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -121,22 +122,12 @@ function Detail() {
   };
 
   const handleDelete = async () => {
+    if (!isLocalToilet) return;
     if (!window.confirm('本当にこのトイレ情報を削除しますか？\n（この操作は取り消せません）')) return;
     try {
-      if (id.startsWith('u_')) {
-        saveUserToilets(loadUserToilets().filter(t => t.id !== id));
-        alert('削除しました（ブラウザ保存データ）');
-        navigate('/search');
-      } else {
-        const res = await fetch(`${API_BASE_URL}/${id}`, { 
-          method: 'DELETE',
-          headers: {
-            'X-Admin-Token': import.meta.env.VITE_ADMIN_TOKEN
-          }
-        });
-        if (res.ok) { alert('削除しました'); navigate('/search'); }
-        else alert('削除に失敗しました');
-      }
+      saveUserToilets(loadUserToilets().filter(t => t.id !== id));
+      alert('削除しました（ブラウザ保存データ）');
+      navigate('/search');
     } catch (err) {
       console.error(err);
       alert('エラーが発生しました');
@@ -254,9 +245,11 @@ function Detail() {
               <button className="nav-btn" onClick={openGoogleMaps}>
                 <DirectionsIcon sx={{ mr: 1 }} /> Googleマップでナビ
               </button>
-              <button className="edit-btn" onClick={() => navigate(`/edit/${toilet.id}`)}>
-                <EditIcon sx={{ mr: 1 }} fontSize="small" /> 情報を編集
-              </button>
+              {isLocalToilet && (
+                <button className="edit-btn" onClick={() => navigate(`/edit/${toilet.id}`)}>
+                  <EditIcon sx={{ mr: 1 }} fontSize="small" /> 情報を編集
+                </button>
+              )}
             </div>
 
             <div className="info-section">
@@ -314,18 +307,20 @@ function Detail() {
 
             
             {/* 削除ボタン */}
-            <div style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px', textAlign: 'center' }}>
-              <button
-                onClick={handleDelete}
-                style={{
-                  background: 'transparent', border: '1px solid #ef5350', color: '#ef5350',
-                  padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem'
-                }}
-              >
-                <DeleteForeverIcon fontSize="small" /> この情報を削除する
-              </button>
-            </div>
+            {isLocalToilet && (
+              <div style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px', textAlign: 'center' }}>
+                <button
+                  onClick={handleDelete}
+                  style={{
+                    background: 'transparent', border: '1px solid #ef5350', color: '#ef5350',
+                    padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem'
+                  }}
+                >
+                  <DeleteForeverIcon fontSize="small" /> この情報を削除する
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
