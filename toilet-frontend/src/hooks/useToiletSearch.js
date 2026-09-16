@@ -202,6 +202,7 @@ export const useToiletSearch = () => {
       if (!currentLocation && !currentPlaceQuery && searchTrigger === 0 && !mapBounds) return;
 
       let apiData = [];
+      let apiFailed = false;
       const isLocationSearch = !!currentLocation || !!mapBounds; // ★追加: bounds検索時もロケーション検索として扱う
       const isKeywordSearch = !currentLocation && !mapBounds;
 
@@ -260,9 +261,11 @@ export const useToiletSearch = () => {
           const data = await res.json();
           apiData = data.content || []; 
         } else {
-          console.error('API Error');
+          apiFailed = true;
+          console.error('API Error', res.status);
         }
       } catch (e) {
+        apiFailed = true;
         console.error('Fetch Error', e);
       }
 
@@ -356,6 +359,9 @@ export const useToiletSearch = () => {
 
       setFilteredToilets(uniqueResult);
       setSearchStatus(prev => {
+        if (apiFailed) {
+          return 'トイレ情報の取得に失敗しました。通信状況を確認して再試行してください';
+        }
         if (uniqueResult.length > 0) {
           return `${uniqueResult.length}件のトイレが見つかりました`;
         }
