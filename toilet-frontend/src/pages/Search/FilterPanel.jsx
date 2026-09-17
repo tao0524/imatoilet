@@ -14,7 +14,7 @@ import HotelIcon from '@mui/icons-material/Hotel';
 import CategoryIcon from '@mui/icons-material/Category';
 
 function FilterPanel({
-  placeQuery, setPlaceQuery, handleKeywordSearch, handleCurrentLocation,
+  placeQuery, setPlaceQuery, handleCurrentLocation,
   handlePlaceSearch, searchHistory, handleHistorySearch, removeFromHistory
 }) {
   const [searchParams, setSearchParams] = useSearchParams();

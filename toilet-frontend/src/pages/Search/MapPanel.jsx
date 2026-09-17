@@ -63,6 +63,8 @@ const scheduleClusterRender = (clusterer) => {
 
 const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, isRealLocation, onClick }) => {
   const onClickRef = useRef(onClick);
+  const latitude = position.lat;
+  const longitude = position.lng;
 
   useEffect(() => { onClickRef.current = onClick; }, [onClick]);
 
@@ -92,7 +94,7 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
 
     const marker = new window.google.maps.marker.AdvancedMarkerElement({
       map, 
-      position, 
+      position: { lat: latitude, lng: longitude },
       title, 
       content: contentEl,
       gmpClickable: true 
@@ -116,7 +118,7 @@ const AdvancedMarker = ({ map, clusterer, position, title, iconSrc, isCenter, is
         marker.map = null;
       }
     };
-  }, [map, clusterer, position.lat, position.lng, title, iconSrc, isCenter, isRealLocation]);
+  }, [map, clusterer, latitude, longitude, title, iconSrc, isCenter, isRealLocation]);
 
   return null;
 };
@@ -128,18 +130,18 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
   const [travelMode, setTravelMode] = useState('WALKING');
   const [map, setMap] = useState(null);
   const [clusterer, setClusterer] = useState(null);
-  const [favorites, setFavorites] = useState([]);
+  const favorites = JSON.parse(
+    localStorage.getItem('imatoilet_favorites') || '[]'
+  );
+
 
   useEffect(() => {
-    const favs = JSON.parse(localStorage.getItem('imatoilet_favorites') || '[]');
-    setFavorites(favs);
-  }, [filteredToilets]); 
-
-  useEffect(() => {
-    setSelectedToiletId(null);
-    setDirectionsResponse(null);
-    setRouteInfo('');
-    setTravelMode('WALKING');
+    queueMicrotask(() => {
+      setSelectedToiletId(null);
+      setDirectionsResponse(null);
+      setRouteInfo('');
+      setTravelMode('WALKING');
+    });
   }, [currentLocation, setSelectedToiletId]);
 
   const center = useMemo(() => {
@@ -242,8 +244,10 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
         }
       });
     } else {
-      setDirectionsResponse(null);
-      setRouteInfo('');
+      queueMicrotask(() => {
+        setDirectionsResponse(null);
+        setRouteInfo('');
+      });
     }
   }, [selectedToiletId, realLocation, currentLocation, selectedToilet, travelMode]);
 

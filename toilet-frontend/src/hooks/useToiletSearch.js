@@ -42,7 +42,15 @@ export const useToiletSearch = () => {
       : savedStatus;
   });
 
-  const [searchHistory, setSearchHistory] = useState([]);
+  const [searchHistory, setSearchHistory] = useState(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  });
   const [searchTrigger, setSearchTrigger] = useState(0);
   
   // 選択されたトイレのIDを管理
@@ -50,6 +58,48 @@ export const useToiletSearch = () => {
   
   // ★今回追加：地図の表示領域（Bounding Box）を管理
   const [mapBounds, setMapBounds] = useState(null);
+
+  const handleCurrentLocation = () => {
+    setSearchStatus('現在地を取得中...');
+    if (!navigator.geolocation) {
+      setSearchStatus('ブラウザが位置情報に対応していません');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setPlaceQuery('');
+
+        if (window.google?.maps?.Geocoder) {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            let addr = '現在地';
+            if (status === 'OK' && results[0]) {
+              addr = results[0].address_components
+                .filter(c => c.types.includes('locality') || c.types.includes('sublocality') || c.types.includes('neighborhood'))
+                .map(c => c.long_name).reverse().join('') || results[0].formatted_address;
+              setSearchStatus(`現在地: ${addr} 付近`);
+            } else {
+              setSearchStatus('現在地周辺を表示中');
+            }
+            const loc = { lat, lng, address: addr };
+            setCurrentLocation(loc);
+            setRealLocation(loc);
+          });
+        } else {
+          const loc = { lat, lng, address: '現在地' };
+          setCurrentLocation(loc);
+          setRealLocation(loc);
+          setSearchStatus('現在地周辺を表示中');
+        }
+      },
+      (err) => {
+        console.error(err);
+        setSearchStatus('現在地の取得に失敗しました');
+      }
+    );
+  };
 
   useEffect(() => { placeQueryRef.current = placeQuery; }, [placeQuery]);
 
@@ -66,20 +116,14 @@ export const useToiletSearch = () => {
   useEffect(() => { sessionStorage.setItem('imatoilet_query', placeQuery); }, [placeQuery]);
   useEffect(() => { sessionStorage.setItem('imatoilet_status', searchStatus); }, [searchStatus]);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(HISTORY_KEY);
-      if (raw) setSearchHistory(JSON.parse(raw));
-    } catch (e) { console.error(e); }
-  }, []);
 
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
     if (!currentLocation && !searchParams.has('lat') && !searchParams.has('keyword')) {
-      handleCurrentLocation();
+      queueMicrotask(handleCurrentLocation);
     }
-  }, []);
+  }, [currentLocation, searchParams]);
 
   const addToHistory = (query) => {
     if (!query) return;
@@ -140,48 +184,6 @@ export const useToiletSearch = () => {
             }
           });
         }
-      }
-    );
-  };
-
-  const handleCurrentLocation = () => {
-    setSearchStatus('現在地を取得中...');
-    if (!navigator.geolocation) {
-      setSearchStatus('ブラウザが位置情報に対応していません');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setPlaceQuery('');
-
-        if (window.google?.maps?.Geocoder) {
-          const geocoder = new window.google.maps.Geocoder();
-          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-            let addr = '現在地';
-            if (status === 'OK' && results[0]) {
-              addr = results[0].address_components
-                .filter(c => c.types.includes('locality') || c.types.includes('sublocality') || c.types.includes('neighborhood'))
-                .map(c => c.long_name).reverse().join('') || results[0].formatted_address;
-              setSearchStatus(`現在地: ${addr} 付近`);
-            } else {
-              setSearchStatus('現在地周辺を表示中');
-            }
-            const loc = { lat, lng, address: addr };
-            setCurrentLocation(loc);
-            setRealLocation(loc);
-          });
-        } else {
-          const loc = { lat, lng, address: '現在地' };
-          setCurrentLocation(loc);
-          setRealLocation(loc);
-          setSearchStatus('現在地周辺を表示中');
-        }
-      },
-      (err) => {
-        console.error(err);
-        setSearchStatus('現在地の取得に失敗しました');
       }
     );
   };

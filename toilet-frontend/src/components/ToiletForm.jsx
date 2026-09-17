@@ -27,22 +27,26 @@ const FACILITY_OPTIONS = [
 // ドラッグ可能なAdvancedMarkerElement
 const DraggableMarker = ({ map, position, onDragEnd }) => {
   const markerRef = useRef(null);
+  const onDragEndRef = useRef(onDragEnd);
+  const latitude = position.lat;
+  const longitude = position.lng;
+
+  useEffect(() => { onDragEndRef.current = onDragEnd; }, [onDragEnd]);
 
   useEffect(() => {
     if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
 
     const marker = new window.google.maps.marker.AdvancedMarkerElement({
       map,
-      position,
       gmpDraggable: true,
       title: 'ドラッグして位置を調整'
     });
 
     const listener = marker.addListener('dragend', () => {
-      if (onDragEnd && marker.position) {
+      if (onDragEndRef.current && marker.position) {
         const lat = typeof marker.position.lat === 'function' ? marker.position.lat() : marker.position.lat;
         const lng = typeof marker.position.lng === 'function' ? marker.position.lng() : marker.position.lng;
-        onDragEnd({ lat, lng });
+        onDragEndRef.current({ lat, lng });
       }
     });
 
@@ -56,9 +60,9 @@ const DraggableMarker = ({ map, position, onDragEnd }) => {
 
   useEffect(() => {
     if (markerRef.current) {
-      markerRef.current.position = position;
+      markerRef.current.position = { lat: latitude, lng: longitude };
     }
-  }, [position.lat, position.lng]);
+  }, [latitude, longitude]);
 
   return null;
 };

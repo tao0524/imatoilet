@@ -77,7 +77,7 @@ function PlaceSearch({
         </div>
       </div>
       <p style={{ fontSize: '0.75rem', color: '#888', margin: '4px 0 0', lineHeight: '1.5' }}>
-        🗺️ 地図で探す：駅名・エリア名向け　／　🔍 DB検索：施設名が分かる時向け
+        🗺️ 地図で探す：駅名・エリア名向け ／ 🔍 DB検索：施設名が分かる時向け
       </p>
       <p className="place-search__status">{searchStatus}</p>
     </section>
