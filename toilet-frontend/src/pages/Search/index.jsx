@@ -25,6 +25,7 @@ function Search() {
     removeFromHistory,
     selectedToiletId,      
     setSelectedToiletId,
+    mapBounds,
     setMapBounds           // ★追加: 先ほどフックに追加した関数を取得
   } = useToiletSearch();
 
@@ -72,6 +73,7 @@ function Search() {
           <ListPanel 
             filteredToilets={filteredToilets}
             currentLocation={currentLocation}
+            boundsPending={!!currentLocation && !mapBounds}
           />
         </div>
       </div>

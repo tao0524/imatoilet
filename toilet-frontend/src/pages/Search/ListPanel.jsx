@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { normalizeEquipment } from '../../utils'; // ★追加
 
-function ListPanel({ filteredToilets = [], currentLocation }) {
+function ListPanel({ filteredToilets = [], currentLocation, boundsPending = false }) {
   const navigate = useNavigate();
 
   return (
@@ -9,7 +9,7 @@ function ListPanel({ filteredToilets = [], currentLocation }) {
       <header className="panel-head">
         <h2 className="panel-title">検索結果</h2>
         <div className="panel-meta">
-          並び順：{currentLocation ? "近い順" : "おすすめ順"} / {filteredToilets.length}件
+          並び順：{currentLocation ? "近い順" : "おすすめ順"} / {boundsPending ? '取得中' : `${filteredToilets.length}件`}
         </div>
       </header>
       <div className="list-area">

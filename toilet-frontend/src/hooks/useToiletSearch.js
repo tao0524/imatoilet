@@ -5,6 +5,7 @@ import { loadUserToilets, calcDistance, normalizeEquipment } from '../utils';
 import { API_BASE_URL } from '../config/api';
 
 const HISTORY_KEY = 'imatoilet_search_history';
+const BOUNDS_PENDING_STATUS = '表示範囲のトイレを検索中...';
 
 export const useToiletSearch = () => {
   const [searchParams] = useSearchParams();
@@ -35,7 +36,10 @@ export const useToiletSearch = () => {
 
   const [searchStatus, setSearchStatus] = useState(() => {
     if (searchParams.has('lat')) return '現在地周辺を表示中';
-    return sessionStorage.getItem('imatoilet_status') || '';
+    const savedStatus = sessionStorage.getItem('imatoilet_status') || '';
+    return currentLocation && /^\d+件のトイレが見つかりました$/.test(savedStatus)
+      ? BOUNDS_PENDING_STATUS
+      : savedStatus;
   });
 
   const [searchHistory, setSearchHistory] = useState([]);
@@ -196,6 +200,7 @@ export const useToiletSearch = () => {
   };
 
   useEffect(() => {
+    let active = true;
     async function fetchData() {
       const currentPlaceQuery = placeQueryRef.current;
       // ★修正: mapBoundsが存在する場合もフェッチを実行するように条件を緩和
@@ -357,11 +362,13 @@ export const useToiletSearch = () => {
         return true;
       });
 
+      if (!active) return;
       setFilteredToilets(uniqueResult);
       setSearchStatus(prev => {
         if (apiFailed) {
           return 'トイレ情報の取得に失敗しました。通信状況を確認して再試行してください';
         }
+        if (currentLocation && !mapBounds) return BOUNDS_PENDING_STATUS;
         if (uniqueResult.length > 0) {
           return `${uniqueResult.length}件のトイレが見つかりました`;
         }
@@ -370,6 +377,7 @@ export const useToiletSearch = () => {
     }
 
     fetchData();
+    return () => { active = false; };
   // ★修正: mapBounds が変わったときにも再フェッチが走るように依存配列に追加
   }, [searchParams, currentLocation, searchTrigger, mapBounds]);
 
