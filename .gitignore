@@ -1,1 +1,8 @@
 repomix-output.xml
+scripts/osm-import/.env.production
+.vercel
+
+.metadata/
+backup/
+imatoilet_old_20260816/
+scripts/osm-import/output/
