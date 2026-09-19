@@ -279,6 +279,7 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
               options={{
                 directions: directionsResponse,
                 suppressMarkers: true,
+                preserveViewport: true,
                 polylineOptions: {
                   strokeColor: travelMode === 'WALKING' ? '#4285F4' : '#FF5252',
                   strokeWeight: 5,
@@ -309,7 +310,10 @@ function MapPanel({ filteredToilets = [], currentLocation, realLocation, selecte
             <InfoWindow
               position={{ lat: selectedToilet.lat, lng: selectedToilet.lng }}
               onCloseClick={() => setSelectedToiletId(null)}
-              options={{ pixelOffset: new window.google.maps.Size(0, -52) }}
+              options={{
+                pixelOffset: new window.google.maps.Size(0, -52),
+                disableAutoPan: true
+              }}
             >
               <div style={{ padding: '4px', maxWidth: '240px' }}>
                 <b style={{ fontSize: '1rem', display: 'block', marginBottom: '10px', textAlign: 'center' }}>
