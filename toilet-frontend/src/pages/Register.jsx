@@ -79,6 +79,8 @@ function Register() {
         } catch {
           alert('入力内容に誤りがあります。');
         }
+      } else if (res.status === 409) {
+        alert('50m以内に既に登録されているトイレがあります。');
       } else {
         alert('登録に失敗しました。サーバーエラーです。');
       }
