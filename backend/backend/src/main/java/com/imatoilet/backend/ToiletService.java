@@ -91,7 +91,7 @@ public ToiletService(ToiletRepository toiletRepository) {
         return toiletRepository.save(savedToilet);
     }
 
-    public Toilet createToiletByUser(AddToiletRequestDto dto, String userId) {
+    public Toilet createToiletByUser(AddToiletRequestDto dto) {
         List<Long> nearby = toiletRepository.findNearbyToiletIds(dto.getLat(), dto.getLng(), 0.05);
         if (!nearby.isEmpty()) {
             throw new DuplicateToiletException(nearby.get(0));
@@ -104,7 +104,6 @@ public ToiletService(ToiletRepository toiletRepository) {
         toilet.setFacilityCategory(dto.getFacilityCategory());
         toilet.setDescription(dto.getDescription());
         toilet.setCleanliness(3);
-        toilet.setCreatedBy(userId);
         toilet.setSource("user");
 
         if (dto.getUsageConditions() != null) {

@@ -3,7 +3,6 @@ package com.imatoilet.backend;
 import com.imatoilet.backend.dto.AddToiletRequestDto;
 import com.imatoilet.backend.dto.AddToiletResponseDto;
 import com.imatoilet.backend.dto.ToiletUpdateDto;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,16 +55,10 @@ public class ToiletApiController {
 
     @PostMapping
     public ResponseEntity<?> createToilet(
-            @RequestBody @Valid AddToiletRequestDto dto,
-            HttpServletRequest request) {
-
-        // Authorizationヘッダー・UIDがあればログインユーザーとして紐づけ、なければ匿名投稿として扱う（任意認証）
-        String userId = (String) request.getAttribute(
-            com.imatoilet.backend.config.FirebaseAuthFilter.FIREBASE_UID_ATTR
-        );
+            @RequestBody @Valid AddToiletRequestDto dto) {
 
         try {
-            Toilet saved = toiletService.createToiletByUser(dto, userId);
+            Toilet saved = toiletService.createToiletByUser(dto);
             AddToiletResponseDto response = new AddToiletResponseDto(
                 saved.getId(), saved.getName(), saved.getLat(), saved.getLng(), false
             );
