@@ -1,5 +1,7 @@
 package com.imatoilet.backend;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +10,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -28,6 +32,9 @@ public class ToiletApiControllerTest {
 
     @Autowired
     private ToiletRepository toiletRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
@@ -93,13 +100,40 @@ public class ToiletApiControllerTest {
             }
         """;
 
-        mockMvc.perform(post("/api/toilets")
+        MvcResult result = mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(toiletJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is("New Toilet")))
                 .andExpect(jsonPath("$.lat", is(35.123)))
-                .andExpect(jsonPath("$.lng", is(139.456)));
+                .andExpect(jsonPath("$.lng", is(139.456)))
+                .andReturn();
+
+        Toilet saved = toiletRepository.findById(extractId(result)).orElseThrow();
+        assertThat(saved.getAddress()).isEqualTo("New Address");
+        assertThat(saved.getCleanliness()).isEqualTo(4);
+        assertThat(saved.getImage()).isEqualTo("http://example.com/img.jpg");
+    }
+
+    // --- POST: cleanliness未指定 → 3で保存される（回帰テスト） ---
+    @Test
+    void shouldDefaultCleanlinessToThreeWhenOmitted() throws Exception {
+        String toiletJson = """
+            {
+                "name": "No Cleanliness Toilet",
+                "lat": 35.1,
+                "lng": 139.1
+            }
+        """;
+
+        MvcResult result = mockMvc.perform(post("/api/toilets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(toiletJson))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        Toilet saved = toiletRepository.findById(extractId(result)).orElseThrow();
+        assertThat(saved.getCleanliness()).isEqualTo(3);
     }
 
     // --- PUT: 更新 ---
@@ -222,11 +256,15 @@ public class ToiletApiControllerTest {
             }
         """;
 
-        mockMvc.perform(post("/api/toilets")
+        MvcResult result = mockMvc.perform(post("/api/toilets")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name", is("Multi Image")));
+                .andExpect(jsonPath("$.name", is("Multi Image")))
+                .andReturn();
+
+        Toilet saved = toiletRepository.findById(extractId(result)).orElseThrow();
+        assertThat(saved.getImage()).isEqualTo("https://example.com/1.jpg,https://example.com/2.jpg");
     }
 
     @Test
@@ -234,5 +272,10 @@ public class ToiletApiControllerTest {
         mockMvc.perform(delete("/api/toilets/9999")
                 .header("X-Admin-Token", VALID_TOKEN))
                 .andExpect(status().isNotFound());
+    }
+
+    private Long extractId(MvcResult result) throws Exception {
+        JsonNode node = objectMapper.readTree(result.getResponse().getContentAsString());
+        return node.get("id").asLong();
     }
 }

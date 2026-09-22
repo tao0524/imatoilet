@@ -27,5 +27,16 @@ public class AddToiletRequestDto {
     @Size(max = 500)
     private String description;
 
+    @Size(max = 200)
+    private String address;
+
+    @Min(1)
+    @Max(5)
+    private Integer cleanliness;
+
+    @Size(max = 2048, message = "画像URLは2048文字以内で入力してください")
+    @Pattern(regexp = "^(https?://[^,]+(,https?://[^,]+)*)?$", message = "画像URLの形式が不正です")
+    private String image;
+
     private List<String> equipment;
 }

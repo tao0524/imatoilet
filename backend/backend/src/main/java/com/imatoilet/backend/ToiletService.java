@@ -103,7 +103,9 @@ public ToiletService(ToiletRepository toiletRepository) {
         toilet.setLng(dto.getLng());
         toilet.setFacilityCategory(dto.getFacilityCategory());
         toilet.setDescription(dto.getDescription());
-        toilet.setCleanliness(3);
+        toilet.setAddress(dto.getAddress());
+        toilet.setImage(dto.getImage());
+        toilet.setCleanliness(dto.getCleanliness() != null ? dto.getCleanliness() : 3);
         toilet.setSource("user");
 
         if (dto.getUsageConditions() != null) {
