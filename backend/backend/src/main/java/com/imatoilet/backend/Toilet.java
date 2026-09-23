@@ -74,15 +74,6 @@ public class Toilet {
 
     private LocalDate lastVerified;
 
-    @Column(name = "trust_score")
-    private Double trustScore;
-
-    @Column(name = "feedback_count")
-    private Integer feedbackCount = 0;
-
-    @Column(name = "created_by", length = 128)
-    private String createdBy;
-    
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
