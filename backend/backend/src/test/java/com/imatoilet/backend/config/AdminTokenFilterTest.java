@@ -42,7 +42,9 @@ class AdminTokenFilterTest {
     @CsvSource({
             "PUT, /api/toilets/1",
             "DELETE, /api/toilets/1",
-            "POST, /api/admin/toilets/import"
+            "GET, /api/admin/audit",
+            "POST, /api/admin/toilets/import",
+            "POST, /api/admin/toilets/import-external"
     })
     void protectedRequestsWithoutTokenAreRejected(String method, String path) throws Exception {
         AdminTokenFilter filter = newFilter();
@@ -59,7 +61,8 @@ class AdminTokenFilterTest {
     @ParameterizedTest
     @CsvSource({
             "PUT, /api/toilets/1",
-            "POST, /api/admin/toilets/import"
+            "POST, /api/admin/toilets/import",
+            "POST, /api/admin/toilets/import-external"
     })
     void protectedRequestsWithCorrectTokenProceed(String method, String path) throws Exception {
         AdminTokenFilter filter = newFilter();
@@ -71,6 +74,25 @@ class AdminTokenFilterTest {
         filter.doFilterInternal(request, response, chain);
 
         verify(chain, times(1)).doFilter(request, response);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "POST, /api/admin/toilets/import",
+            "POST, /api/admin/toilets/import-external",
+            "POST, /api/%61dmin/toilets/import-external"
+    })
+    void protectedRequestsWithInvalidTokenAreRejected(String method, String path) throws Exception {
+        AdminTokenFilter filter = newFilter();
+        MockHttpServletRequest request = new MockHttpServletRequest(method, path);
+        request.addHeader("X-Admin-Token", "wrong-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertEquals(401, response.getStatus());
+        verify(chain, never()).doFilter(request, response);
     }
 
     @ParameterizedTest
@@ -101,6 +123,34 @@ class AdminTokenFilterTest {
 
         assertEquals(401, response.getStatus());
         verify(chain, never()).doFilter(request, response);
+    }
+
+    @Test
+    void encodedAdminPathWithoutTokenIsRejected() throws Exception {
+        AdminTokenFilter filter = newFilter();
+        MockHttpServletRequest request = new MockHttpServletRequest(
+                "POST", "/api/%61dmin/toilets/import-external");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertEquals(401, response.getStatus());
+        verify(chain, never()).doFilter(request, response);
+    }
+
+    @Test
+    void encodedAdminPathWithCorrectTokenProceeds() throws Exception {
+        AdminTokenFilter filter = newFilter();
+        MockHttpServletRequest request = new MockHttpServletRequest(
+                "POST", "/api/%61dmin/toilets/import-external");
+        request.addHeader("X-Admin-Token", ADMIN_TOKEN);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilterInternal(request, response, chain);
+
+        verify(chain, times(1)).doFilter(request, response);
     }
 
     private AdminTokenFilter newFilter() {

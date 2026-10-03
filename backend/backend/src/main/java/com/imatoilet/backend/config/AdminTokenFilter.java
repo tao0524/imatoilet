@@ -7,6 +7,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.http.server.RequestPath;
+import org.springframework.web.util.ServletRequestPathUtils;
+import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -26,6 +30,8 @@ public class AdminTokenFilter extends OncePerRequestFilter {
 
     /** 認証を要求するHTTPメソッドのセット */
     private static final Set<String> PROTECTED_METHODS = Set.of("PUT", "DELETE");
+    private static final PathPattern ADMIN_API_PATH =
+            PathPatternParser.defaultInstance.parse("/api/admin/**");
 
     @Value("${app.admin.token}")
     private String adminToken;
@@ -44,9 +50,9 @@ public class AdminTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String method = request.getMethod();
-        String path = request.getRequestURI();
+        RequestPath requestPath = ServletRequestPathUtils.parseAndCache(request);
         boolean needsAuth = PROTECTED_METHODS.contains(method)
-                || ("POST".equals(method) && path.startsWith("/api/admin/"));
+                || ADMIN_API_PATH.matches(requestPath.pathWithinApplication());
 
         if (needsAuth) {
             String token = request.getHeader("X-Admin-Token");
