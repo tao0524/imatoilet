@@ -72,6 +72,12 @@ public class Toilet {
     @Size(max = 2048, message = "出典URLは2048文字以内で入力してください")
     private String sourceUrl;
 
+    @Size(max = 100, message = "外部ソースキーは100文字以内で入力してください")
+    private String sourceKey;
+
+    @Size(max = 255, message = "外部IDは255文字以内で入力してください")
+    private String sourceExternalId;
+
     private LocalDate lastVerified;
 
     @OneToMany(mappedBy = "toilet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

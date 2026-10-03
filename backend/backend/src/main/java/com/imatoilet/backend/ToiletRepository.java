@@ -12,6 +12,12 @@ import java.util.Optional;
 
 public interface ToiletRepository extends JpaRepository<Toilet, Long> {
 
+    Optional<Toilet> findBySourceKeyAndSourceExternalId(String sourceKey, String sourceExternalId);
+
+    List<Toilet> findByLatBetweenAndLngBetween(
+        Double minLat, Double maxLat, Double minLng, Double maxLng
+    );
+
     @Override
     @EntityGraph(attributePaths = {"equipmentList"})
     @NonNull

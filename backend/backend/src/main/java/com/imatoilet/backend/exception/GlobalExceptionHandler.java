@@ -1,5 +1,7 @@
 package com.imatoilet.backend.exception;
 
+import com.imatoilet.backend.ExternalImportConflictException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,19 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ExternalImportConflictException.class)
+    public ResponseEntity<ErrorResponse> handleExternalImportConflict(
+            ExternalImportConflictException ex, WebRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getDescription(false),
+                null
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
 
     // 1. リソースが見つからない場合 (404)
     @ExceptionHandler(ResourceNotFoundException.class)
